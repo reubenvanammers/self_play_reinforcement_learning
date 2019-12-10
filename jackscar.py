@@ -113,7 +113,6 @@ class JacksCar:
                 cars_rented = min(cars_starting, cars_requested)
                 money_earned = self.rent_reward * cars_rented
 
-
                 expected_earnings = prob_rent * money_earned
                 expected_reward_matrix[cars_starting] += expected_earnings
         return expected_reward_matrix
