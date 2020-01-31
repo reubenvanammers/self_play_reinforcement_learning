@@ -5,16 +5,9 @@ from random import random, choice
 import copy
 
 
-# class keydefaultdict(defaultdict):
-#     def __missing__(self, key):
-#         if self.default_factory is None:
-#             raise KeyError(key)
-#         else:
-#             ret = self[key] = self.default_factory(key)
-#             return ret
 
 
-class TicTacToeSarsa():
+class TicTacToeSarsa:
 
     # Use self play, and epsilon greedy algo on both sides
     # Represent empty space as 0, player 1 as 1 and player 2 as -1 on a n*n array representing the board
@@ -51,7 +44,9 @@ class TicTacToeSarsa():
             self.expected_reward[state.tostring()] = self.default_move_weights(state)
 
         if first_player == -1:
-            enemy_move = self.choose_move(state, self.opponent_expected_reward, player=-1)
+            enemy_move = self.choose_move(
+                state, self.opponent_expected_reward, player=-1
+            )
             state = self.apply_move(state, enemy_move, player=-1)
 
         if not self.expected_reward.get(state.tostring()):
@@ -65,17 +60,21 @@ class TicTacToeSarsa():
 
             if not self.expected_reward.get(new_state.tostring()):
                 self.state_rep_dict[new_state.tostring()] = new_state
-                self.expected_reward[new_state.tostring()] = self.default_move_weights(new_state)
+                self.expected_reward[new_state.tostring()] = self.default_move_weights(
+                    new_state
+                )
             if reward or not self.valid_moves(new_state):
                 self.expected_reward[state.tostring()][move] += self.alpha * (
-                        reward - self.expected_reward[state.tostring()][move])
+                    reward - self.expected_reward[state.tostring()][move]
+                )
                 break
 
             new_move = self.choose_move(new_state, self.expected_reward)
             self.expected_reward[state.tostring()][move] += self.alpha * (
-                    reward + self.gamma * self.expected_reward[new_state.tostring()][new_move] -
-                    self.expected_reward[state.tostring()][
-                        move])
+                reward
+                + self.gamma * self.expected_reward[new_state.tostring()][new_move]
+                - self.expected_reward[state.tostring()][move]
+            )
             if reward or not self.valid_moves(new_state):
                 break
             state = new_state
@@ -84,7 +83,8 @@ class TicTacToeSarsa():
     def play_move(self, move, state):
         state = self.apply_move(state, move, player=1)
         reward = 0
-        if winner := self.check_winner(state):
+        winner = self.check_winner(state)
+        if winner:
             reward = winner
             return reward, state
         elif winner is None:
@@ -92,12 +92,14 @@ class TicTacToeSarsa():
 
         if not self.opponent_expected_reward.get(state.tostring()):
             self.state_rep_dict[state.tostring()] = state
-            self.opponent_expected_reward[state.tostring()] = self.default_move_weights(state)
+            self.opponent_expected_reward[state.tostring()] = self.default_move_weights(
+                state
+            )
 
         enemy_move = self.choose_move(state, self.opponent_expected_reward, player=-1)
         state = self.apply_move(state, enemy_move, player=-1)
-
-        if winner := self.check_winner(state):
+        winner = self.check_winner(state)
+        if winner:
             reward = winner
         elif winner is None:
             reward = 0
@@ -129,13 +131,17 @@ class TicTacToeSarsa():
         if random() < self.epsilon and not greedy:
             move = choice(list(rewards[state.tostring()].keys()))
         else:
-            player_state = state*player
+            player_state = state * player
             if not rewards.get(player_state.tostring()):
                 self.state_rep_dict[player_state.tostring()] = player_state
-                rewards[player_state.tostring()] = self.default_move_weights(player_state)
+                rewards[player_state.tostring()] = self.default_move_weights(
+                    player_state
+                )
 
-            move = max(rewards[player_state.tostring()],
-                       key=lambda x: rewards[player_state.tostring()].get(x))  # gets highest valued reward
+            move = max(
+                rewards[player_state.tostring()],
+                key=lambda x: rewards[player_state.tostring()].get(x),
+            )  # gets highest valued reward
         return move
 
     def valid_moves(self, state):
