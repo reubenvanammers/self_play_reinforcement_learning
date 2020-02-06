@@ -45,13 +45,8 @@ class CoinFlip:
 
     def generate_policies(self):
         for reserve in range(1, self.goal):
-            values = [
-                (stake, self.evaluate_stake(reserve, stake))
-                for stake in range(1, reserve + 1)
-            ]
-            best_stake = functools.reduce(
-                lambda a, b: a if a[1] >= b[1] - self.theta else b, values
-            )[0]
+            values = [(stake, self.evaluate_stake(reserve, stake)) for stake in range(1, reserve + 1)]
+            best_stake = functools.reduce(lambda a, b: a if a[1] >= b[1] - self.theta else b, values)[0]
             self.policy_matrix[reserve] = best_stake
 
 

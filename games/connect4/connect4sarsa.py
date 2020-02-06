@@ -13,9 +13,7 @@ from tensorflow.keras.losses import MeanSquaredError
 # use rollout/monte carlo tree search
 # might want to deep copy models if possible?
 class Connect4TD:
-    def __init__(
-            self, epsilon=0.1, self_play_update_freq=10, gamma=1, num_iter=10, width=7, height=6
-    ):
+    def __init__(self, epsilon=0.1, self_play_update_freq=10, gamma=1, num_iter=10, width=7, height=6):
         self.epsilon = epsilon
         self.gamma = gamma
         self.self_play_update_freq = self_play_update_freq
@@ -30,14 +28,15 @@ class Connect4TD:
         # function approximation
 
         # loss = tf.keras.losses.MeanSquaredError()
-        model = tf.keras.models.Sequential(layers=[
-            tf.keras.layers.Flatten(
-                input_shape=(self.width, self.height)),
-            # ),
-            tf.keras.layers.Dense(40, activation="relu", input_shape=(self.width, self.height)),
-            tf.keras.layers.Dense(1)],
+        model = tf.keras.models.Sequential(
+            layers=[
+                tf.keras.layers.Flatten(input_shape=(self.width, self.height)),
+                # ),
+                tf.keras.layers.Dense(40, activation="relu", input_shape=(self.width, self.height)),
+                tf.keras.layers.Dense(1),
+            ],
         )
-        model.compile(optimizer='SGD', loss=MeanSquaredError())
+        model.compile(optimizer="SGD", loss=MeanSquaredError())
         return model
 
     def run(self):
@@ -52,9 +51,7 @@ class Connect4TD:
     def play_game(self, first_player):
         state, heights = self.env.get_state()
         if first_player == -1:
-            enemy_move = self.choose_move(
-                state, player=-1
-            )
+            enemy_move = self.choose_move(state, player=-1)
             state, _, game_over = self.play_move(enemy_move)
 
         move = self.choose_move(state, player=1)
@@ -62,9 +59,7 @@ class Connect4TD:
 
         while not game_over:
             try:
-                enemy_move = self.choose_move(
-                    state, player=-1
-                )
+                enemy_move = self.choose_move(state, player=-1)
                 new_state, new_reward, game_over = self.play_move(enemy_move, player=-1)
                 move = self.choose_move(state)
                 new_state, new_reward, game_over = self.play_move(move, player=1)

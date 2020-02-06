@@ -5,7 +5,7 @@ import gym
 from collections import deque
 
 
-class Memory():
+class Memory:
     def __init__(self, max_size):
         self.buffer = deque(maxlen=max_size)
 
@@ -14,9 +14,7 @@ class Memory():
 
     def sample(self, batch_size):
         buffer_size = len(self.buffer)
-        index = np.random.choice(np.arange(buffer_size),
-                                 size=batch_size,
-                                 replace=False)
+        index = np.random.choice(np.arange(buffer_size), size=batch_size, replace=False)
 
         return [self.buffer[i] for i in index]
 
@@ -53,12 +51,17 @@ class FrozenLake:
         return move
 
     def build_model(self):
-        model = tf.keras.models.Sequential([
-            tf.keras.layers.Dense(40, input_shape=(None, self.output_size),
-                                  # output_shape=(self.batch_size, self.output_size)
-                                  ), tf.keras.layers.Dense(self.action_size)
-        ])
-        model.compile(loss='MeanSquaredError', optimizer='SGD')
+        model = tf.keras.models.Sequential(
+            [
+                tf.keras.layers.Dense(
+                    40,
+                    input_shape=(None, self.output_size),
+                    # output_shape=(self.batch_size, self.output_size)
+                ),
+                tf.keras.layers.Dense(self.action_size),
+            ]
+        )
+        model.compile(loss="MeanSquaredError", optimizer="SGD")
         return model
 
     def run(self):
@@ -124,6 +127,7 @@ class FrozenLake:
 
                 self.model.fit()
 
+
 if __name__ == "__main__":
     fl = FrozenLake()
-    print('asdf')
+    print("asdf")

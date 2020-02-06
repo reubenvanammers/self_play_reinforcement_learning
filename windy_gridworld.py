@@ -3,9 +3,7 @@ from random import random, randint, choice
 
 
 class WindyGridworld:
-    def __init__(
-        self, use_diagonals=False, allow_stationary=False, stochastic_wind=False
-    ):
+    def __init__(self, use_diagonals=False, allow_stationary=False, stochastic_wind=False):
         self.goal_location = np.array([7, 3])
         self.starting_location = np.array([0, 3])
         self.wind_amounts = [0, 0, 0, 1, 1, 1, 2, 2, 1, 0]
@@ -37,9 +35,7 @@ class WindyGridworld:
                 q_s_a = self.expected_reward[state[0], state[1], action]
                 new_action = self.choose_action(new_state)
 
-                q_s_a_prime = self.expected_reward[
-                    new_state[0], new_state[1], new_action
-                ]
+                q_s_a_prime = self.expected_reward[new_state[0], new_state[1], new_action]
 
                 self.expected_reward[state[0], state[1], action] += self.alpha * (
                     reward + self.gamma * q_s_a_prime - q_s_a

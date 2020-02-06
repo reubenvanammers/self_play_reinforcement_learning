@@ -1,5 +1,6 @@
 import numpy as np
 from functools import reduce
+from gym import spaces
 
 
 class GameOver(Exception):
@@ -13,6 +14,7 @@ class Connect4Env:
         self.episode_over = False
         self.board = np.zeros([width, height], dtype=np.int)
         self.heights = np.zeros([width], dtype=np.int)
+        self.action_space = spaces.Discrete(width)
 
     def step(self, action, player=1):
         if self.episode_over:
@@ -34,9 +36,10 @@ class Connect4Env:
 
     # Action is a integer between 0 and the width
 
-    def reset(self, action):
+    def reset(self):
         self.board = np.zeros([self.width, self.height])
         self.heights = np.zeros([self.width])
+        return self.board
 
     def get_reward(self, action, player=1):
         piece_height = self.heights[action]
@@ -44,12 +47,9 @@ class Connect4Env:
         verticals = self.board[action, :]
         offset = piece_height - action
         diagonal_1 = np.diagonal(self.board, offset=offset)
-        diagonal_2 = np.diagonal(
-            np.fliplr(self.board), offset=piece_height - self.height + action + 1
-        )
+        diagonal_2 = np.diagonal(np.fliplr(self.board), offset=piece_height - self.height + action + 1)
         connect = [
-            reduce(self._calc_win_in_a_row, row * player, 0)
-            for row in [horizontals, verticals, diagonal_1, diagonal_2]
+            reduce(self._calc_win_in_a_row, row * player, 0) for row in [horizontals, verticals, diagonal_1, diagonal_2]
         ]
         if 4 in connect:
             return 1

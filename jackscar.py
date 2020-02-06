@@ -27,12 +27,8 @@ class JacksCar:
         self.max_transfer = max_transfer
         self.additional_lot_cost = additional_lot_cost
 
-        self.prob_matrix_1 = self.calculate_prob_matrix(
-            self.request_rate_1, self.return_rate_1
-        )
-        self.prob_matrix_2 = self.calculate_prob_matrix(
-            self.request_rate_2, self.return_rate_2
-        )
+        self.prob_matrix_1 = self.calculate_prob_matrix(self.request_rate_1, self.return_rate_1)
+        self.prob_matrix_2 = self.calculate_prob_matrix(self.request_rate_2, self.return_rate_2)
         self.reward_matrix_1 = self.calculate_reward(self.request_rate_1)
         self.reward_matrix_2 = self.calculate_reward(self.request_rate_2)
 
@@ -42,9 +38,7 @@ class JacksCar:
         self.policy_matrix = self.init_policy_matrix()
 
     def init_value_matrix(self):
-        return np.zeros(
-            [self.max_cars + 1, self.max_cars + 1]
-        )  # value of cars in first, second lot respectively
+        return np.zeros([self.max_cars + 1, self.max_cars + 1])  # value of cars in first, second lot respectively
 
     def init_policy_matrix(self):
         return np.zeros([self.max_cars + 1, self.max_cars + 1], dtype=np.int)
@@ -61,9 +55,7 @@ class JacksCar:
         while delta > self.theta:
             delta = 0
             value_matrix = self.value_matrix
-            for num_cars_1, num_cars_2 in itertools.product(
-                range(self.max_cars + 1), repeat=2
-            ):
+            for num_cars_1, num_cars_2 in itertools.product(range(self.max_cars + 1), repeat=2):
                 v = self.value_matrix[num_cars_1, num_cars_2]
 
                 num_cars_moved = self.policy_matrix[num_cars_1, num_cars_2]
@@ -75,27 +67,18 @@ class JacksCar:
     def improve_policy(self):
 
         policy_stable = True
-        for num_cars_1, num_cars_2 in itertools.product(
-            range(self.max_cars + 1), repeat=2
-        ):
+        for num_cars_1, num_cars_2 in itertools.product(range(self.max_cars + 1), repeat=2):
             old_policy = self.policy_matrix[num_cars_1, num_cars_2]
             possible_moves = range(-min(5, num_cars_2), min(5, num_cars_1) + 1)
-            values = [
-                (move, self.calculate_value(num_cars_1, num_cars_2, move))
-                for move in possible_moves
-            ]
-            best_move = functools.reduce(lambda a, b: a if a[1] > b[1] else b, values)[
-                0
-            ]
+            values = [(move, self.calculate_value(num_cars_1, num_cars_2, move)) for move in possible_moves]
+            best_move = functools.reduce(lambda a, b: a if a[1] > b[1] else b, values)[0]
             self.policy_matrix[num_cars_1, num_cars_2] = best_move
             if old_policy != best_move:
                 policy_stable = False
         return policy_stable
 
     def calculate_value(self, num_cars_1, num_cars_2, num_cars_moved):
-        reward = (
-            -np.abs(num_cars_moved) * self.transfer_cost
-        )  # cars moved from first location to second location
+        reward = -np.abs(num_cars_moved) * self.transfer_cost  # cars moved from first location to second location
         if num_cars_1 > 10:
             reward -= self.additional_lot_cost
         if num_cars_2 > 10:
@@ -127,9 +110,7 @@ class JacksCar:
                 for cars_returned in range(max_end + 1):
                     prob_returned = self.poisson(cars_returned, return_rate)
                     total_prob = prob_rent * prob_returned
-                    end_of_day_cars = max(
-                        0, min(cars_starting - cars_requested + cars_returned, 20)
-                    )
+                    end_of_day_cars = max(0, min(cars_starting - cars_requested + cars_returned, 20))
                     prob_matrix[cars_starting, end_of_day_cars] += total_prob
         return prob_matrix
 
