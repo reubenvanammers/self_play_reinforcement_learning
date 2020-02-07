@@ -1,10 +1,26 @@
+import random
+import time
+from collections import deque
+
 import gym
 import numpy as np
 import torch
 from torch import nn
-import random
-import time
 from torch.functional import F
+
+
+class Memory:
+    def __init__(self, max_size):
+        self.buffer = deque(maxlen=max_size)
+
+    def add(self, experience):
+        self.buffer.append(experience)
+
+    def sample(self, batch_size):
+        buffer_size = len(self.buffer)
+        index = np.random.choice(np.arange(buffer_size), size=batch_size, replace=False)
+
+        return [self.buffer[i] for i in index]
 
 
 class EpsilonGreedy:
@@ -24,9 +40,9 @@ class QLinear(nn.Module):
     def __call__(self, s, a):
         if not isinstance(s, torch.Tensor):
             # s = torch.scalar_tensor(s).long()
-            s = torch.as_numpy(s).long()
+            s = torch.from_numpy(s).long()
         if not isinstance(a, torch.Tensor):
-            a = torch.from_numpy(a)
+            a = torch.scalar_tensor(a).long()
         return super().__call__(s, a)
 
     def __init__(self, env, lr=0.025, gamma=1, momentum=0):
@@ -34,8 +50,8 @@ class QLinear(nn.Module):
 
         self.gamma = gamma
         self.env = env
-        self.linear = nn.Linear(self.env.width * self.env.width * self.height, 1)
-        # self.linear.weight.data.fill_(1)
+        self.linear = nn.Linear(self.env.width * self.env.width * self.env.height, 1)
+        self.linear.weight.data.fill_(0.5)
         self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr)
 
     def forward(self, s, a):  # At the moment just use a linear network - dont expect it to be good

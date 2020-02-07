@@ -1,5 +1,6 @@
-import numpy as np
 from functools import reduce
+
+import numpy as np
 from gym import spaces
 
 
@@ -12,8 +13,8 @@ class Connect4Env:
         self.height = height
         self.width = width
         self.episode_over = False
-        self.board = np.zeros([width, height], dtype=np.int)
-        self.heights = np.zeros([width], dtype=np.int)
+        self.board = np.zeros([width, height], dtype=np.int64)
+        self.heights = np.zeros([width], dtype=np.int64)
         self.action_space = spaces.Discrete(width)
 
     def step(self, action, player=1):
@@ -26,8 +27,9 @@ class Connect4Env:
         reward = self.get_reward(action, player)
         state = self.board
         self.episode_over = reward != 0 or np.sum(self.heights) == self.height * self.width
-
-        return state, reward, self.episode_over
+        # if self.episode_over:
+        #     print('game_over')
+        return state, reward, self.episode_over, self.heights
 
         # Allow invalid moves? Just don't do anything and its a waste?
 
@@ -37,8 +39,9 @@ class Connect4Env:
     # Action is a integer between 0 and the width
 
     def reset(self):
-        self.board = np.zeros([self.width, self.height])
-        self.heights = np.zeros([self.width])
+        self.episode_over = False
+        self.board = np.zeros([self.width, self.height], dtype=np.int64)
+        self.heights = np.zeros([self.width], dtype=np.int64)
         return self.board
 
     def get_reward(self, action, player=1):

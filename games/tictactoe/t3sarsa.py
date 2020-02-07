@@ -1,8 +1,9 @@
-import numpy as np
-from collections import defaultdict
-import itertools
-from random import random, choice
 import copy
+import itertools
+from collections import defaultdict
+from random import choice, random
+
+import numpy as np
 
 
 class TicTacToeSarsa:

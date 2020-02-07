@@ -1,5 +1,6 @@
-import numpy as np
 import functools
+
+import numpy as np
 
 
 class CoinFlip:

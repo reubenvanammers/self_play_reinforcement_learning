@@ -1,8 +1,10 @@
-from connect4env import Connect4Env, GameOver
-import tensorflow as tf
 from random import random
+
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.losses import MeanSquaredError
+
+from connect4env import Connect4Env, GameOver
 
 
 # Things to do:

@@ -1,5 +1,6 @@
+from random import choice, randint, random
+
 import numpy as np
-from random import random, randint, choice
 
 
 class WindyGridworld:
