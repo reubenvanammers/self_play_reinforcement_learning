@@ -1,0 +1,5 @@
+TODO (in rough order):
+have output being the action space
+change it to memory buffers
+add convolutional networks
+add higher order logic on self play (MCTS)

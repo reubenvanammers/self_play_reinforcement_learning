@@ -45,7 +45,7 @@ class QLinear(nn.Module):
             a = torch.scalar_tensor(a).long()
         return super().__call__(s, a)
 
-    def __init__(self, env, lr=0.025, gamma=1, momentum=0):
+    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=0, batch_size=1):
         super().__init__()
 
         self.gamma = gamma
@@ -53,6 +53,9 @@ class QLinear(nn.Module):
         self.linear = nn.Linear(self.env.width * self.env.width * self.env.height, 1)
         self.linear.weight.data.fill_(0.5)
         self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr)
+        if buffer_size:
+            self.memory = Memory(buffer_size)
+        self.batch_size = batch_size
 
     def forward(self, s, a):  # At the moment just use a linear network - dont expect it to be good
         a = nn.functional.one_hot(a, self.env.width)
@@ -64,6 +67,9 @@ class QLinear(nn.Module):
 
     def update(self, s, a, r, done, s_next):
         # prediction
+        if self.memory:
+            self.memory.add((s, a, r, done, s_next))
+            batch = self.memory.sample(self.batch_size)
         q = self(s, a)
 
         # actual
