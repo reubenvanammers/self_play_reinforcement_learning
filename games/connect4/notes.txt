@@ -1,5 +1,7 @@
 TODO (in rough order):
 have output being the action space
 change it to memory buffers
+convert everything to tensor before it hits networK???????????????
+Add learning rate
 add convolutional networks
 add higher order logic on self play (MCTS)
