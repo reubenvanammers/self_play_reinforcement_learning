@@ -9,9 +9,7 @@ from torch import nn
 from torch.functional import F
 from collections import namedtuple
 
-Transition = namedtuple(
-    "Transition", ("state", "action", "reward", "done", "next_state")
-)
+Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 
 
 class Memory:
@@ -41,7 +39,9 @@ class EpsilonGreedy:
             a = self.q.env.action_space.sample()
         else:
             # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
-            a = np.argmax(self.q(s).detach().numpy())
+            weights = self.q(s).detach().numpy()
+            mask = np.array(self.q.env.valid_moves())
+            a = np.argmax(weights*mask)
         return a
 
 
@@ -54,9 +54,7 @@ class QLinear(nn.Module):
         #     a = torch.scalar_tensor(a).long()
         return super().__call__(s)
 
-    def __init__(
-        self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=16
-    ):
+    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=64,weight_decay=1):
         super().__init__()
 
         self.gamma = gamma
@@ -64,14 +62,12 @@ class QLinear(nn.Module):
         self.state_size = self.env.width * self.env.height
         self.linear = nn.Linear(self.state_size, self.env.action_space.n)
         self.linear.weight.data.fill_(0.5)
-        self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr)
+        self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr,weight_decay=weight_decay)
         if buffer_size:
             self.memory = Memory(buffer_size)
         self.batch_size = batch_size
 
-    def forward(
-        self, s
-    ):  # At the moment just use a linear network - dont expect it to be good
+    def forward(self, s):  # At the moment just use a linear network - dont expect it to be good
         # a = nn.functional.one_hot(a, self.env.width)
         # # s = nn.functional.one_hot(s, output_size)
         s = s.view(-1, self.state_size).float()
@@ -105,15 +101,15 @@ class QLinear(nn.Module):
         s_batch, a_batch, r_batch, done_batch, s_next_batch = batch_t
         s_batch = torch.stack(s_batch)
         a_batch = torch.stack(a_batch)
-        r_batch = torch.stack(r_batch)
+        r_batch = torch.stack(r_batch).view(-1, 1)
         s_next_batch = torch.stack(s_next_batch)
-        done_batch = torch.stack(done_batch)
+        done_batch = torch.stack(done_batch).view(-1, 1)
         q = self.v(s_batch, a_batch)
         # seperate state,actions
 
         # actual
         q_next = (
-            self(s_next_batch).max(1)[0].detach()
+            self(s_next_batch).max(1)[0].view(-1, 1).detach()
         )  # check how detach works (might be dodgy???) #max results in values and
         # q_next = max(self(s_next, a_) for a_ in range(self.env.action_space.n))  # Check!
         q_next_actual = (~done_batch) * q_next  # Removes elements that are done
@@ -124,10 +120,6 @@ class QLinear(nn.Module):
 
         self.optim.zero_grad()
         loss.backward()
-        for (
-            param
-        ) in (
-            self.linear.parameters()
-        ):  # see if this ends up doing anything - should just be relu
+        for param in self.parameters():  # see if this ends up doing anything - should just be relu
             param.grad.data.clamp_(-1, 1)
         self.optim.step()
