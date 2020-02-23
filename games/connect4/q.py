@@ -41,11 +41,14 @@ class EpsilonGreedy:
             # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
             weights = self.q(s).detach().numpy()
             mask = np.array(self.q.env.valid_moves())
-            a = np.argmax(weights*mask)
+            a = np.argmax(weights * mask)
         return a
 
 
-class QLinear(nn.Module):
+class Q(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
     def __call__(self, s):
         if not isinstance(s, torch.Tensor):
             # s = torch.scalar_tensor(s).long()
@@ -53,28 +56,6 @@ class QLinear(nn.Module):
         # if not isinstance(a, torch.Tensor):
         #     a = torch.scalar_tensor(a).long()
         return super().__call__(s)
-
-    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=64,weight_decay=1):
-        super().__init__()
-
-        self.gamma = gamma
-        self.env = env
-        self.state_size = self.env.width * self.env.height
-        self.linear = nn.Linear(self.state_size, self.env.action_space.n)
-        self.linear.weight.data.fill_(0.5)
-        self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr,weight_decay=weight_decay)
-        if buffer_size:
-            self.memory = Memory(buffer_size)
-        self.batch_size = batch_size
-
-    def forward(self, s):  # At the moment just use a linear network - dont expect it to be good
-        # a = nn.functional.one_hot(a, self.env.width)
-        # # s = nn.functional.one_hot(s, output_size)
-        s = s.view(-1, self.state_size).float()
-        # s = s.unsqueeze(0).float()
-        # x = torch.functional.einsum("i,j->ij", s, a).float().view(-1)  # Cartesian product
-
-        return self.linear(s)
 
     def v(self, s, a):
         a = a.view(-1, 1)
@@ -90,14 +71,13 @@ class QLinear(nn.Module):
             self.memory.add(Transition(s, a, r, done, s_next))
             return
 
-        # prediction
+        # Using batch memory
         if self.memory:
             self.memory.add(Transition(s, a, r, done, s_next))
             batch = self.memory.sample(self.batch_size)
             batch_t = Transition(*zip(*batch))  # transposed batch
-        # q = self(s, a)
 
-        # prediction
+        # Get expected Q values
         s_batch, a_batch, r_batch, done_batch, s_next_batch = batch_t
         s_batch = torch.stack(s_batch)
         a_batch = torch.stack(a_batch)
@@ -105,17 +85,13 @@ class QLinear(nn.Module):
         s_next_batch = torch.stack(s_next_batch)
         done_batch = torch.stack(done_batch).view(-1, 1)
         q = self.v(s_batch, a_batch)
-        # seperate state,actions
 
-        # actual
+        # Get Actual Q values
         q_next = (
             self(s_next_batch).max(1)[0].view(-1, 1).detach()
         )  # check how detach works (might be dodgy???) #max results in values and
-        # q_next = max(self(s_next, a_) for a_ in range(self.env.action_space.n))  # Check!
         q_next_actual = (~done_batch) * q_next  # Removes elements that are done
         q_target = r_batch + self.gamma * q_next_actual
-        # q_target = r + (1 - done) * self.gamma * q_next
-        #         q_target = torch.scalar_tensor(q_target).unsqueeze(0)
         loss = F.smooth_l1_loss(q, q_target)
 
         self.optim.zero_grad()
@@ -123,3 +99,69 @@ class QLinear(nn.Module):
         for param in self.parameters():  # see if this ends up doing anything - should just be relu
             param.grad.data.clamp_(-1, 1)
         self.optim.step()
+
+
+class QLinear(Q):
+
+    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=64, weight_decay=1):
+        super().__init__()
+
+        self.gamma = gamma
+        self.env = env
+        self.state_size = self.env.width * self.env.height
+        self.linear = nn.Linear(self.state_size, self.env.action_space.n)
+        self.linear.weight.data.fill_(0)
+        self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr, weight_decay=weight_decay)
+        if buffer_size:
+            self.memory = Memory(buffer_size)
+        self.batch_size = batch_size
+
+    def forward(self, s):  # At the moment just use a linear network - dont expect it to be good
+        s = s.view(-1, self.state_size).float()
+
+        return self.linear(s)
+
+
+class QConv(Q):
+
+    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=64, weight_decay=1):
+        super().__init__()
+
+        self.gamma = gamma
+        self.env = env
+        self.state_size = self.env.width * self.env.height
+        # self.linear = nn.Linear(self.state_size, self.env.action_space.n)
+        # self.linear.weight.data.fill_(0.5)
+
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=4, stride=1)
+        self.bn1 = nn.BatchNorm2d(16)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=1)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=4, stride=1)
+        self.bn3 = nn.BatchNorm2d(32)
+
+        def conv2d_size_out(size, kernel_size=4, stride=1):
+            return (size - (kernel_size - 1) - 1) // stride + 1
+
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(self.env.width)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(self.env.height)))
+        linear_input_size = convw * convh * 32
+
+        self.head = nn.Linear(linear_input_size, self.env.action_space.n)
+
+        self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr, weight_decay=weight_decay)
+        if buffer_size:
+            self.memory = Memory(buffer_size)
+        self.batch_size = batch_size
+
+    def forward(self, s):
+        # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
+        empty_channel = s == 0
+        own_channel = s == 1
+        enemy_channel = s == -1
+        x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
+
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        return self.head(x.view(x.size(0), -1))

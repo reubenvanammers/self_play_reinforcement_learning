@@ -31,7 +31,7 @@ class SelfPlay:
             episode_list.append(s)
             reward_list.append(r)
             print(f'player {r if r == 1 else 2} won')
-            win_percent = sum(1 if r > 0 else 0 for r in reward_list) / len(reward_list) * 100
+        win_percent = sum(1 if r > 0 else 0 for r in reward_list) / len(reward_list) * 100
         print(f"win percent : {win_percent}%")
         return episode_list, reward_list
 
