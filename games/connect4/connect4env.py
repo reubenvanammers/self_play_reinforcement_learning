@@ -21,9 +21,11 @@ class Connect4Env:
         if self.episode_over:
             raise GameOver
         piece_height = self.heights[action]
-        if piece_height < self.height - 1:
+        if piece_height < self.height:
             self.board[action, piece_height] = player
             self.heights[action] += 1
+        else:
+            raise ValueError
         reward = self.get_reward(action, player)
         state = self.board
         self.episode_over = reward != 0 or np.sum(self.heights) == self.height * self.width
@@ -34,7 +36,7 @@ class Connect4Env:
         # Allow invalid moves? Just don't do anything and its a waste?
 
     def valid_moves(self):
-        return self.heights < (self.height - 1)
+        return self.heights < self.height
 
     # Action is a integer between 0 and the width
 
@@ -54,12 +56,12 @@ class Connect4Env:
         print('\n'.join(l))
 
     def get_reward(self, action, player=1):
-        piece_height = self.heights[action]
+        piece_height = self.heights[action]-1
         horizontals = self.board[:, piece_height]
         verticals = self.board[action, :]
         offset = piece_height - action
         diagonal_1 = np.diagonal(self.board, offset=offset)
-        diagonal_2 = np.diagonal(np.fliplr(self.board), offset=piece_height - self.height + action + 1)
+        diagonal_2 = np.diagonal(np.flipud(self.board), offset=piece_height - self.width + action + 1)
         connect = [
             reduce(self._calc_win_in_a_row, row * player, 0) for row in [horizontals, verticals, diagonal_1, diagonal_2]
         ]

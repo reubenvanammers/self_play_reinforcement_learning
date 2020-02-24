@@ -13,10 +13,10 @@ save_dir = 'saves'
 
 def run_training():
     env = Connect4Env()
-    policy = EpsilonGreedy(QLinear(env), 0.1)
-    opposing_policy = EpsilonGreedy(QLinear(env), 0)  # Acts greedily
+    policy = EpsilonGreedy(QConv(env), 0.1)
+    opposing_policy = EpsilonGreedy(QConv(env), 0)  # Acts greedily
     self_play = SelfPlay(policy, opposing_policy)
-    self_play.train_model(2000)
+    self_play.train_model(5000, resume=False)
     print("Training Done")
 
     saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())

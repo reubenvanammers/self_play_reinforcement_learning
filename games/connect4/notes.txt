@@ -1,14 +1,17 @@
 TODO (in rough order):
 have output being the action space (done)
 change it to memory buffers (done)]
-stop illegal moves
-stop weights increasing too much
-convert everything to tensor before it hits networK???????????????
+stop illegal moves (done)
+stop weights increasing too much (done I think)
+add convolutional networks (done)
+
 Add learning rate
-add convolutional networks
 add target network
-save models
+add prioritized experience replay
+save models (done)
 Think about evalution of models
+add dropout layers (maybe?)
 
 #add higher order logic on self play (MCTS)
 change from q learning to something else (td lambda? n step tree backup?)
+convert everything to tensor before it hits networK???????????????

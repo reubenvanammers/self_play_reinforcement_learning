@@ -36,12 +36,13 @@ class EpsilonGreedy:
 
     def __call__(self, s):
         if np.random.rand() < self.epsilon:
-            a = self.q.env.action_space.sample()
+            possible_moves = [i for i, move in enumerate(self.q.env.valid_moves()) if move]
+            a = random.choice(possible_moves)
         else:
             # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
             weights = self.q(s).detach().numpy()
-            mask = np.array(self.q.env.valid_moves())
-            a = np.argmax(weights * mask)
+            mask = (-1000000000*~np.array(self.q.env.valid_moves()))+1 #just a really big negative number? is quite hacky
+            a = np.argmax(weights + mask)
         return a
 
 
@@ -133,15 +134,15 @@ class QConv(Q):
         # self.linear = nn.Linear(self.state_size, self.env.action_space.n)
         # self.linear.weight.data.fill_(0.5)
 
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=4, stride=1)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=2)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(16)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=1)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2)
         self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 32, kernel_size=4, stride=1)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
         self.bn3 = nn.BatchNorm2d(32)
 
-        def conv2d_size_out(size, kernel_size=4, stride=1):
-            return (size - (kernel_size - 1) - 1) // stride + 1
+        def conv2d_size_out(size, kernel_size=5, stride=1, padding=2):
+            return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
 
         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(self.env.width)))
         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(self.env.height)))
@@ -155,10 +156,11 @@ class QConv(Q):
         self.batch_size = batch_size
 
     def forward(self, s):
+        s = s.view(-1, 7, 6)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
-        empty_channel = s == 0
-        own_channel = s == 1
-        enemy_channel = s == -1
+        empty_channel = torch.tensor(s == 0, dtype=torch.float).detach()
+        own_channel = torch.tensor(s == 1, dtype=torch.float).detach()
+        enemy_channel = torch.tensor(s == -1, dtype=torch.float).detach()
         x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
 
         x = F.relu(self.bn1(self.conv1(x)))
