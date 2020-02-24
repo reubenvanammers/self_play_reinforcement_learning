@@ -51,21 +51,19 @@ class EpsilonGreedy:
         return a
 
 
-class Q(nn.Module):
+class Q:
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        pass
 
     def __call__(self, s):
         if not isinstance(s, torch.Tensor):
-            # s = torch.scalar_tensor(s).long()
             s = torch.from_numpy(s).long()
-        # if not isinstance(a, torch.Tensor):
-        #     a = torch.scalar_tensor(a).long()
-        return super().__call__(s)
+        # return super().__call__(s)
+        return self.policy_net(s)
 
     def v(self, s, a):
         a = a.view(-1, 1)
-        return self(s).gather(1, a)
+        return self.policy_net(s).gather(1, a)
 
     def update(self, s, a, r, done, s_next):
         s = torch.tensor(s)
@@ -94,7 +92,7 @@ class Q(nn.Module):
 
         # Get Actual Q values
         q_next = (
-            self(s_next_batch).max(1)[0].view(-1, 1).detach()
+            self.target_net(s_next_batch).max(1)[0].view(-1, 1).detach()
         )  # check how detach works (might be dodgy???) #max results in values and
         q_next_actual = (~done_batch) * q_next  # Removes elements that are done
         q_target = r_batch + self.gamma * q_next_actual
@@ -102,15 +100,15 @@ class Q(nn.Module):
 
         self.optim.zero_grad()
         loss.backward()
-        for param in self.parameters():  # see if this ends up doing anything - should just be relu
+        for param in self.policy_net.parameters():  # see if this ends up doing anything - should just be relu
             param.grad.data.clamp_(-1, 1)
         self.optim.step()
 
 
 class QLinear(Q):
 
-    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=8, weight_decay=0.5):
-        super().__init__()
+    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, buffer_size=50000, batch_size=8, weight_decay=0.5):
+        super().__init__()  # gamma is slightly less than 1 to promote faster games
 
         self.gamma = gamma
         self.env = env
@@ -128,17 +126,10 @@ class QLinear(Q):
         return self.linear(s)
 
 
-class QConv(Q):
+class ConvNet(nn.Module):
 
-    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=8, weight_decay=0):
+    def __init__(self, width, height, action_size):
         super().__init__()
-
-        self.gamma = gamma
-        self.env = env
-        self.state_size = self.env.width * self.env.height
-        # self.linear = nn.Linear(self.state_size, self.env.action_space.n)
-        # self.linear.weight.data.fill_(0.5)
-
         self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=2)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2)
@@ -146,19 +137,24 @@ class QConv(Q):
         self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
         self.bn3 = nn.BatchNorm2d(32)
 
+        # self.conv1.weight.data.fill_(0.01)
+        # self.conv2.weight.data.fill_(0.01)
+        # self.conv3.weight.data.fill_(0.01)
+        # self.conv1.bias.data.fill_(0.0)
+        # self.conv2.bias.data.fill_(0.0)
+        # self.conv3.bias.data.fill_(0.0)
+        # self.bn1.weight.data.fill_(0.0)
+        # self.bn2.weight.data.fill_(0.0)
+        # self.bn3.weight.data.fill_(0.0)
+
         def conv2d_size_out(size, kernel_size=5, stride=1, padding=2):
             return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
 
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(self.env.width)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(self.env.height)))
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(width)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(height)))
         linear_input_size = convw * convh * 32
 
-        self.head = nn.Linear(linear_input_size, self.env.action_space.n)
-
-        self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr, weight_decay=weight_decay)
-        if buffer_size:
-            self.memory = Memory(buffer_size)
-        self.batch_size = batch_size
+        self.head = nn.Linear(linear_input_size, action_size)
 
     def forward(self, s):
         s = s.view(-1, 7, 6)
@@ -167,8 +163,30 @@ class QConv(Q):
         own_channel = torch.tensor(s == 1, dtype=torch.float).detach()
         enemy_channel = torch.tensor(s == -1, dtype=torch.float).detach()
         x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
-
+        # print(x)
         x = F.relu(self.bn1(self.conv1(x)))
+        # print(x)
         x = F.relu(self.bn2(self.conv2(x)))
+        # print(x)
         x = F.relu(self.bn3(self.conv3(x)))
+        # print(x)
         return self.head(x.view(x.size(0), -1))
+
+
+class QConv(Q):
+
+    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, buffer_size=20000, batch_size=16, weight_decay=0):
+        # gamma is slightly less than 1 to promote faster games
+        self.gamma = gamma
+        self.env = env
+        self.state_size = self.env.width * self.env.height
+        self.policy_net = ConvNet(self.env.width, self.env.height, self.env.action_space.n)
+        self.target_net = ConvNet(self.env.width, self.env.height, self.env.action_space.n)
+        # self.linear = nn.Linear(self.state_size, self.env.action_space.n)
+        # self.linear.weight.data.fill_(0.5)
+
+        self.optim = torch.optim.SGD(self.policy_net.parameters(),
+                                     weight_decay=weight_decay)  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
+        if buffer_size:
+            self.memory = Memory(buffer_size)
+        self.batch_size = batch_size

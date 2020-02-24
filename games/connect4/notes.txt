@@ -5,6 +5,8 @@ stop illegal moves (done)
 stop weights increasing too much (done I think)
 add convolutional networks (done)
 
+figure out why weights are increasing
+
 Add learning rate
 add target network
 add prioritized experience replay

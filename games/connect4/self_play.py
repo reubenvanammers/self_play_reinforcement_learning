@@ -48,8 +48,9 @@ class SelfPlay:
         if resume:
             saves = [f for f in listdir(save_dir) if isfile(join(save_dir, f))]
             recent_file = max(saves)
-            self.policy.q.load_state_dict(torch.load(join(save_dir, recent_file)))
-            self.opposing_policy.q.load_state_dict(torch.load(join(save_dir, recent_file)))
+            self.policy.q.policy_net.load_state_dict(torch.load(join(save_dir, recent_file)))
+            self.policy.q.target_net.load_state_dict(torch.load(join(save_dir, recent_file)))
+            self.opposing_policy.q.policy_net.load_state_dict(torch.load(join(save_dir, recent_file)))
 
         for episode in range(num_episodes):
             epsilon = self.eps_end + (self.eps_start - self.eps_end) * \
@@ -61,9 +62,11 @@ class SelfPlay:
             self.play_episode(swap_sides=(self.swap_sides and episode % 2 == 0))
             if episode % 50 == 0:
                 print("episode number", episode)
+            if episode % 50 == 0 and episode > 0:
+                self.update_target_net()
             if episode % 200 == 0 and episode > 0:
                 saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat() + ':' + str(episode))
-                torch.save(self.policy.q.state_dict(), saved_name)
+                torch.save(self.policy.q.policy_net.state_dict(), saved_name)
 
     def play_episode(self, swap_sides=False, update=True):
         s = self.env.reset()
@@ -110,13 +113,17 @@ class SelfPlay:
     def play_move(self, a, player=1):
         return self.env.step(a, player=player)
 
+    def update_target_net(self):
+        print("updating target network")
+        self.policy.q.target_net.load_state_dict(self.policy.q.policy_net.state_dict())
+
     def update_opponent_model(self):
         print("evaluating policy with greedy algo")
         self.policy.epsilon = 0
         self.evaluate_policy(100)
         print("updating policy")
-        self.opposing_policy.q.load_state_dict(self.policy.q.state_dict())
-        self.policy.q.memory.reset()
+        # self.opposing_policy.q.policy_net.load_state_dict(self.policy.q.policy_net.state_dict())
+        # self.policy.q.memory.reset()
         # = copy.deepcopy(
         # self.policy.q
         # )  # See if this works? Might need to use some torch specific stuff
