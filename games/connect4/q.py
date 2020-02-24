@@ -91,9 +91,13 @@ class Q:
         q = self.v(s_batch, a_batch)
 
         # Get Actual Q values
-        q_next = (
-            self.target_net(s_next_batch).max(1)[0].view(-1, 1).detach()
-        )  # check how detach works (might be dodgy???) #max results in values and
+
+        double_actions = self.policy_net(s_next_batch).max(1)[1].detach()  # used for double q learning
+        q_next = self.v(s_next_batch, double_actions)
+
+        # q_next = (
+        #     self.target_net(s_next_batch).max(1)[0].view(-1, 1).detach()
+        # )  # check how detach works (might be dodgy???) #max results in values and
         q_next_actual = (~done_batch) * q_next  # Removes elements that are done
         q_target = r_batch + self.gamma * q_next_actual
         loss = F.smooth_l1_loss(q, q_target)
@@ -115,7 +119,7 @@ class QLinear(Q):
         self.state_size = self.env.width * self.env.height
         self.linear = nn.Linear(self.state_size, self.env.action_space.n)
         self.linear.weight.data.fill_(0)
-        self.optim = torch.optim.SGD(self.parameters(), momentum=momentum, lr=lr, weight_decay=weight_decay)
+        self.optim = torch.optim.RMSprop(self.parameters(), momentum=momentum, lr=lr, weight_decay=weight_decay)
         if buffer_size:
             self.memory = Memory(buffer_size)
         self.batch_size = batch_size
@@ -164,11 +168,11 @@ class ConvNet(nn.Module):
         enemy_channel = torch.tensor(s == -1, dtype=torch.float).detach()
         x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
         # print(x)
-        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.leaky_relu(self.bn1(self.conv1(x)))
         # print(x)
-        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.leaky_relu(self.bn2(self.conv2(x)))
         # print(x)
-        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.leaky_relu(self.bn3(self.conv3(x)))
         # print(x)
         return self.head(x.view(x.size(0), -1))
 
@@ -185,8 +189,8 @@ class QConv(Q):
         # self.linear = nn.Linear(self.state_size, self.env.action_space.n)
         # self.linear.weight.data.fill_(0.5)
 
-        self.optim = torch.optim.SGD(self.policy_net.parameters(),
-                                     weight_decay=weight_decay)  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
+        self.optim = torch.optim.RMSprop(self.policy_net.parameters(),
+                                         weight_decay=weight_decay)  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
         if buffer_size:
             self.memory = Memory(buffer_size)
         self.batch_size = batch_size
