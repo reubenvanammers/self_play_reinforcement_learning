@@ -14,6 +14,7 @@ Transition = namedtuple("Transition", ("state", "action", "reward", "done", "nex
 
 class Memory:
     def __init__(self, max_size):
+        self.max_size = max_size
         self.buffer = deque(maxlen=max_size)
 
     def __len__(self):
@@ -28,6 +29,9 @@ class Memory:
 
         return [self.buffer[i] for i in index]
 
+    def reset(self):
+        self.buffer = deque(maxlen=self.max_size)
+
 
 class EpsilonGreedy:
     def __init__(self, q, epsilon):
@@ -41,7 +45,8 @@ class EpsilonGreedy:
         else:
             # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
             weights = self.q(s).detach().numpy()
-            mask = (-1000000000*~np.array(self.q.env.valid_moves()))+1 #just a really big negative number? is quite hacky
+            mask = (-1000000000 * ~np.array(
+                self.q.env.valid_moves())) + 1  # just a really big negative number? is quite hacky
             a = np.argmax(weights + mask)
         return a
 
@@ -104,7 +109,7 @@ class Q(nn.Module):
 
 class QLinear(Q):
 
-    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=64, weight_decay=1):
+    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=8, weight_decay=0.5):
         super().__init__()
 
         self.gamma = gamma
@@ -125,7 +130,7 @@ class QLinear(Q):
 
 class QConv(Q):
 
-    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=64, weight_decay=1):
+    def __init__(self, env, lr=0.025, gamma=1, momentum=0, buffer_size=50000, batch_size=8, weight_decay=0):
         super().__init__()
 
         self.gamma = gamma

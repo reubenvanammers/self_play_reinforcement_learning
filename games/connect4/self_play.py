@@ -61,7 +61,7 @@ class SelfPlay:
             self.play_episode(swap_sides=(self.swap_sides and episode % 2 == 0))
             if episode % 50 == 0:
                 print("episode number", episode)
-            if episode % 200 == 0:
+            if episode % 200 == 0 and episode > 0:
                 saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat() + ':' + str(episode))
                 torch.save(self.policy.q.state_dict(), saved_name)
 
@@ -115,6 +115,8 @@ class SelfPlay:
         self.policy.epsilon = 0
         self.evaluate_policy(100)
         print("updating policy")
-        self.opposing_policy.q.load_state_dict(self.policy.q.state_dict())  # = copy.deepcopy(
+        self.opposing_policy.q.load_state_dict(self.policy.q.state_dict())
+        self.policy.q.memory.reset()
+        # = copy.deepcopy(
         # self.policy.q
         # )  # See if this works? Might need to use some torch specific stuff
