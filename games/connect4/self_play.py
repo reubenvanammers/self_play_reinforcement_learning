@@ -15,9 +15,15 @@ class SelfPlay:
     # Given a learning policy, opponent policy , learns by playing opponent and then updating opponents model
     # TODO add function for alternating who starts first
     # TODO add evaluation function
-    def __init__(self, policy, opposing_policy, swap_sides=False):
+    def __init__(self, policy, opposing_policy, swap_sides=False, benchmark_policy=None):
         self.policy = policy
         self.opposing_policy = opposing_policy
+        self.opposing_policy.q.policy_net.train(False)
+
+        if benchmark_policy:
+            self.benchmark_policy = benchmark_policy
+            self.benchmark_policy.q.policy_net.train(False)
+
         self.alternate_start = False
         self.update_lag = 500  # games till opponent gets updated
         self.q = self.policy.q
@@ -34,6 +40,7 @@ class SelfPlay:
     def evaluate_policy(self, num_episodes):
         episode_list = []
         reward_list = []
+        self.policy.q.policy_net.train(False)
         for episode in range(num_episodes):
             s, r = self.play_episode(update=False, swap_sides=episode % 2 == 0)
             episode_list.append(s)
@@ -41,6 +48,10 @@ class SelfPlay:
             print(f'player {r if r == 1 else 2} won')
         win_percent = sum(1 if r > 0 else 0 for r in reward_list) / len(reward_list) * 100
         print(f"win percent : {win_percent}%")
+
+        self.policy.q.policy_net.train(True)
+
+
         return episode_list, reward_list
 
     def train_model(self, num_episodes, resume=False):
@@ -97,18 +108,20 @@ class SelfPlay:
             return s_next, a, r, done, info
 
     def play_round(self, s, update=True):
-        s_next, a, r, done, info = self.get_and_play_moves(s)
+        s = s.copy()
+        s_intermediate, own_a, r, done, info = self.get_and_play_moves(s)
         if done:
             self.policy_wins += 1
             if update:
-                self.q.update(s, a, r, done, s_next)
+                self.q.update(s, own_a, r, done, s_intermediate)
+            return s_intermediate, done, r
         else:
-            s_next, a, r, done, info = self.get_and_play_moves(s_next, player=-1)
+            s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
             if done:
                 self.opponent_wins += 1
             if update:
-                self.q.update(s, a, r, done, s_next)
-        return s_next, done, r
+                self.q.update(s, own_a, r, done, s_next)
+            return s_next, done, r
 
     def play_move(self, a, player=1):
         return self.env.step(a, player=player)

@@ -5,14 +5,21 @@ stop illegal moves (done)
 stop weights increasing too much (done I think)
 add convolutional networks (done)
 
-figure out why weights are increasing
+figure out why weights are increasing (tried clamping to fix?)
+Model overfitting - think about dropout layer, prioritized experience replay
+
+#TODO make sure copies are consistent
+
+add evaluation against random player
 
 Add learning rate
-add target network
+add target network (done)
 add prioritized experience replay
 save models (done)
 Think about evalution of models
-add dropout layers (maybe?)
+add dropout layers (done)
+
+maybe try softmax instead of epsilon greedy (for evaluation?)
 
 #add higher order logic on self play (MCTS)
 change from q learning to something else (td lambda? n step tree backup?)

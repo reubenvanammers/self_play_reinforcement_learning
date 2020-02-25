@@ -61,7 +61,7 @@ class Q:
         # return super().__call__(s)
         return self.policy_net(s)
 
-    def v(self, s, a):
+    def state_action_value(self, s, a):
         a = a.view(-1, 1)
         return self.policy_net(s).gather(1, a)
 
@@ -88,18 +88,22 @@ class Q:
         r_batch = torch.stack(r_batch).view(-1, 1)
         s_next_batch = torch.stack(s_next_batch)
         done_batch = torch.stack(done_batch).view(-1, 1)
-        q = self.v(s_batch, a_batch)
+        q = self.state_action_value(s_batch, a_batch)
 
         # Get Actual Q values
 
         double_actions = self.policy_net(s_next_batch).max(1)[1].detach()  # used for double q learning
-        q_next = self.v(s_next_batch, double_actions)
+        q_next = self.state_action_value(s_next_batch, double_actions)
 
         # q_next = (
         #     self.target_net(s_next_batch).max(1)[0].view(-1, 1).detach()
         # )  # check how detach works (might be dodgy???) #max results in values and
         q_next_actual = (~done_batch) * q_next  # Removes elements that are done
         q_target = r_batch + self.gamma * q_next_actual
+        ###TEST if clamping works or is even good practise
+        q_target = q_target.clamp(-1, 1)
+        ###/TEST
+
         loss = F.smooth_l1_loss(q, q_target)
 
         self.optim.zero_grad()
@@ -136,10 +140,16 @@ class ConvNet(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=2)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(16)
+        # self.drop1 = nn.Dropout2d(p=0.1)
+
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2)
         self.bn2 = nn.BatchNorm2d(32)
+        # self.drop2 = nn.Dropout2d(p=0.1)
+
         self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
         self.bn3 = nn.BatchNorm2d(32)
+
+        # self.drop3 = nn.Dropout2d(p=0.1)
 
         # self.conv1.weight.data.fill_(0.01)
         # self.conv2.weight.data.fill_(0.01)
@@ -158,14 +168,20 @@ class ConvNet(nn.Module):
         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(height)))
         linear_input_size = convw * convh * 32
 
-        self.head = nn.Linear(linear_input_size, action_size)
+        self.value_fc = nn.Linear(linear_input_size, 512)
+        self.value = nn.Linear(512, 1)
+
+        self.advantage_fc = nn.Linear(linear_input_size, 512)
+        self.advantage = nn.Linear(512, action_size)
+
+        # self.head = nn.Linear(linear_input_size, action_size)
 
     def forward(self, s):
         s = s.view(-1, 7, 6)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
-        empty_channel = torch.tensor(s == 0, dtype=torch.float).detach()
-        own_channel = torch.tensor(s == 1, dtype=torch.float).detach()
-        enemy_channel = torch.tensor(s == -1, dtype=torch.float).detach()
+        empty_channel = (s == 0).clone().float().detach()
+        own_channel = (s == 1).clone().float().detach()
+        enemy_channel = (s == -1).clone().float().detach()
         x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
         # print(x)
         x = F.leaky_relu(self.bn1(self.conv1(x)))
@@ -174,7 +190,13 @@ class ConvNet(nn.Module):
         # print(x)
         x = F.leaky_relu(self.bn3(self.conv3(x)))
         # print(x)
-        return self.head(x.view(x.size(0), -1))
+
+        value = self.value(self.value_fc(x.view(x.size(0), -1)))
+        advantage = self.advantage(self.advantage_fc(x.view(x.size(0), -1)))
+
+        output = value + (advantage - torch.mean(advantage, dim=1, keepdim=True))
+        return output
+        # return self.head(x.view(x.size(0), -1))
 
 
 class QConv(Q):

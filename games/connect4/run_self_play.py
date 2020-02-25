@@ -2,7 +2,6 @@ from games.connect4.connect4env import Connect4Env
 from games.connect4.q import EpsilonGreedy, QLinear, QConv
 from games.connect4.self_play import SelfPlay
 import torch
-from torch.utils.tensorboard import SummaryWriter
 import os
 import datetime
 
@@ -13,10 +12,9 @@ save_dir = 'saves'
 
 
 def run_training():
-    writer = SummaryWriter()
     env = Connect4Env()
     policy = EpsilonGreedy(QConv(env), 0.1)
-    opposing_policy = EpsilonGreedy(QConv(env), 0.05)  # Make it not act greedily for the moment- exploration Acts greedily
+    opposing_policy = EpsilonGreedy(QConv(env), 1)  # Make it not act greedily for the moment- exploration Acts greedily
     self_play = SelfPlay(policy, opposing_policy)
     self_play.train_model(5000, resume=False)
     print("Training Done")
