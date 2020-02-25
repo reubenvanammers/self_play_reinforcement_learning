@@ -15,7 +15,8 @@ class SelfPlay:
     # Given a learning policy, opponent policy , learns by playing opponent and then updating opponents model
     # TODO add function for alternating who starts first
     # TODO add evaluation function
-    def __init__(self, policy, opposing_policy, swap_sides=False, benchmark_policy=None):
+    def __init__(self, policy, opposing_policy, swap_sides=False, benchmark_policy=None, eps_start=0.3, eps_end=0.01,
+                 eps_decay=5000):
         self.policy = policy
         self.opposing_policy = opposing_policy
         self.opposing_policy.q.policy_net.train(False)
@@ -33,9 +34,9 @@ class SelfPlay:
         self.opponent_wins = 0
         self.swap_sides = swap_sides
 
-        self.eps_start = 0.3
-        self.eps_end = 0.01
-        self.eps_decay = 5000
+        self.eps_start = eps_start
+        self.eps_end = eps_end
+        self.eps_decay = eps_decay
 
     def evaluate_policy(self, num_episodes):
         episode_list = []
@@ -50,7 +51,6 @@ class SelfPlay:
         print(f"win percent : {win_percent}%")
 
         self.policy.q.policy_net.train(True)
-
 
         return episode_list, reward_list
 
