@@ -9,6 +9,9 @@ from torch import nn
 from torch.functional import F
 from collections import namedtuple
 
+from rl_utils.sum_tree import WeightedMemory
+from rl_utils.losses import weighted_smooth_l1_loss
+
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 
 
@@ -52,8 +55,12 @@ class EpsilonGreedy:
 
 
 class Q:
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, mem_type='sumtree', buffer_size=20000, batch_size=16, *args, **kwargs):
+        if mem_type == 'sumtree':
+            self.memory = WeightedMemory(buffer_size)
+        else:
+            self.memory = Memory(buffer_size)
+        self.batch_size = batch_size
 
     def __call__(self, s):
         if not isinstance(s, torch.Tensor):
@@ -71,15 +78,18 @@ class Q:
         r = torch.tensor(r)
         done = torch.tensor(done)
         s_next = torch.tensor(s_next)
-        if len(self.memory) < self.batch_size:
+        if len(self.memory) < self.memory.max_size:
             self.memory.add(Transition(s, a, r, done, s_next))
             return
 
         # Using batch memory
-        if self.memory:
-            self.memory.add(Transition(s, a, r, done, s_next))
+        self.memory.add(Transition(s, a, r, done, s_next))
+        if isinstance(self.memory, WeightedMemory):
+            tree_idx, batch, sample_weights = self.memory.sample(self.batch_size)
+            sample_weights = torch.tensor(sample_weights)
+        else:
             batch = self.memory.sample(self.batch_size)
-            batch_t = Transition(*zip(*batch))  # transposed batch
+        batch_t = Transition(*zip(*batch))  # transposed batch
 
         # Get expected Q values
         s_batch, a_batch, r_batch, done_batch, s_next_batch = batch_t
@@ -104,7 +114,15 @@ class Q:
         q_target = q_target.clamp(-1, 1)
         ###/TEST
 
-        loss = F.smooth_l1_loss(q, q_target)
+        if isinstance(self.memory, WeightedMemory):
+            absolute_loss = torch.abs(q - q_target).detach().numpy()
+            loss = weighted_smooth_l1_loss(q,
+                                           q_target,
+                                           sample_weights)  # TODO fix potential non-linearities using huber loss
+            self.memory.batch_update(tree_idx, absolute_loss)
+
+        else:
+            loss = F.smooth_l1_loss(q, q_target)
 
         self.optim.zero_grad()
         loss.backward()
@@ -115,8 +133,9 @@ class Q:
 
 class QLinear(Q):
 
-    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, buffer_size=50000, batch_size=8, weight_decay=0.5):
-        super().__init__()  # gamma is slightly less than 1 to promote faster games
+    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0.5, *args,
+                 **kwargs):
+        super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
 
         self.gamma = gamma
         self.env = env
@@ -124,9 +143,6 @@ class QLinear(Q):
         self.linear = nn.Linear(self.state_size, self.env.action_space.n)
         self.linear.weight.data.fill_(0)
         self.optim = torch.optim.RMSprop(self.parameters(), momentum=momentum, lr=lr, weight_decay=weight_decay)
-        if buffer_size:
-            self.memory = Memory(buffer_size)
-        self.batch_size = batch_size
 
     def forward(self, s):  # At the moment just use a linear network - dont expect it to be good
         s = s.view(-1, self.state_size).float()
@@ -201,8 +217,11 @@ class ConvNet(nn.Module):
 
 class QConv(Q):
 
-    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, buffer_size=20000, batch_size=16, weight_decay=0):
+    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0, *args,
+                 **kwargs):
         # gamma is slightly less than 1 to promote faster games
+        super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
+
         self.gamma = gamma
         self.env = env
         self.state_size = self.env.width * self.env.height
@@ -213,6 +232,3 @@ class QConv(Q):
 
         self.optim = torch.optim.RMSprop(self.policy_net.parameters(),
                                          weight_decay=weight_decay)  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
-        if buffer_size:
-            self.memory = Memory(buffer_size)
-        self.batch_size = batch_size
