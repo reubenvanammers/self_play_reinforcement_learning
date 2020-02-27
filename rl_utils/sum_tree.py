@@ -6,6 +6,7 @@ class SumTree(object):
     This SumTree code is modified version of Morvan Zhou:
     https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/5.2_Prioritized_Replay_DQN/RL_brain.py
     """
+
     data_pointer = 0
 
     """
@@ -147,13 +148,14 @@ class WeightedMemory(object):  # stored as ( s, a, r, s_ ) in SumTree
     This SumTree code is modified version and the original code is from:
     https://github.com/jaara/AI-blog/blob/master/Seaquest-DDQN-PER.py
     """
+
     PER_e = 0.01  # Hyperparameter that we use to avoid some experiences to have 0 probability of being taken
     PER_a = 0.6  # Hyperparameter that we use to make a tradeoff between taking only exp with high priority and sampling randomly
     PER_b = 0.4  # importance-sampling, from initial value increasing to 1
 
     PER_b_increment_per_sampling = 0.0002
 
-    absolute_error_upper = 1.  # clipped abs error
+    absolute_error_upper = 1.0  # clipped abs error
 
     def __len__(self):
         return len(self.tree)
@@ -176,7 +178,7 @@ class WeightedMemory(object):  # stored as ( s, a, r, s_ ) in SumTree
 
     def add(self, experience):
         # Find the max priority
-        max_priority = np.max(self.tree.tree[-self.tree.capacity:])
+        max_priority = np.max(self.tree.tree[-self.tree.capacity :])
 
         # If the max priority = 0 we can't put priority = 0 since this exp will never have a chance to be selected
         # So we use a minimum priority
@@ -203,10 +205,10 @@ class WeightedMemory(object):  # stored as ( s, a, r, s_ ) in SumTree
         priority_segment = self.tree.total_priority / n  # priority segment
 
         # Here we increasing the PER_b each time we sample a new minibatch
-        self.PER_b = np.min([1., self.PER_b + self.PER_b_increment_per_sampling])  # max = 1
+        self.PER_b = np.min([1.0, self.PER_b + self.PER_b_increment_per_sampling])  # max = 1
 
         # Calculating the max_weight
-        p_min = np.min(self.tree.tree[-self.tree.capacity:]) / self.tree.total_priority
+        p_min = np.min(self.tree.tree[-self.tree.capacity :]) / self.tree.total_priority
         max_weight = (p_min * n) ** (-self.PER_b)
 
         for i in range(n):

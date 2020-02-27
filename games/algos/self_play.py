@@ -1,21 +1,29 @@
 import copy
-import math
-import numpy
-import os
-import torch
 import datetime
-
-save_dir = 'saves/temp'
-
+import math
+import os
 from os import listdir
 from os.path import isfile, join
+
+import numpy
+import torch
+
+save_dir = "saves/temp"
 
 
 class SelfPlay:
     # Given a learning policy, opponent policy , learns by playing opponent and then updating opponents model
     # TODO add evaluation function
-    def __init__(self, policy, opposing_policy, swap_sides=False, benchmark_policy=None, eps_start=0.3, eps_end=0.01,
-                 eps_decay=5000):
+    def __init__(
+        self,
+        policy,
+        opposing_policy,
+        swap_sides=False,
+        benchmark_policy=None,
+        eps_start=0.3,
+        eps_end=0.01,
+        eps_decay=5000,
+    ):
         self.policy = policy
         self.opposing_policy = opposing_policy
         self.opposing_policy.q.policy_net.train(False)
@@ -45,7 +53,7 @@ class SelfPlay:
             s, r = self.play_episode(update=False, swap_sides=episode % 2 == 0)
             episode_list.append(s)
             reward_list.append(r)
-            print(f'player {r if r == 1 else 2} won')
+            print(f"player {r if r == 1 else 2} won")
         win_percent = sum(1 if r > 0 else 0 for r in reward_list) / len(reward_list) * 100
         print(f"win percent : {win_percent}%")
 
@@ -63,8 +71,7 @@ class SelfPlay:
             self.opposing_policy.q.policy_net.load_state_dict(torch.load(join(save_dir, recent_file)))
 
         for episode in range(num_episodes):
-            epsilon = self.eps_end + (self.eps_start - self.eps_end) * \
-                      math.exp(-1. * episode / self.eps_decay)
+            epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1.0 * episode / self.eps_decay)
             self.policy.epsilon = epsilon
 
             if episode % self.update_lag == 0 and episode > 0:
@@ -75,7 +82,7 @@ class SelfPlay:
             if episode % 50 == 0 and episode > 0:
                 self.update_target_net()
             if episode % 200 == 0 and episode > 0:
-                saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat() + ':' + str(episode))
+                saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat() + ":" + str(episode))
                 torch.save(self.policy.q.policy_net.state_dict(), saved_name)
 
     def play_episode(self, swap_sides=False, update=True):
