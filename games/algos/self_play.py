@@ -13,7 +13,6 @@ from os.path import isfile, join
 
 class SelfPlay:
     # Given a learning policy, opponent policy , learns by playing opponent and then updating opponents model
-    # TODO add function for alternating who starts first
     # TODO add evaluation function
     def __init__(self, policy, opposing_policy, swap_sides=False, benchmark_policy=None, eps_start=0.3, eps_end=0.01,
                  eps_decay=5000):

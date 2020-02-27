@@ -1,4 +1,4 @@
-from games.connect4.connect4env import Connect4Env
+from games.tictactoe.tictactoe_env import TicTacToeEnv
 from games.algos.q import EpsilonGreedy, QLinear, QConvConnect4
 from games.algos.self_play import SelfPlay
 import torch
@@ -12,8 +12,8 @@ save_dir = 'saves'
 
 
 def run_training():
-    env = Connect4Env()
-    policy = EpsilonGreedy(QConvConnect4(env, buffer_size=10000), 0.1)
+    env = TicTacToeEnv()
+    policy = EpsilonGreedy(QConvConnect4(env), 0.1)
     opposing_policy = EpsilonGreedy(QConvConnect4(env),
                                     1)  # Make it not act greedily for the moment- exploration Acts greedily
     self_play = SelfPlay(policy, opposing_policy)
@@ -25,7 +25,7 @@ def run_training():
 
 
 def resume_self_play():
-    env = Connect4Env()
+    env = TicTacToeEnv()
     saves = [f for f in listdir(save_dir) if isfile(join(save_dir, f))]
     recent_file = max(saves)
     policy = EpsilonGreedy(QLinear(env), 0)

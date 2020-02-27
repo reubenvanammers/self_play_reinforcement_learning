@@ -66,6 +66,7 @@ class Q:
         if not isinstance(s, torch.Tensor):
             s = torch.from_numpy(s).long()
         # return super().__call__(s)
+        s = self.policy_net.preprocess(s)
         return self.policy_net(s)
 
     def state_action_value(self, s, a):
@@ -74,10 +75,13 @@ class Q:
 
     def update(self, s, a, r, done, s_next):
         s = torch.tensor(s)
+        s = self.policy_net.preprocess(s)
         a = torch.tensor(a)
         r = torch.tensor(r)
         done = torch.tensor(done)
         s_next = torch.tensor(s_next)
+        s_next = self.policy_net.preprocess(s_next)
+
         if len(self.memory) < self.memory.max_size:
             self.memory.add(Transition(s, a, r, done, s_next))
             return
@@ -93,10 +97,10 @@ class Q:
 
         # Get expected Q values
         s_batch, a_batch, r_batch, done_batch, s_next_batch = batch_t
-        s_batch = torch.stack(s_batch)
+        s_batch = torch.cat(s_batch)
         a_batch = torch.stack(a_batch)
         r_batch = torch.stack(r_batch).view(-1, 1)
-        s_next_batch = torch.stack(s_next_batch)
+        s_next_batch = torch.cat(s_next_batch)
         done_batch = torch.stack(done_batch).view(-1, 1)
         q = self.state_action_value(s_batch, a_batch)
 
@@ -150,7 +154,7 @@ class QLinear(Q):
         return self.linear(s)
 
 
-class ConvNet(nn.Module):
+class ConvNetConnect4(nn.Module):
 
     def __init__(self, width, height, action_size):
         super().__init__()
@@ -192,15 +196,26 @@ class ConvNet(nn.Module):
 
         # self.head = nn.Linear(linear_input_size, action_size)
 
-    def forward(self, s):
+    def preprocess(self, s):
         s = s.view(-1, 7, 6)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
         empty_channel = (s == 0).clone().float().detach()
         own_channel = (s == 1).clone().float().detach()
         enemy_channel = (s == -1).clone().float().detach()
         x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
+
+        return x
+
+    def forward(self, s):
+        # s = s.view(-1, 7, 6)
+        # # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
+        # empty_channel = (s == 0).clone().float().detach()
+        # own_channel = (s == 1).clone().float().detach()
+        # enemy_channel = (s == -1).clone().float().detach()
+        # x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
+
         # print(x)
-        x = F.leaky_relu(self.bn1(self.conv1(x)))
+        x = F.leaky_relu(self.bn1(self.conv1(s)))
         # print(x)
         x = F.leaky_relu(self.bn2(self.conv2(x)))
         # print(x)
@@ -215,7 +230,7 @@ class ConvNet(nn.Module):
         # return self.head(x.view(x.size(0), -1))
 
 
-class QConv(Q):
+class QConvConnect4(Q):
 
     def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0, *args,
                  **kwargs):
@@ -225,8 +240,8 @@ class QConv(Q):
         self.gamma = gamma
         self.env = env
         self.state_size = self.env.width * self.env.height
-        self.policy_net = ConvNet(self.env.width, self.env.height, self.env.action_space.n)
-        self.target_net = ConvNet(self.env.width, self.env.height, self.env.action_space.n)
+        self.policy_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n)
+        self.target_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n)
         # self.linear = nn.Linear(self.state_size, self.env.action_space.n)
         # self.linear.weight.data.fill_(0.5)
 
