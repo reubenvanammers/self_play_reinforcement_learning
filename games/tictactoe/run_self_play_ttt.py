@@ -5,7 +5,7 @@ from os.path import isfile, join
 
 import torch
 
-from games.algos.q import EpsilonGreedy, QConvConnect4, QLinear
+from games.algos.q import EpsilonGreedy, QConvTicTacToe, QLinear
 from games.algos.self_play import SelfPlay
 from games.tictactoe.tictactoe_env import TicTacToeEnv
 
@@ -14,12 +14,12 @@ save_dir = "saves"
 
 def run_training():
     env = TicTacToeEnv()
-    policy = EpsilonGreedy(QConvConnect4(env), 0.1)
+    policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=16), 0.1)
     opposing_policy = EpsilonGreedy(
-        QConvConnect4(env), 1
+        QConvTicTacToe(env), 1
     )  # Make it not act greedily for the moment- exploration Acts greedily
     self_play = SelfPlay(policy, opposing_policy)
-    self_play.train_model(5000, resume=True)
+    self_play.train_model(5000, resume=False)
     print("Training Done")
 
     saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())

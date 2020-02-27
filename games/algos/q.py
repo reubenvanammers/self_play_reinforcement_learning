@@ -202,6 +202,57 @@ class ConvNetConnect4(nn.Module):
         return output
 
 
+
+class ConvNetTicTacToe(nn.Module):
+    def __init__(self, width, height, action_size):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)  # Deal with padding?
+        self.bn1 = nn.BatchNorm2d(16)
+
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(32)
+
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(32)
+
+
+        def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
+            return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
+
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(width)))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(height)))
+        linear_input_size = convw * convh * 32
+
+        self.value_fc = nn.Linear(linear_input_size, 128)
+        self.value = nn.Linear(128, 1)
+
+        self.advantage_fc = nn.Linear(linear_input_size, 128)
+        self.advantage = nn.Linear(128, action_size)
+
+
+    def preprocess(self, s):
+        s = s.view(-1, 3, 3)
+        # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
+        empty_channel = (s == 0).clone().float().detach()
+        own_channel = (s == 1).clone().float().detach()
+        enemy_channel = (s == -1).clone().float().detach()
+        x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
+
+        return x
+
+    def forward(self, s):
+
+        x = F.leaky_relu(self.bn1(self.conv1(s)))
+        x = F.leaky_relu(self.bn2(self.conv2(x)))
+        x = F.leaky_relu(self.bn3(self.conv3(x)))
+
+        value = self.value(self.value_fc(x.view(x.size(0), -1)))
+        advantage = self.advantage(self.advantage_fc(x.view(x.size(0), -1)))
+
+        output = value + (advantage - torch.mean(advantage, dim=1, keepdim=True))
+        return output
+
+
 class QConvConnect4(Q):
     def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
@@ -212,6 +263,22 @@ class QConvConnect4(Q):
         self.state_size = self.env.width * self.env.height
         self.policy_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n)
         self.target_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n)
+
+        self.optim = torch.optim.RMSprop(
+            self.policy_net.parameters(), weight_decay=weight_decay
+        )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
+
+
+class QConvTicTacToe(Q):
+    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0, *args, **kwargs):
+        # gamma is slightly less than 1 to promote faster games
+        super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
+
+        self.gamma = gamma
+        self.env = env
+        self.state_size = self.env.width * self.env.height
+        self.policy_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n)
+        self.target_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n)
 
         self.optim = torch.optim.RMSprop(
             self.policy_net.parameters(), weight_decay=weight_decay

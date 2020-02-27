@@ -34,7 +34,7 @@ class TicTacToeEnv:
         return np.unravel_index(action, (self.width, self.height))
 
     def valid_moves(self):
-        return self.board.reshape().nonzero()
+        return self.board.reshape(-1) == 0
 
     # Action is a integer between 0 and the width
 
@@ -56,7 +56,7 @@ class TicTacToeEnv:
         x, y = self.get_loc(action)
         piece_height = self.heights[x] - 1
         horizontals = self.board[:, y]
-        verticals = self.board[action, :]
+        verticals = self.board[x, :]
         offset = y - x
         diagonal_1 = np.diagonal(self.board, offset=offset)
         diagonal_2 = np.diagonal(np.flipud(self.board), offset=y - self.width + x + 1)
