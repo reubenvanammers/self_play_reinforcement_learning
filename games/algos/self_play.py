@@ -15,14 +15,14 @@ class SelfPlay:
     # Given a learning policy, opponent policy , learns by playing opponent and then updating opponents model
     # TODO add evaluation function
     def __init__(
-        self,
-        policy,
-        opposing_policy,
-        swap_sides=False,
-        benchmark_policy=None,
-        eps_start=0.3,
-        eps_end=0.01,
-        eps_decay=5000,
+            self,
+            policy,
+            opposing_policy,
+            swap_sides=False,
+            benchmark_policy=None,
+            eps_start=0.3,
+            eps_end=0.01,
+            eps_decay=5000,
     ):
         self.policy = policy
         self.opposing_policy = opposing_policy
@@ -53,9 +53,14 @@ class SelfPlay:
             s, r = self.play_episode(update=False, swap_sides=episode % 2 == 0)
             episode_list.append(s)
             reward_list.append(r)
+
             print(f"player {r if r == 1 else 2} won")
         win_percent = sum(1 if r > 0 else 0 for r in reward_list) / len(reward_list) * 100
+        wins = len([i for i in reward_list if i == 1])
+        draws = len([i for i in reward_list if i == 0])
+        losses = len([i for i in reward_list if i == -1])
         print(f"win percent : {win_percent}%")
+        print(f"wins: {wins}, draws: {draws}, losses: {losses}")
 
         self.policy.q.policy_net.train(True)
 

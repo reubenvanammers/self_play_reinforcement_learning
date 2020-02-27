@@ -206,7 +206,7 @@ class ConvNetConnect4(nn.Module):
 class ConvNetTicTacToe(nn.Module):
     def __init__(self, width, height, action_size):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)  # Deal with padding?
+        self.conv1 = nn.Conv2d(4, 16, kernel_size=3, stride=1, padding=1)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(16)
 
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
@@ -236,7 +236,7 @@ class ConvNetTicTacToe(nn.Module):
         empty_channel = (s == 0).clone().float().detach()
         own_channel = (s == 1).clone().float().detach()
         enemy_channel = (s == -1).clone().float().detach()
-        x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
+        x = torch.stack([empty_channel, own_channel, enemy_channel, s.float().detach()], 1)  # stack along channel dimension
 
         return x
 

@@ -19,7 +19,7 @@ def run_training():
         QConvTicTacToe(env), 1
     )  # Make it not act greedily for the moment- exploration Acts greedily
     self_play = SelfPlay(policy, opposing_policy)
-    self_play.train_model(5000, resume=False)
+    self_play.train_model(20000, resume=False)
     print("Training Done")
 
     saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())
@@ -30,8 +30,8 @@ def resume_self_play():
     env = TicTacToeEnv()
     saves = [f for f in listdir(save_dir) if isfile(join(save_dir, f))]
     recent_file = max(saves)
-    policy = EpsilonGreedy(QLinear(env), 0)
-    opposing_policy = EpsilonGreedy(QLinear(env), 0)  # Acts greedily
+    policy = EpsilonGreedy(QConvTicTacToe(env), 0)
+    opposing_policy = EpsilonGreedy(QConvTicTacToe(env), 1)
     self_play = SelfPlay(policy, opposing_policy)
     policy.q.policy_net.load_state_dict(torch.load(join(save_dir, recent_file)))
     self_play.evaluate_policy(100)
