@@ -5,7 +5,7 @@ from os.path import isfile, join
 
 import torch
 
-from games.algos.q import EpsilonGreedy, QConvTicTacToe, QLinear
+from games.algos.q import EpsilonGreedy, QConvTicTacToe
 from games.algos.self_play import SelfPlay
 from games.tictactoe.tictactoe_env import TicTacToeEnv
 
