@@ -206,14 +206,14 @@ class ConvNetConnect4(nn.Module):
 class ConvNetTicTacToe(nn.Module):
     def __init__(self, width, height, action_size):
         super().__init__()
-        self.conv1 = nn.Conv2d(4, 16, kernel_size=3, stride=1, padding=1)  # Deal with padding?
-        self.bn1 = nn.BatchNorm2d(16)
+        self.conv1 = nn.Conv2d(4, 128, kernel_size=3, stride=1, padding=1,bias=False)  # Deal with padding?
+        self.bn1 = nn.BatchNorm2d(128)
 
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(32)
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1,bias=False)
+        self.bn2 = nn.BatchNorm2d(128)
 
-        self.conv3 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn3 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1,bias=False)
+        self.bn3 = nn.BatchNorm2d(64)
 
 
         def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
@@ -221,13 +221,13 @@ class ConvNetTicTacToe(nn.Module):
 
         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(width)))
         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(height)))
-        linear_input_size = convw * convh * 32
+        linear_input_size = convw * convh * 64
 
-        self.value_fc = nn.Linear(linear_input_size, 128)
-        self.value = nn.Linear(128, 1)
+        self.value_fc = nn.Linear(linear_input_size, 512)
+        self.value = nn.Linear(512, 1)
 
-        self.advantage_fc = nn.Linear(linear_input_size, 128)
-        self.advantage = nn.Linear(128, action_size)
+        self.advantage_fc = nn.Linear(linear_input_size, 512)
+        self.advantage = nn.Linear(512, action_size)
 
 
     def preprocess(self, s):
@@ -270,7 +270,7 @@ class QConvConnect4(Q):
 
 
 class QConvTicTacToe(Q):
-    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0, *args, **kwargs):
+    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
         super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
 

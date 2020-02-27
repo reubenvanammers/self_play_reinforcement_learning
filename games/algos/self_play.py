@@ -45,6 +45,8 @@ class SelfPlay:
         self.eps_end = eps_end
         self.eps_decay = eps_decay
 
+        self.historical_rewards = []
+
     def evaluate_policy(self, num_episodes):
         episode_list = []
         reward_list = []
@@ -59,8 +61,17 @@ class SelfPlay:
         wins = len([i for i in reward_list if i == 1])
         draws = len([i for i in reward_list if i == 0])
         losses = len([i for i in reward_list if i == -1])
+
         print(f"win percent : {win_percent}%")
         print(f"wins: {wins}, draws: {draws}, losses: {losses}")
+
+        starts = ["first", "second"]
+        for j, start in enumerate(starts):
+            wins = len([i for k, i in enumerate(reward_list) if
+                        i == 1 and (k + 1) % 2 == j])  # k+1 as initial step is going second
+            draws = len([i for k, i in enumerate(reward_list) if i == 0 and (k + 1) % 2 == j])
+            losses = len([i for k, i in enumerate(reward_list) if i == -1 and (k + 1) % 2 == j])
+            print(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
 
         self.policy.q.policy_net.train(True)
 
@@ -74,6 +85,11 @@ class SelfPlay:
             self.policy.q.policy_net.load_state_dict(torch.load(join(save_dir, recent_file)))
             self.policy.q.target_net.load_state_dict(torch.load(join(save_dir, recent_file)))
             self.opposing_policy.q.policy_net.load_state_dict(torch.load(join(save_dir, recent_file)))
+
+        pre_game = 0  # Populate memory buffer
+        while len(self.policy.q.memory) < self.policy.q.memory.max_size:
+            pre_game += 1
+            self.play_episode(swap_sides=(self.swap_sides and pre_game % 2 == 0))
 
         for episode in range(num_episodes):
             epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1.0 * episode / self.eps_decay)
@@ -144,7 +160,8 @@ class SelfPlay:
     def update_opponent_model(self):
         print("evaluating policy with greedy algo")
         self.policy.epsilon = 0
-        self.evaluate_policy(100)
+        _, reward_list = self.evaluate_policy(100)
+        self.historical_rewards.append(reward_list)
         print("updating policy")
         # self.opposing_policy.q.policy_net.load_state_dict(self.policy.q.policy_net.state_dict())
         # self.policy.q.memory.reset()
