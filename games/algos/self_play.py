@@ -57,7 +57,7 @@ class SelfPlay:
             episode_list.append(s)
             reward_list.append(r)
 
-#             print(f"player {r if r == 1 else 2} won")
+        #             print(f"player {r if r == 1 else 2} won")
         win_percent = sum(1 if r > 0 else 0 for r in reward_list) / len(reward_list) * 100
         wins = len([i for i in reward_list if i == 1])
         draws = len([i for i in reward_list if i == 0])
@@ -79,7 +79,7 @@ class SelfPlay:
         return episode_list, reward_list
 
     def train_model(self, num_episodes, resume=False):
-
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.q.optim, 'max', patience=5)
         if resume:
             saves = [f for f in listdir(save_dir) if isfile(join(save_dir, f))]
             recent_file = max(saves)
@@ -156,14 +156,14 @@ class SelfPlay:
 
     def evaluate_weights(self):
         s = self.env.reset()
-        s = torch.tensor(s,device=device)
+        s = torch.tensor(s, device=device)
         s = self.policy.q.policy_net.preprocess(s)
         results = self.policy.q.policy_net(s)
-        
-        results =results.cpu().detach().numpy()
+
+        results = results.cpu().detach().numpy()
         result_sum = np.sum(results)
         print(f"sum of policy net for base vector is: {result_sum}")
-    
+
     def update_target_net(self):
         print("updating target network")
         self.policy.q.target_net.load_state_dict(self.policy.q.policy_net.state_dict())
@@ -171,7 +171,9 @@ class SelfPlay:
     def update_opponent_model(self):
         print("evaluating policy with greedy algo")
         self.policy.epsilon = 0
-        _, reward_list = self.evaluate_policy(100)
+        _, reward_list = self.evaluate_policy(500)
+        total_rewards = np.sum(reward_list)
+        self.scheduler.step(total_rewards)
         self.historical_rewards.append(reward_list)
         print("updating policy")
         # self.opposing_policy.q.policy_net.load_state_dict(self.policy.q.policy_net.state_dict())
