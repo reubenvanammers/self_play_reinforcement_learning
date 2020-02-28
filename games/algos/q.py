@@ -48,8 +48,8 @@ class EpsilonGreedy:
             # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
             weights = self.q(s).detach().numpy()
             mask = (
-                -1000000000 * ~np.array(self.q.env.valid_moves())
-            ) + 1  # just a really big negative number? is quite hacky
+                           -1000000000 * ~np.array(self.q.env.valid_moves())
+                   ) + 1  # just a really big negative number? is quite hacky
             a = np.argmax(weights + mask)
         return a
 
@@ -112,7 +112,7 @@ class Q:
         # q_next = (
         #     self.target_net(s_next_batch).max(1)[0].view(-1, 1).detach()
         # )  # check how detach works (might be dodgy???) #max results in values and
-        q_next_actual = (~done_batch) * q_next  # Removes elements that are done
+        q_next_actual = (~done_batch) * q_next  # Removes elements thx`at are done
         q_target = r_batch + self.gamma * q_next_actual
         ###TEST if clamping works or is even good practise
         q_target = q_target.clamp(-1, 1)
@@ -164,7 +164,6 @@ class ConvNetConnect4(nn.Module):
         self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
         self.bn3 = nn.BatchNorm2d(32)
 
-
         def conv2d_size_out(size, kernel_size=5, stride=1, padding=2):
             return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
 
@@ -178,7 +177,6 @@ class ConvNetConnect4(nn.Module):
         self.advantage_fc = nn.Linear(linear_input_size, 512)
         self.advantage = nn.Linear(512, action_size)
 
-
     def preprocess(self, s):
         s = s.view(-1, 7, 6)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
@@ -190,7 +188,6 @@ class ConvNetConnect4(nn.Module):
         return x
 
     def forward(self, s):
-
         x = F.leaky_relu(self.bn1(self.conv1(s)))
         x = F.leaky_relu(self.bn2(self.conv2(x)))
         x = F.leaky_relu(self.bn3(self.conv3(x)))
@@ -202,19 +199,23 @@ class ConvNetConnect4(nn.Module):
         return output
 
 
+def init_weights(m):
+    if type(m) == nn.Conv2d or type(m) == nn.Conv2d:
+        torch.nn.init.xavier_uniform_(m.weight)
+        m.bias.data.fill_(0.01)
+
 
 class ConvNetTicTacToe(nn.Module):
     def __init__(self, width, height, action_size):
         super().__init__()
-        self.conv1 = nn.Conv2d(4, 128, kernel_size=3, stride=1, padding=1,bias=False)  # Deal with padding?
+        self.conv1 = nn.Conv2d(4, 128, kernel_size=3, stride=1, padding=1, bias=True)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(128)
 
-        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1,bias=False)
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
         self.bn2 = nn.BatchNorm2d(128)
 
-        self.conv3 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1,bias=False)
+        self.conv3 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1, bias=True)
         self.bn3 = nn.BatchNorm2d(64)
-
 
         def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
             return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
@@ -229,19 +230,18 @@ class ConvNetTicTacToe(nn.Module):
         self.advantage_fc = nn.Linear(linear_input_size, 512)
         self.advantage = nn.Linear(512, action_size)
 
-
     def preprocess(self, s):
         s = s.view(-1, 3, 3)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
         empty_channel = (s == 0).clone().float().detach()
         own_channel = (s == 1).clone().float().detach()
         enemy_channel = (s == -1).clone().float().detach()
-        x = torch.stack([empty_channel, own_channel, enemy_channel, s.float().detach()], 1)  # stack along channel dimension
+        x = torch.stack([empty_channel, own_channel, enemy_channel, s.float().detach()],
+                        1)  # stack along channel dimension
 
         return x
 
     def forward(self, s):
-
         x = F.leaky_relu(self.bn1(self.conv1(s)))
         x = F.leaky_relu(self.bn2(self.conv2(x)))
         x = F.leaky_relu(self.bn3(self.conv3(x)))
@@ -280,6 +280,8 @@ class QConvTicTacToe(Q):
         self.policy_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n)
         self.target_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n)
 
-        self.optim = torch.optim.RMSprop(
+        self.policy_net.apply(init_weights)
+        self.target_net.apply(init_weights)
+        self.optim = torch.optim.Adam(
             self.policy_net.parameters(), weight_decay=weight_decay
         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
