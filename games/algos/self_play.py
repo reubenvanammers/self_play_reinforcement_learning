@@ -79,7 +79,8 @@ class SelfPlay:
         return episode_list, reward_list
 
     def train_model(self, num_episodes, resume=False):
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.q.optim, 'max', patience=5, factor=0.2)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.q.optim, 'max', patience=5, factor=0.2,
+                                                                    verbose=True)
         if resume:
             saves = [f for f in listdir(save_dir) if isfile(join(save_dir, f))]
             recent_file = max(saves)
@@ -173,6 +174,7 @@ class SelfPlay:
         self.policy.epsilon = 0
         _, reward_list = self.evaluate_policy(500)
         total_rewards = np.sum(reward_list)
+        print(f"total rewards are {total_rewards}")
         self.scheduler.step(total_rewards)
         self.historical_rewards.append(reward_list)
         print("updating policy")
