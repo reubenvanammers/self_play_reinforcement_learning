@@ -5,10 +5,11 @@ import os
 from os import listdir
 from os.path import isfile, join
 
-import numpy
+import numpy as np
 import torch
 
 save_dir = "saves/temp"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class SelfPlay:
@@ -56,7 +57,7 @@ class SelfPlay:
             episode_list.append(s)
             reward_list.append(r)
 
-            print(f"player {r if r == 1 else 2} won")
+#             print(f"player {r if r == 1 else 2} won")
         win_percent = sum(1 if r > 0 else 0 for r in reward_list) / len(reward_list) * 100
         wins = len([i for i in reward_list if i == 1])
         draws = len([i for i in reward_list if i == 0])
@@ -74,7 +75,7 @@ class SelfPlay:
             print(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
 
         self.policy.q.policy_net.train(True)
-
+        self.evaluate_weights()
         return episode_list, reward_list
 
     def train_model(self, num_episodes, resume=False):
@@ -153,6 +154,16 @@ class SelfPlay:
     def play_move(self, a, player=1):
         return self.env.step(a, player=player)
 
+    def evaluate_weights(self):
+        s = self.env.reset()
+        s = torch.tensor(s,device=device)
+        s = self.policy.q.policy_net.preprocess(s)
+        results = self.policy.q.policy_net(s)
+        
+        results =results.cpu().detach().numpy()
+        result_sum = np.sum(results)
+        print(f"sum of policy net for base vector is: {result_sum}")
+    
     def update_target_net(self):
         print("updating target network")
         self.policy.q.target_net.load_state_dict(self.policy.q.policy_net.state_dict())

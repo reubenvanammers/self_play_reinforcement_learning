@@ -13,6 +13,7 @@ from rl_utils.sum_tree import WeightedMemory
 
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device="cpu"
 
 
 class Memory:
@@ -47,7 +48,7 @@ class EpsilonGreedy:
             a = random.choice(possible_moves)
         else:
             # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
-            weights = self.q(s).detach().numpy()
+            weights = self.q(s).detach().cpu().numpy() #TODO maybe do this with tensors
             mask = (
                            -1000000000 * ~np.array(self.q.env.valid_moves())
                    ) + 1  # just a really big negative number? is quite hacky
@@ -120,7 +121,7 @@ class Q:
         ###/TEST
 
         if isinstance(self.memory, WeightedMemory):
-            absolute_loss = torch.abs(q - q_target).detach().numpy()
+            absolute_loss = torch.abs(q - q_target).detach().cpu().numpy()
             loss = weighted_smooth_l1_loss(
                 q, q_target, sample_weights
             )  # TODO fix potential non-linearities using huber loss
@@ -232,11 +233,12 @@ class ConvNetTicTacToe(nn.Module):
         self.advantage = nn.Linear(512, action_size)
 
     def preprocess(self, s):
+        s=s.to(device)
         s = s.view(-1, 3, 3)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
-        empty_channel = (s == 0).clone().float().detach()
-        own_channel = (s == 1).clone().float().detach()
-        enemy_channel = (s == -1).clone().float().detach()
+        empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
+        own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
+        enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
         x = torch.stack([empty_channel, own_channel, enemy_channel, s.float().detach()],
                         1)  # stack along channel dimension
 
@@ -271,7 +273,7 @@ class QConvConnect4(Q):
 
 
 class QConvTicTacToe(Q):
-    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0.01, *args, **kwargs):
+    def __init__(self, env, lr=0.0001, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
         super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
 
@@ -283,6 +285,10 @@ class QConvTicTacToe(Q):
 
         self.policy_net.apply(init_weights)
         self.target_net.apply(init_weights)
-        self.optim = torch.optim.Adam(
-            self.policy_net.parameters(), weight_decay=weight_decay
-        )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
+#         self.optim = torch.optim.Adam(
+#             self.policy_net.parameters(), weight_decay=weight_decay
+#         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
+        self.optim = torch.optim.SGD(
+            self.policy_net.parameters(), weight_decay=weight_decay,
+            momentum=momentum,lr =lr
+        )
