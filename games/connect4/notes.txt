@@ -18,6 +18,9 @@ add prioritized experience replay
 save models (done)
 Think about evalution of models
 add dropout layers (done)
+add gpu(done)
+optimize code for gpu
+pararelize cpu code
 
 maybe try softmax instead of epsilon greedy (for evaluation?)
 
