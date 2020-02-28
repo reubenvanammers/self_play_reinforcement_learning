@@ -13,6 +13,8 @@ from rl_utils.sum_tree import WeightedMemory
 
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 # device="cpu"
 
 
@@ -48,7 +50,7 @@ class EpsilonGreedy:
             a = random.choice(possible_moves)
         else:
             # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
-            weights = self.q(s).detach().cpu().numpy() #TODO maybe do this with tensors
+            weights = self.q(s).detach().cpu().numpy()  # TODO maybe do this with tensors
             mask = (
                            -1000000000 * ~np.array(self.q.env.valid_moves())
                    ) + 1  # just a really big negative number? is quite hacky
@@ -76,12 +78,12 @@ class Q:
         return self.policy_net(s).gather(1, a)
 
     def update(self, s, a, r, done, s_next):
-        s = torch.tensor(s,device=device)
+        s = torch.tensor(s, device=device)
         s = self.policy_net.preprocess(s)
-        a = torch.tensor(a,device=device)
-        r = torch.tensor(r,device=device)
-        done = torch.tensor(done,device=device)
-        s_next = torch.tensor(s_next,device=device)
+        a = torch.tensor(a, device=device)
+        r = torch.tensor(r, device=device)
+        done = torch.tensor(done, device=device)
+        s_next = torch.tensor(s_next, device=device)
         s_next = self.policy_net.preprocess(s_next)
 
         if len(self.memory) < self.memory.max_size:
@@ -92,7 +94,7 @@ class Q:
         self.memory.add(Transition(s, a, r, done, s_next))
         if isinstance(self.memory, WeightedMemory):
             tree_idx, batch, sample_weights = self.memory.sample(self.batch_size)
-            sample_weights = torch.tensor(sample_weights,device=device)
+            sample_weights = torch.tensor(sample_weights, device=device)
         else:
             batch = self.memory.sample(self.batch_size)
         batch_t = Transition(*zip(*batch))  # transposed batch
@@ -157,21 +159,24 @@ class QLinear(Q):
 class ConvNetConnect4(nn.Module):
     def __init__(self, width, height, action_size):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=2)  # Deal with padding?
-        self.bn1 = nn.BatchNorm2d(16)
+        self.conv1 = nn.Conv2d(3, 128, kernel_size=5, stride=1, padding=2)  # Deal with padding?
+        self.bn1 = nn.BatchNorm2d(128)
 
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2)
-        self.bn2 = nn.BatchNorm2d(32)
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=5, stride=1, padding=2)
+        self.bn2 = nn.BatchNorm2d(128)
 
-        self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=1, padding=2)
-        self.bn3 = nn.BatchNorm2d(32)
+        self.conv3 = nn.Conv2d(128, 128, kernel_size=5, stride=1, padding=2)
+        self.bn3 = nn.BatchNorm2d(128)
+
+        self.con4 = nn.Conv2d(128, 64, kernel_size=5, stride=1, padding=2)
+        self.bn4 = nn.BatchNorm2d(64)
 
         def conv2d_size_out(size, kernel_size=5, stride=1, padding=2):
             return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
 
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(width)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(height)))
-        linear_input_size = convw * convh * 32
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(width))))
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(height))))
+        linear_input_size = convw * convh * 64
 
         self.value_fc = nn.Linear(linear_input_size, 512)
         self.value = nn.Linear(512, 1)
@@ -180,11 +185,12 @@ class ConvNetConnect4(nn.Module):
         self.advantage = nn.Linear(512, action_size)
 
     def preprocess(self, s):
+        s = s.to(device)
         s = s.view(-1, 7, 6)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
-        empty_channel = (s == 0).clone().float().detach()
-        own_channel = (s == 1).clone().float().detach()
-        enemy_channel = (s == -1).clone().float().detach()
+        empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
+        own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
+        enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
         x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
 
         return x
@@ -193,6 +199,7 @@ class ConvNetConnect4(nn.Module):
         x = F.leaky_relu(self.bn1(self.conv1(s)))
         x = F.leaky_relu(self.bn2(self.conv2(x)))
         x = F.leaky_relu(self.bn3(self.conv3(x)))
+        x = F.leaky_relu(self.bn4(self.conv4(x)))
 
         value = self.value(self.value_fc(x.view(x.size(0), -1)))
         advantage = self.advantage(self.advantage_fc(x.view(x.size(0), -1)))
@@ -233,7 +240,7 @@ class ConvNetTicTacToe(nn.Module):
         self.advantage = nn.Linear(512, action_size)
 
     def preprocess(self, s):
-        s=s.to(device)
+        s = s.to(device)
         s = s.view(-1, 3, 3)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
         empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
@@ -257,23 +264,27 @@ class ConvNetTicTacToe(nn.Module):
 
 
 class QConvConnect4(Q):
-    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0, *args, **kwargs):
+    def __init__(self, env, lr=0.01, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
         super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
 
         self.gamma = gamma
         self.env = env
         self.state_size = self.env.width * self.env.height
-        self.policy_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n)
-        self.target_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n)
+        self.policy_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n).to(device)
+        self.target_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n).to(device)
 
-        self.optim = torch.optim.RMSprop(
-            self.policy_net.parameters(), weight_decay=weight_decay
-        )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
+        self.policy_net.apply(init_weights)
+        self.target_net.apply(init_weights)
+
+        self.optim = torch.optim.SGD(
+            self.policy_net.parameters(), weight_decay=weight_decay,
+            momentum=momentum, lr=lr
+        )
 
 
 class QConvTicTacToe(Q):
-    def __init__(self, env, lr=0.0001, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
+    def __init__(self, env, lr=0.001, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
         super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
 
@@ -285,10 +296,10 @@ class QConvTicTacToe(Q):
 
         self.policy_net.apply(init_weights)
         self.target_net.apply(init_weights)
-#         self.optim = torch.optim.Adam(
-#             self.policy_net.parameters(), weight_decay=weight_decay
-#         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
+        #         self.optim = torch.optim.Adam(
+        #             self.policy_net.parameters(), weight_decay=weight_decay
+        #         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
         self.optim = torch.optim.SGD(
             self.policy_net.parameters(), weight_decay=weight_decay,
-            momentum=momentum,lr =lr
+            momentum=momentum, lr=lr
         )
