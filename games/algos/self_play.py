@@ -79,7 +79,7 @@ class SelfPlay:
         return episode_list, reward_list
 
     def train_model(self, num_episodes, resume=False):
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.q.optim, 'max', patience=5)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.q.optim, 'max', patience=5, factor=0.2)
         if resume:
             saves = [f for f in listdir(save_dir) if isfile(join(save_dir, f))]
             recent_file = max(saves)
