@@ -12,6 +12,7 @@ from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.sum_tree import WeightedMemory
 
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Memory:
@@ -74,12 +75,12 @@ class Q:
         return self.policy_net(s).gather(1, a)
 
     def update(self, s, a, r, done, s_next):
-        s = torch.tensor(s)
+        s = torch.tensor(s,device=device)
         s = self.policy_net.preprocess(s)
-        a = torch.tensor(a)
-        r = torch.tensor(r)
-        done = torch.tensor(done)
-        s_next = torch.tensor(s_next)
+        a = torch.tensor(a,device=device)
+        r = torch.tensor(r,device=device)
+        done = torch.tensor(done,device=device)
+        s_next = torch.tensor(s_next,device=device)
         s_next = self.policy_net.preprocess(s_next)
 
         if len(self.memory) < self.memory.max_size:
@@ -90,7 +91,7 @@ class Q:
         self.memory.add(Transition(s, a, r, done, s_next))
         if isinstance(self.memory, WeightedMemory):
             tree_idx, batch, sample_weights = self.memory.sample(self.batch_size)
-            sample_weights = torch.tensor(sample_weights)
+            sample_weights = torch.tensor(sample_weights,device=device)
         else:
             batch = self.memory.sample(self.batch_size)
         batch_t = Transition(*zip(*batch))  # transposed batch
@@ -277,8 +278,8 @@ class QConvTicTacToe(Q):
         self.gamma = gamma
         self.env = env
         self.state_size = self.env.width * self.env.height
-        self.policy_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n)
-        self.target_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n)
+        self.policy_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n).to(device)
+        self.target_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n).to(device)
 
         self.policy_net.apply(init_weights)
         self.target_net.apply(init_weights)
