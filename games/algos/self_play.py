@@ -79,10 +79,10 @@ class SelfPlay:
         return episode_list, reward_list
 
     def train_model(self, num_episodes, resume=False):
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.q.optim, 'max', patience=5, factor=0.2,
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.q.optim, 'max', patience=10, factor=0.2,
                                                                     verbose=True)
         if resume:
-            saves = [f for f in listdir(save_dir) if isfile(join(save_dir, f))]
+            saves = [f for f in listdir(os.path.join(save_dir,self.policy.q.__class__.__name__)) if isfile(join(save_dir, f))]
             recent_file = max(saves)
             self.policy.q.policy_net.load_state_dict(torch.load(join(save_dir, recent_file)))
             self.policy.q.target_net.load_state_dict(torch.load(join(save_dir, recent_file)))
@@ -105,7 +105,7 @@ class SelfPlay:
             if episode % 50 == 0 and episode > 0:
                 self.update_target_net()
             if episode % 2000 == 0 and episode > 0:
-                saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat() + ":" + str(episode))
+                saved_name = os.path.join(save_dir,self.policy.q.__class__.__name__, datetime.datetime.now().isoformat() + ":" + str(episode))
                 torch.save(self.policy.q.policy_net.state_dict(), saved_name)
 
     def play_episode(self, swap_sides=False, update=True):

@@ -168,7 +168,7 @@ class ConvNetConnect4(nn.Module):
         self.conv3 = nn.Conv2d(128, 128, kernel_size=5, stride=1, padding=2)
         self.bn3 = nn.BatchNorm2d(128)
 
-        self.con4 = nn.Conv2d(128, 64, kernel_size=5, stride=1, padding=2)
+        self.conv4 = nn.Conv2d(128, 64, kernel_size=5, stride=1, padding=2)
         self.bn4 = nn.BatchNorm2d(64)
 
         def conv2d_size_out(size, kernel_size=5, stride=1, padding=2):
