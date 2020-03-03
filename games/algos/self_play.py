@@ -7,9 +7,11 @@ from os.path import isfile, join
 
 import numpy as np
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 save_dir = "saves/temp"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+writer = SummaryWriter()
 
 
 class SelfPlay:
@@ -75,7 +77,6 @@ class SelfPlay:
             print(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
 
         self.policy.q.policy_net.train(True)
-        self.evaluate_weights()
         return episode_list, reward_list
 
     def train_model(self, num_episodes, resume=False):
@@ -98,14 +99,16 @@ class SelfPlay:
             self.policy.epsilon = epsilon
 
             if episode % self.update_lag == 0 and episode > 0:
-                self.update_opponent_model()
+                weight_sum = self.evaluate_weights()
+                writer.add_scalar('weight_sum', weight_sum, episode)
+                self.update_opponent_model(episode)
             self.play_episode(swap_sides=(self.swap_sides and episode % 2 == 0))
             if episode % 50 == 0:
                 print("episode number", episode)
             if episode % 50 == 0 and episode > 0:
                 self.update_target_net()
             if episode % 2000 == 0 and episode > 0:
-                saved_name = os.path.join(save_dir,self.policy.q.__class__.__name__, datetime.datetime.now().isoformat() + ":" + str(episode))
+                saved_name = os.path.join(save_dir, self.policy.q.__class__.__name__, datetime.datetime.now().isoformat() + ":" + str(episode))
                 torch.save(self.policy.q.policy_net.state_dict(), saved_name)
 
     def play_episode(self, swap_sides=False, update=True):
@@ -164,12 +167,13 @@ class SelfPlay:
         results = results.cpu().detach().numpy()
         result_sum = np.sum(results)
         print(f"sum of policy net for base vector is: {result_sum}")
+        return result_sum
 
     def update_target_net(self):
         print("updating target network")
         self.policy.q.target_net.load_state_dict(self.policy.q.policy_net.state_dict())
 
-    def update_opponent_model(self):
+    def update_opponent_model(self, n):
         print("evaluating policy with greedy algo")
         self.policy.epsilon = 0
         _, reward_list = self.evaluate_policy(500)
@@ -178,6 +182,9 @@ class SelfPlay:
         self.scheduler.step(total_rewards)
         self.historical_rewards.append(reward_list)
         print("updating policy")
+
+        writer.add_scalar('total_reward', total_rewards, n)
+        # writer.add_scalar()
         # self.opposing_policy.q.policy_net.load_state_dict(self.policy.q.policy_net.state_dict())
         # self.policy.q.memory.reset()
         # = copy.deepcopy(

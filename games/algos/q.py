@@ -284,7 +284,7 @@ class QConvConnect4(Q):
 
 
 class QConvTicTacToe(Q):
-    def __init__(self, env, lr=0.001, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
+    def __init__(self, env, lr=0.0002, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
         super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
 

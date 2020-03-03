@@ -14,12 +14,12 @@ save_dir = "saves"
 
 def run_training():
     env = TicTacToeEnv()
-    policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=500, batch_size=64), 0.1)
+    policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
     opposing_policy = EpsilonGreedy(
         QConvTicTacToe(env), 1
     )  # Make it not act greedily for the moment- exploration Acts greedily
     self_play = SelfPlay(policy, opposing_policy)
-    self_play.train_model(20000, resume=False)
+    self_play.train_model(20000, resume=True)
     print("Training Done")
 
     saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())
