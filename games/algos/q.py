@@ -1,6 +1,6 @@
 import random
 import time
-from collections import deque, namedtuple
+from collections import namedtuple
 
 import gym
 import numpy as np
@@ -10,7 +10,7 @@ from torch.functional import F
 
 from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.sum_tree import WeightedMemory
-
+from rl_utils.memory import Memory
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -18,25 +18,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # device="cpu"
 
 
-class Memory:
-    def __init__(self, max_size):
-        self.max_size = max_size
-        self.buffer = deque(maxlen=max_size)
 
-    def __len__(self):
-        return len(self.buffer)
-
-    def add(self, experience):
-        self.buffer.append(experience)
-
-    def sample(self, batch_size):
-        buffer_size = len(self.buffer)
-        index = np.random.choice(np.arange(buffer_size), size=batch_size, replace=False)
-
-        return [self.buffer[i] for i in index]
-
-    def reset(self):
-        self.buffer = deque(maxlen=self.max_size)
 
 
 class EpsilonGreedy:
