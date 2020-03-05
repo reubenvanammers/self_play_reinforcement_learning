@@ -1,3 +1,15 @@
+ADD MCTS evaluator
+check if it works in simple case
+add multithreading capability
+check on connect 4
+add async self-play - network training
+
+
+
+
+
+
+
 TODO (in rough order):
 have output being the action space (done)
 change it to memory buffers (done)]
@@ -14,7 +26,7 @@ add evaluation against random player
 
 Add learning rate
 add target network (done)
-add prioritized experience replay
+add prioritized experience replay (done)
 save models (done)
 Think about evalution of models
 add dropout layers (done)
@@ -25,5 +37,9 @@ pararelize cpu code
 maybe try softmax instead of epsilon greedy (for evaluation?)
 
 #add higher order logic on self play (MCTS)
+
+
+
+
 change from q learning to something else (td lambda? n step tree backup?)
 convert everything to tensor before it hits networK???????????????

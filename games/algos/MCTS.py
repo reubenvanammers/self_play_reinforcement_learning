@@ -1,9 +1,18 @@
-import numpy as np
-from anytree import NodeMixin
-from rl_utils.memory import Memory
 from collections import namedtuple
 
-Move = namedtuple("Move", ("state", "action", "predicted_val", "actual_val", "network_probs", "tree_probs"))
+import numpy as np
+import torch
+from anytree import NodeMixin
+from torch import nn
+from torch.functional import F
+
+from rl_utils.memory import Memory
+
+Move = namedtuple(
+    "Move",
+    ("state", "action", "predicted_val", "actual_val", "network_probs", "tree_probs"),
+)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class MCNode(NodeMixin):
@@ -58,7 +67,6 @@ class MCNode(NodeMixin):
 # TODO deal with opposite player choosing moves
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
-
     def __init__(self, iterations, evaluator, env_gen, actions=7, temperature_cutoff=5):
         self.iterations = iterations
         self.evaluator = evaluator
@@ -66,8 +74,6 @@ class MCTreeSearch:
         self.env = env_gen()
         base_state = self.env.reset()
         self.root_node = MCNode(state=base_state)
-
-        # self.initial_probs, self.v = self.evaluator(base_state)
 
         self.temp_memory = []
         self.memory = Memory()
@@ -78,7 +84,6 @@ class MCTreeSearch:
 
     def search_and_play(self):
         temperature = 1 if self.moves_played < self.temperature_cutoff else 0
-        # self.initial_probs, self.v = self.evaluator(base_state)
         self.search()
         move = self.play(temperature)
         return move
@@ -105,7 +110,16 @@ class MCTreeSearch:
 
         self.moves_played += 1
 
-        self.temp_memory.append(Move(self.root_node.state, action, self.root_node.v, None, move_probs, play_probs))
+        self.temp_memory.append(
+            Move(
+                self.root_node.state,
+                action,
+                self.root_node.v,
+                None,
+                move_probs,
+                play_probs,
+            )
+        )
         return action
 
     def expand_node(self, parent_node, action, player=1):
@@ -135,3 +149,68 @@ class MCTreeSearch:
                     break
                 else:
                     node = node.children[action]
+
+
+class ConvNetTicTacToe(nn.Module):
+    def __init__(self, width, height, action_size):
+        super().__init__()
+        self.conv1 = nn.Conv2d(
+            4, 128, kernel_size=3, stride=1, padding=1, bias=True
+        )  # Deal with padding?
+        self.bn1 = nn.BatchNorm2d(128)
+
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn2 = nn.BatchNorm2d(128)
+
+        self.conv3 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn3 = nn.BatchNorm2d(64)
+
+        def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
+            return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
+
+        convw = conv2d_size_out(
+            conv2d_size_out(conv2d_size_out(conv2d_size_out(width, 1, 1, 0)))
+        )
+        convh = conv2d_size_out(
+            conv2d_size_out(conv2d_size_out(conv2d_size_out(height, 1, 1, 0)))
+        )
+        linear_input_size = convw * convh * 64
+
+        # Policy Head
+        self.conv_policy = nn.Conv2d(64, 2, kernel_size=1, stride=1)
+        self.policy_bn = nn.BatchNorm2d(2)
+        self.linear_policy = nn.Linear(linear_input_size, action_size)
+
+        # Value head
+        self.conv_value = nn.Conv2d(64, 1, kernel_size=1, stride=1)
+        self.value_bn = nn.BatchNorm2d(1)
+        self.fc_value = nn.Linear(linear_input_size, 256)
+        self.linear_output = nn.Linear(256, 1)
+
+    def preprocess(self, s):
+        s = s.to(device)
+        s = s.view(-1, 3, 3)
+        # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
+        empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
+        own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
+        enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
+        x = torch.stack(
+            [empty_channel, own_channel, enemy_channel, s.float().detach()], 1
+        )  # stack along channel dimension
+
+        return x
+
+    def forward(self, s):
+        x = F.leaky_relu(self.bn1(self.conv1(s)))
+        x = F.leaky_relu(self.bn2(self.conv2(x)))
+        x = F.leaky_relu(self.bn3(self.conv3(x)))
+        x = x.view(x.size(0), -1)
+
+        policy = F.leaky_relu(self.policy_bn(self.conv_policy(x)))
+        policy = self.linear_policy(policy)
+
+        value = F.leaky_relu(self.value_bn(self.conv_value(x)))
+        value = F.leaky_relu(self.fc_value(value))
+        value = torch.tanh(self.linear_output(value))
+
+        return policy, value
