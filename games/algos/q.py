@@ -11,14 +11,12 @@ from torch.functional import F
 from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.sum_tree import WeightedMemory
 from rl_utils.memory import Memory
+
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # device="cpu"
-
-
-
 
 
 class EpsilonGreedy:
@@ -38,6 +36,32 @@ class EpsilonGreedy:
                    ) + 1  # just a really big negative number? is quite hacky
             a = np.argmax(weights + mask)
         return a
+
+    def load_state_dict(self, state_dict, target=False):
+        self.q.policy_net.load_state_dict(state_dict)
+        if target:
+            self.q.target_net.load_state_dict(state_dict)
+
+    def update(self, *args, **kwargs):
+        return self.q.update(*args, **kwargs)
+
+    # determines when a neural net has enough data to train
+    @property
+    def ready(self):
+        return len(self.q.memory) < self.policy.q.max_size
+
+    def state_dict(self):
+        return self.q.policy_net.state_dict()
+
+    def update_target_net(self):
+        self.q.target_net.load_state_dict(self.state)
+
+    def train(self,train_state):
+        return self.q.policy_net.train(train_state)
+
+    @property
+    def optim(self):
+        return self.q.optim
 
 
 class Q:
