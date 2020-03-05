@@ -7,13 +7,15 @@ Move = namedtuple("Move", ("state", "action", "predicted_val", "actual_val", "ne
 
 
 class MCNode(NodeMixin):
+    # Represents an action of a Monte Carlo Search Tree
 
-    def __init__(self, state=None, n=0, w=0, p=0, parent=None):
+    def __init__(self, state=None, n=0, w=0, p=0, parent=None, player=1):
         self.state = state
         self.n = n
         self.w = w
         self.p = p
         self.parent = parent
+        self.player = -1 * self.parent.player if self.parent else 1
 
         self.cpuct = 1
 
@@ -53,6 +55,8 @@ class MCNode(NodeMixin):
             del child
 
 
+# TODO deal with opposite player choosing moves
+# TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
 
     def __init__(self, iterations, evaluator, env_gen, actions=7, temperature_cutoff=5):
@@ -79,6 +83,11 @@ class MCTreeSearch:
         move = self.play(temperature)
         return move
 
+    def prune(self, action):
+        # Choose action - and remove all other elements of tree
+        self.root_node.children = self.root_node.children[action]
+        self.root_node = self.root_node.children[0]
+
     def update(self, s, a, r, done, next_s):
         if done:
             for experience in self.temp_memory:
@@ -91,26 +100,25 @@ class MCTreeSearch:
         play_probs = [child.play_prob(temp) for child in self.root_node.children]
         move_probs = [child.p for child in self.root_node.children]
 
-        choice = np.random.choice(self.actions, p=play_probs)
-        self.root_node.children = self.root_node.children[choice]
-        self.root_node = self.root_node.children[0]
+        action = np.random.choice(self.actions, p=play_probs)
+        self.prune(action)
 
         self.moves_played += 1
 
-        self.temp_memory.append(Move(self.root_node.state, choice, self.root_node.v, None, move_probs, play_probs))
-        return choice
+        self.temp_memory.append(Move(self.root_node.state, action, self.root_node.v, None, move_probs, play_probs))
+        return action
 
-    def expand_node(self, parent_node, choice, player=1):
+    def expand_node(self, parent_node, action, player=1):
         env = self.env_gen()
         env.set_state(parent_node.state)
-        s, r, done, _ = env.step(choice, player=player)
+        s, r, done, _ = env.step(action, player=player)
         if done:
             v = r
-            child_node = parent_node.children[choice]
+            child_node = parent_node.children[action]
         else:
-            # TODO add if done set MCTS to appropriate val
-            probs, v = self.evaluator(s)
-            child_node = parent_node.children[choice]
+            probs, v = self.evaluator(s, parent_node.player)
+            # TODO check if this works correctly with player - might have to swap
+            child_node = parent_node.children[action]
             child_node.create_children(probs)
         return child_node, v
 
@@ -119,11 +127,11 @@ class MCTreeSearch:
         for i in range(self.iterations):
             while True:
                 select_probs = [child.select_prob for child in node.children]
-                choice = np.random.choice(self.actions, p=select_probs)
+                action = np.random.choice(self.actions, p=select_probs)
                 if node.is_leaf:
-                    node, v = self.expand_node(node, choice)
+                    node, v = self.expand_node(node, action)
                     node.backup(v)
                     node.v = v
                     break
                 else:
-                    node = node.children[choice]
+                    node = node.children[action]
