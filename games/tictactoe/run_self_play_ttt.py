@@ -18,8 +18,8 @@ def run_training():
     opposing_policy = EpsilonGreedy(
         QConvTicTacToe(env), 1
     )  # Make it not act greedily for the moment- exploration Acts greedily
-    self_play = SelfPlay(policy, opposing_policy)
-    self_play.train_model(20000, resume=True)
+    self_play = SelfPlay(policy, opposing_policy, env=env)
+    self_play.train_model(20000, resume=False)
     print("Training Done")
 
     saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())

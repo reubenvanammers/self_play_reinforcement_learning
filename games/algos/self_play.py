@@ -89,7 +89,7 @@ class SelfPlay:
         if resume:
             saves = [f for f in listdir(os.path.join(self.save_dir)) if isfile(join(self.save_dir, f))]
             recent_file = max(saves)
-            self.policy.load_state_dict()
+            # self.policy.load_state_dict()
             self.policy.load_state_dict(torch.load(join(self.save_dir, recent_file)), target=True)
             # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
             self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
@@ -104,8 +104,8 @@ class SelfPlay:
             self.policy.epsilon = epsilon
 
             if episode % self.update_lag == 0 and episode > 0:
-                weight_sum = self.evaluate_weights()
-                writer.add_scalar('weight_sum', weight_sum, episode)
+                # weight_sum = self.evaluate_weights()
+                # writer.add_scalar('weight_sum', weight_sum, episode)
                 self.update_opponent_model(episode)
             self.play_episode(swap_sides=(self.swap_sides and episode % 2 == 0))
             if episode % 50 == 0:

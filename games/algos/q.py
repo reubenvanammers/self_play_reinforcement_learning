@@ -48,13 +48,13 @@ class EpsilonGreedy:
     # determines when a neural net has enough data to train
     @property
     def ready(self):
-        return len(self.q.memory) < self.policy.q.max_size
+        return len(self.q.memory) >= self.q.memory.max_size
 
     def state_dict(self):
         return self.q.policy_net.state_dict()
 
     def update_target_net(self):
-        self.q.target_net.load_state_dict(self.state)
+        self.q.target_net.load_state_dict(self.state_dict())
 
     def train(self,train_state):
         return self.q.policy_net.train(train_state)
