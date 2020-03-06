@@ -14,7 +14,6 @@ class TicTacToeEnv:
         self.width = width
         self.episode_over = False
         self.board = np.zeros([width, height], dtype=np.int64)
-        self.heights = np.zeros([width], dtype=np.int64)
         self.action_space = spaces.Discrete(width * height)  # Linear action space even though board is 3*3
 
     def step(self, action, player=1):
@@ -29,6 +28,9 @@ class TicTacToeEnv:
         self.episode_over = reward != 0 or self.board.all()
         return state, reward, self.episode_over, None
         # Allow invalid moves? Just don't do anything and its a waste?
+
+    def set_state(self, state):
+        self.board = state
 
     def get_loc(self, action):
         return np.unravel_index(action, (self.width, self.height))
@@ -54,7 +56,6 @@ class TicTacToeEnv:
 
     def get_reward(self, action, player=1):
         x, y = self.get_loc(action)
-        piece_height = self.heights[x] - 1
         horizontals = self.board[:, y]
         verticals = self.board[x, :]
         offset = y - x
@@ -76,4 +77,4 @@ class TicTacToeEnv:
         return 0
 
     def get_state(self):
-        return self.board, self.heights
+        return self.board, None

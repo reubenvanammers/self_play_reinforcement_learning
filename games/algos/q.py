@@ -63,6 +63,8 @@ class EpsilonGreedy:
     def optim(self):
         return self.q.optim
 
+    def opponent_action(self):
+        pass #does nothign atm - mostly for the mcts
 
 class Q:
     def __init__(self, mem_type="sumtree", buffer_size=20000, batch_size=16, *args, **kwargs):

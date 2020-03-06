@@ -142,6 +142,7 @@ class SelfPlay:
             opp_s = self.swap_state(s)
             a = self.opposing_policy(opp_s)
             s_next, r, done, info = self.play_move(a, player=-1)
+            self.policy.opponent_action(a)
             r = r * player
             return s_next, a, r, done, info
 

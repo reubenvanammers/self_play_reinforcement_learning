@@ -5,6 +5,7 @@ import torch
 from anytree import NodeMixin
 from torch import nn
 from torch.functional import F
+import random
 
 from rl_utils.memory import Memory
 
@@ -54,7 +55,7 @@ class MCNode(NodeMixin):
     def create_children(self, action_probs):
         children_list = []
         for action_prob in action_probs:
-            children_list.append(MCNode(p=action_prob), parent=self)
+            children_list.append(MCNode(p=action_prob, parent=self))
         self.children = children_list
 
     def _post_detach_children(self, children):
@@ -67,7 +68,7 @@ class MCNode(NodeMixin):
 # TODO deal with opposite player choosing moves
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
-    def __init__(self, iterations, evaluator, env_gen, actions=7, temperature_cutoff=5):
+    def __init__(self, evaluator, env_gen, iterations=100, actions=7, temperature_cutoff=5):
         self.iterations = iterations
         self.evaluator = evaluator
         self.env_gen = env_gen
@@ -76,17 +77,42 @@ class MCTreeSearch:
         self.root_node = MCNode(state=base_state)
 
         self.temp_memory = []
-        self.memory = Memory()
+        self.memory = Memory(5000)
 
         self.temperature_cutoff = temperature_cutoff
         self.actions = actions
         self.moves_played = 0
+
+        self.optim = torch.optim.SGD(
+            self.evaluator.parameters(), weight_decay=0.0001,
+            momentum=0.9, lr=0.0001
+        )
+
+    ## Ignores the inputted state for the moment. Produces the correct action, and changes the root node appropriately
+    # TODO might want to do a check on the state to make sure it is consistent
+    def __call__(self, s):
+        move = self.search_and_play()
+        return move
+        # if np.random.rand() < self.epsilon:
+        #     possible_moves = [i for i, move in enumerate(self.q.env.valid_moves()) if move]
+        #     a = random.choice(possible_moves)
+        # else:
+        #     # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
+        #     weights = self.q(s).detach().cpu().numpy()  # TODO maybe do this with tensors
+        #     mask = (
+        #                    -1000000000 * ~np.array(self.q.env.valid_moves())
+        #            ) + 1  # just a really big negative number? is quite hacky
+        #     a = np.argmax(weights + mask)
+        # return a
 
     def search_and_play(self):
         temperature = 1 if self.moves_played < self.temperature_cutoff else 0
         self.search()
         move = self.play(temperature)
         return move
+
+    def opponent_action(self, action):
+        self.prune(action)
 
     def prune(self, action):
         # Choose action - and remove all other elements of tree
@@ -150,6 +176,25 @@ class MCTreeSearch:
                 else:
                     node = node.children[action]
 
+    def load_state_dict(self, state_dict, target=False):
+        self.evaluator.load_state_dict(state_dict)
+
+    # determines when a neural net has enough data to train
+    @property
+    def ready(self):
+        # Hard code value for the moment
+        return len(self.memory) >= 1000
+
+    def state_dict(self):
+        return self.evaluator.state_dict()
+
+    def update_target_net(self):
+        # No target net so pass
+        pass
+
+    def train(self, train_state):
+        return self.evaluator.train(train_state)
+
 
 class ConvNetTicTacToe(nn.Module):
     def __init__(self, width, height, action_size):
@@ -201,7 +246,8 @@ class ConvNetTicTacToe(nn.Module):
         return x
 
     def forward(self, s):
-        x = F.leaky_relu(self.bn1(self.conv1(s)))
+        x = self.preprocess(s)
+        x = F.leaky_relu(self.bn1(self.conv1(x)))
         x = F.leaky_relu(self.bn2(self.conv2(x)))
         x = F.leaky_relu(self.bn3(self.conv3(x)))
         x = x.view(x.size(0), -1)

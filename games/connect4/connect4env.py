@@ -9,13 +9,18 @@ class GameOver(Exception):
 
 
 class Connect4Env:
-    def __init__(self, width=7, height=6):
+    def __init__(self, width=7, height=6, state=None):
         self.height = height
         self.width = width
-        self.episode_over = False
-        self.board = np.zeros([width, height], dtype=np.int64)
-        self.heights = np.zeros([width], dtype=np.int64)
+        self.episode_over = False  # TODO maybe put this in set state?x
+
         self.action_space = spaces.Discrete(width)
+
+        if state:
+            self.set_state(state)
+        else:
+            self.board = np.zeros([width, height], dtype=np.int64)
+            self.heights = np.zeros([width], dtype=np.int64)
 
     def step(self, action, player=1):
         if self.episode_over:
@@ -45,6 +50,10 @@ class Connect4Env:
         self.board = np.zeros([self.width, self.height], dtype=np.int64)
         self.heights = np.zeros([self.width], dtype=np.int64)
         return self.board
+
+    def set_state(self, state):
+        self.board = state
+        self.heights = np.sum(np.abs(state), axis=1)
 
     def render(self, board=None):
         l = []
