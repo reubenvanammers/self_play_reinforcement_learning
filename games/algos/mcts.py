@@ -1,5 +1,5 @@
 from collections import namedtuple
-
+import copy
 import numpy as np
 import torch
 from anytree import NodeMixin
@@ -8,6 +8,7 @@ from torch.functional import F
 import random
 
 from rl_utils.memory import Memory
+from rl_utils.weights import init_weights
 
 Move = namedtuple(
     "Move",
@@ -53,8 +54,9 @@ class MCNode(NodeMixin):
         return np.power(self.n, 1 / temp)
 
     def create_children(self, action_probs):
+        # action_probs = list(action_probs)  # TODO make everything torch native if possible
         children_list = []
-        for action_prob in action_probs:
+        for action_prob in action_probs:  # .tolist()[0]:
             children_list.append(MCNode(p=action_prob, parent=self))
         self.children = children_list
 
@@ -68,19 +70,21 @@ class MCNode(NodeMixin):
 # TODO deal with opposite player choosing moves
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
-    def __init__(self, evaluator, env_gen, iterations=100, actions=7, temperature_cutoff=5):
+    def __init__(self, evaluator, env_gen, iterations=100, temperature_cutoff=5):
         self.iterations = iterations
         self.evaluator = evaluator
         self.env_gen = env_gen
         self.env = env_gen()
         base_state = self.env.reset()
         self.root_node = MCNode(state=base_state)
+        probs, v = evaluator(base_state)
+        self.root_node.create_children(probs)
 
         self.temp_memory = []
         self.memory = Memory(5000)
 
         self.temperature_cutoff = temperature_cutoff
-        self.actions = actions
+        self.actions = self.env.action_space.n
         self.moves_played = 0
 
         self.optim = torch.optim.SGD(
@@ -116,7 +120,7 @@ class MCTreeSearch:
 
     def prune(self, action):
         # Choose action - and remove all other elements of tree
-        self.root_node.children = self.root_node.children[action]
+        self.root_node.children = [self.root_node.children[action]]
         self.root_node = self.root_node.children[0]
 
     def update(self, s, a, r, done, next_s):
@@ -128,7 +132,7 @@ class MCTreeSearch:
         # TODO atm start of with running update, then maybe move to async model like in paper
 
     def play(self, temp=0.01):
-        play_probs = [child.play_prob(temp) for child in self.root_node.children]
+        play_probs = [child.play_prob(temp)/self.iterations for child in self.root_node.children]
         move_probs = [child.p for child in self.root_node.children]
 
         action = np.random.choice(self.actions, p=play_probs)
@@ -150,7 +154,7 @@ class MCTreeSearch:
 
     def expand_node(self, parent_node, action, player=1):
         env = self.env_gen()
-        env.set_state(parent_node.state)
+        env.set_state(copy.copy(parent_node.state))
         s, r, done, _ = env.step(action, player=player)
         if done:
             v = r
@@ -160,16 +164,20 @@ class MCTreeSearch:
             # TODO check if this works correctly with player - might have to swap
             child_node = parent_node.children[action]
             child_node.create_children(probs)
+        child_node.state = s
         return child_node, v
 
     def search(self):
-        node = self.root_node
         for i in range(self.iterations):
+            node = self.root_node
             while True:
                 select_probs = [child.select_prob for child in node.children]
-                action = np.random.choice(self.actions, p=select_probs)
-                if node.is_leaf:
-                    node, v = self.expand_node(node, action)
+                try:
+                    action = np.argmax(select_probs)
+                except ValueError:
+                    action = np.random.choice(np.arange(self.actions))
+                if node.children[action].is_leaf:
+                    node, v = self.expand_node(node, action, node.player)
                     node.backup(v)
                     node.v = v
                     break
@@ -197,7 +205,7 @@ class MCTreeSearch:
 
 
 class ConvNetTicTacToe(nn.Module):
-    def __init__(self, width, height, action_size):
+    def __init__(self, width=3, height=3, action_size=3):
         super().__init__()
         self.conv1 = nn.Conv2d(
             4, 128, kernel_size=3, stride=1, padding=1, bias=True
@@ -214,25 +222,32 @@ class ConvNetTicTacToe(nn.Module):
             return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
 
         convw = conv2d_size_out(
-            conv2d_size_out(conv2d_size_out(conv2d_size_out(width, 1, 1, 0)))
-        )
+            conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)
         convh = conv2d_size_out(
-            conv2d_size_out(conv2d_size_out(conv2d_size_out(height, 1, 1, 0)))
-        )
-        linear_input_size = convw * convh * 64
+            conv2d_size_out(conv2d_size_out(conv2d_size_out(height))), 1, 1, 0)
+        linear_input_size = convw * convh
 
         # Policy Head
         self.conv_policy = nn.Conv2d(64, 2, kernel_size=1, stride=1)
         self.policy_bn = nn.BatchNorm2d(2)
-        self.linear_policy = nn.Linear(linear_input_size, action_size)
+        self.linear_policy = nn.Linear(linear_input_size * 2, action_size)
+        self.softmax = nn.Softmax()
 
         # Value head
         self.conv_value = nn.Conv2d(64, 1, kernel_size=1, stride=1)
         self.value_bn = nn.BatchNorm2d(1)
-        self.fc_value = nn.Linear(linear_input_size, 256)
+        self.fc_value = nn.Linear(linear_input_size * 1, 256)
         self.linear_output = nn.Linear(256, 1)
 
+        self.apply(init_weights)
+
+    def __call__(self, state, player=1):
+        state = state * player
+        policy, value = super().__call__(state)
+        return policy.tolist()[0], value.item()
+
     def preprocess(self, s):
+        s = torch.tensor(s)
         s = s.to(device)
         s = s.view(-1, 3, 3)
         # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
@@ -250,12 +265,12 @@ class ConvNetTicTacToe(nn.Module):
         x = F.leaky_relu(self.bn1(self.conv1(x)))
         x = F.leaky_relu(self.bn2(self.conv2(x)))
         x = F.leaky_relu(self.bn3(self.conv3(x)))
-        x = x.view(x.size(0), -1)
+        # x = x.view(x.size(0), -1)
 
-        policy = F.leaky_relu(self.policy_bn(self.conv_policy(x)))
-        policy = self.linear_policy(policy)
+        policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
+        policy = self.softmax(self.linear_policy(policy))
 
-        value = F.leaky_relu(self.value_bn(self.conv_value(x)))
+        value = F.leaky_relu(self.value_bn(self.conv_value(x))).view(x.size(0), -1)
         value = F.leaky_relu(self.fc_value(value))
         value = torch.tanh(self.linear_output(value))
 

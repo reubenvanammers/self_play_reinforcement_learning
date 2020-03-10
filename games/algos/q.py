@@ -11,6 +11,7 @@ from torch.functional import F
 from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.sum_tree import WeightedMemory
 from rl_utils.memory import Memory
+from rl_utils.weights import init_weights
 
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -192,6 +193,8 @@ class ConvNetConnect4(nn.Module):
         self.advantage_fc = nn.Linear(linear_input_size, 512)
         self.advantage = nn.Linear(512, action_size)
 
+
+
     def preprocess(self, s):
         s = s.to(device)
         s = s.view(-1, 7, 6)
@@ -216,10 +219,7 @@ class ConvNetConnect4(nn.Module):
         return output
 
 
-def init_weights(m):
-    if type(m) == nn.Conv2d or type(m) == nn.Conv2d:
-        torch.nn.init.xavier_uniform_(m.weight)
-        m.bias.data.fill_(0.01)
+
 
 
 class ConvNetTicTacToe(nn.Module):

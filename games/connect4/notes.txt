@@ -1,9 +1,11 @@
+Deal with how it works with enemy moves better - read up!!!!!!!!
+
+
 ADD MCTS evaluator
 check if it works in simple case
 add multithreading capability
 check on connect 4
 add async self-play - network training
-
 
 
 
