@@ -119,6 +119,7 @@ class SelfPlay:
 
     def play_episode(self, swap_sides=False, update=True):
         s = self.env.reset()
+        self.policy.reset()
         state_list = []
         if swap_sides:
             s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
@@ -135,12 +136,12 @@ class SelfPlay:
 
     def get_and_play_moves(self, s, player=1):
         if player == 1:
-            a = self.policy(s)
+            a = self.policy(s, player)
             s_next, r, done, info = self.play_move(a, player=1)
             return s_next, a, r, done, info
         else:
             opp_s = self.swap_state(s)
-            a = self.opposing_policy(opp_s)
+            a = self.opposing_policy(opp_s, player)
             s_next, r, done, info = self.play_move(a, player=-1)
             self.policy.opponent_action(a)
             r = r * player

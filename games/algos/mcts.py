@@ -20,7 +20,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
-    def __init__(self, state=None, n=0, w=0, p=0, parent=None, player=1):
+    def __init__(self, state=None, n=0, w=0, p=0, parent=None, cpuct=2, player=1):
         self.state = state
         self.n = n
         self.w = w
@@ -28,7 +28,7 @@ class MCNode(NodeMixin):
         self.parent = parent
         self.player = -1 * self.parent.player if self.parent else 1
 
-        self.cpuct = 1
+        self.cpuct = cpuct
 
         self.v = None
 
@@ -75,22 +75,27 @@ class MCTreeSearch:
         self.evaluator = evaluator
         self.env_gen = env_gen
         self.env = env_gen()
-        base_state = self.env.reset()
-        self.root_node = MCNode(state=base_state)
-        probs, v = evaluator(base_state)
-        self.root_node.create_children(probs)
+        self.reset()
 
         self.temp_memory = []
         self.memory = Memory(5000)
 
         self.temperature_cutoff = temperature_cutoff
         self.actions = self.env.action_space.n
-        self.moves_played = 0
 
         self.optim = torch.optim.SGD(
             self.evaluator.parameters(), weight_decay=0.0001,
             momentum=0.9, lr=0.0001
         )
+
+    def reset(self):
+        base_state = self.env.reset()
+        self.root_node = MCNode(state=base_state)
+        probs, v = self.evaluator(base_state)
+        self.root_node.create_children(probs)
+        self.moves_played = 0
+
+        return base_state
 
     ## Ignores the inputted state for the moment. Produces the correct action, and changes the root node appropriately
     # TODO might want to do a check on the state to make sure it is consistent
@@ -132,7 +137,7 @@ class MCTreeSearch:
         # TODO atm start of with running update, then maybe move to async model like in paper
 
     def play(self, temp=0.01):
-        play_probs = [child.play_prob(temp)/self.iterations for child in self.root_node.children]
+        play_probs = [child.play_prob(temp) / self.iterations for child in self.root_node.children]
         move_probs = [child.p for child in self.root_node.children]
 
         action = np.random.choice(self.actions, p=play_probs)
@@ -173,7 +178,7 @@ class MCTreeSearch:
             while True:
                 select_probs = [child.select_prob for child in node.children]
                 try:
-                    action = np.argmax(select_probs)
+                    action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
                 except ValueError:
                     action = np.random.choice(np.arange(self.actions))
                 if node.children[action].is_leaf:
@@ -208,7 +213,7 @@ class ConvNetTicTacToe(nn.Module):
     def __init__(self, width=3, height=3, action_size=3):
         super().__init__()
         self.conv1 = nn.Conv2d(
-            4, 128, kernel_size=3, stride=1, padding=1, bias=True
+            3, 128, kernel_size=3, stride=1, padding=1, bias=True
         )  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(128)
 
@@ -255,7 +260,7 @@ class ConvNetTicTacToe(nn.Module):
         own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
         enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
         x = torch.stack(
-            [empty_channel, own_channel, enemy_channel, s.float().detach()], 1
+            [empty_channel, own_channel, enemy_channel], 1
         )  # stack along channel dimension
 
         return x

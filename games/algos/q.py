@@ -57,15 +57,19 @@ class EpsilonGreedy:
     def update_target_net(self):
         self.q.target_net.load_state_dict(self.state_dict())
 
-    def train(self,train_state):
+    def train(self, train_state):
         return self.q.policy_net.train(train_state)
+
+    def reset(self):
+        pass
 
     @property
     def optim(self):
         return self.q.optim
 
     def opponent_action(self):
-        pass #does nothign atm - mostly for the mcts
+        pass  # does nothign atm - mostly for the mcts
+
 
 class Q:
     def __init__(self, mem_type="sumtree", buffer_size=20000, batch_size=16, *args, **kwargs):
@@ -75,7 +79,7 @@ class Q:
             self.memory = Memory(buffer_size)
         self.batch_size = batch_size
 
-    def __call__(self, s):
+    def __call__(self, s, player=None):  # TODO use player variable
         if not isinstance(s, torch.Tensor):
             s = torch.from_numpy(s).long()
         # return super().__call__(s)
@@ -193,8 +197,6 @@ class ConvNetConnect4(nn.Module):
         self.advantage_fc = nn.Linear(linear_input_size, 512)
         self.advantage = nn.Linear(512, action_size)
 
-
-
     def preprocess(self, s):
         s = s.to(device)
         s = s.view(-1, 7, 6)
@@ -217,9 +219,6 @@ class ConvNetConnect4(nn.Module):
 
         output = value + (advantage - torch.mean(advantage, dim=1, keepdim=True))
         return output
-
-
-
 
 
 class ConvNetTicTacToe(nn.Module):
