@@ -67,7 +67,7 @@ class EpsilonGreedy:
     def optim(self):
         return self.q.optim
 
-    def opponent_action(self):
+    def play_action(self):
         pass  # does nothign atm - mostly for the mcts
 
 

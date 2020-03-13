@@ -100,7 +100,7 @@ class MCTreeSearch:
 
     ## Ignores the inputted state for the moment. Produces the correct action, and changes the root node appropriately
     # TODO might want to do a check on the state to make sure it is consistent
-    def __call__(self, s):
+    def __call__(self, s, player): #not using player
         move = self.search_and_play()
         return move
         # if np.random.rand() < self.epsilon:
@@ -121,7 +121,7 @@ class MCTreeSearch:
         move = self.play(temperature)
         return move
 
-    def opponent_action(self, action):
+    def play_action(self, action,player):
         self.prune(action)
 
     def prune(self, action):
@@ -132,7 +132,7 @@ class MCTreeSearch:
     def update(self, s, a, r, done, next_s):
         if done:
             for experience in self.temp_memory:
-                experience.actual_val = r
+                experience.actual_val = torch.tensor(r).to(device)
                 self.memory.add(experience)
             self.temp_memory = []
         # TODO atm start of with running update, then maybe move to async model like in paper
@@ -165,18 +165,18 @@ class MCTreeSearch:
         move_probs = [child.p for child in self.root_node.children]
 
         action = np.random.choice(self.actions, p=play_probs)
-        self.prune(action)
+        # self.prune(action) #Do this in the self play step
 
         self.moves_played += 1
 
         self.temp_memory.append(
             Move(
-                self.root_node.state,
-                action,
-                self.root_node.v,
+                torch.tensor(self.root_node.state).to(device),
+                torch.tensor(action).to(device),
+                torch.tensor(self.root_node.v).to(device),
                 None,
-                move_probs,
-                play_probs,
+                torch.tensor(move_probs).to(device),
+                torch.tensor(play_probs).to(device),
             )
         )
         return action

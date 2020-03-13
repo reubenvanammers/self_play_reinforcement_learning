@@ -143,7 +143,6 @@ class SelfPlay:
             opp_s = self.swap_state(s)
             a = self.opposing_policy(opp_s, player)
             s_next, r, done, info = self.play_move(a, player=-1)
-            self.policy.opponent_action(a)
             r = r * player
             return s_next, a, r, done, info
 
@@ -164,6 +163,7 @@ class SelfPlay:
             return s_next, done, r
 
     def play_move(self, a, player=1):
+        self.policy.play_action(a)
         return self.env.step(a, player=player)
 
     def evaluate_weights(self):
