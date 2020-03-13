@@ -70,7 +70,7 @@ class MCNode(NodeMixin):
 # TODO deal with opposite player choosing moves
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
-    def __init__(self, evaluator, env_gen, iterations=100, temperature_cutoff=5):
+    def __init__(self, evaluator, env_gen, iterations=100, temperature_cutoff=5, batch_size=64):
         self.iterations = iterations
         self.evaluator = evaluator
         self.env_gen = env_gen
@@ -87,6 +87,7 @@ class MCTreeSearch:
             self.evaluator.parameters(), weight_decay=0.0001,
             momentum=0.9, lr=0.0001
         )
+        self.batch_size = batch_size
 
     def reset(self):
         base_state = self.env.reset()
@@ -135,6 +136,29 @@ class MCTreeSearch:
                 self.memory.add(experience)
             self.temp_memory = []
         # TODO atm start of with running update, then maybe move to async model like in paper
+        if self.ready:
+            self.update_from_memory()
+
+    def update_from_memory(self):
+        batch = self.memory.sample(self.batch_size)
+        batch_t = Move(*zip(*batch))  # transposed batch
+        s, a, predict_val, actual_val, net_probs, tree_probs = batch_t
+        s_batch = torch.stack(s)
+        a_batch = torch.cat(a)
+        predict_val_batch = torch.cat(predict_val)
+        actual_val_batch = torch.cat(actual_val)
+        net_probs_batch = torch.stack(net_probs)
+        tree_probs_batch = torch.stack(tree_probs)
+
+        value_loss = F.mse_loss(predict_val_batch, actual_val_batch)
+        prob_loss = F.cross_entropy(net_probs_batch, tree_probs_batch)
+
+        loss = value_loss + prob_loss
+        self.optim.zero_grad()
+        loss.backward()
+        for param in self.evaluator.parameters():  # see if this ends up doing anything - should just be relu
+            param.grad.data.clamp_(-1, 1)
+        self.optim.step()
 
     def play(self, temp=0.01):
         play_probs = [child.play_prob(temp) / self.iterations for child in self.root_node.children]
@@ -249,7 +273,7 @@ class ConvNetTicTacToe(nn.Module):
     def __call__(self, state, player=1):
         state = state * player
         policy, value = super().__call__(state)
-        return policy.tolist()[0], value.item()
+        return policy.tolist()[0], value.item() * player
 
     def preprocess(self, s):
         s = torch.tensor(s)

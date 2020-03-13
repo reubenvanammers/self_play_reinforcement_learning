@@ -99,7 +99,7 @@ class Q:
         s_next = torch.tensor(s_next, device=device)
         s_next = self.policy_net.preprocess(s_next)
 
-        if len(self.memory) < self.memory.max_size:
+        if not self.ready:
             self.memory.add(Transition(s, a, r, done, s_next))
             return
 
