@@ -119,7 +119,7 @@ class SelfPlay:
 
     def play_episode(self, swap_sides=False, update=True):
         s = self.env.reset()
-        self.policy.reset()
+        self.policy.reset(player=-(1 if swap_sides else 1))
         state_list = []
         if swap_sides:
             s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
@@ -130,40 +130,45 @@ class SelfPlay:
                 break
         return state_list, r
 
-    def swap_state(self, s):
-        # Make state as opposing policy will see it
-        return s * -1
-
-    def get_and_play_moves(self, s, player=1):
-        if player == 1:
-            a = self.policy(s, player)
-            s_next, r, done, info = self.play_move(a, player=1)
-            return s_next, a, r, done, info
-        else:
-            opp_s = self.swap_state(s)
-            a = self.opposing_policy(opp_s, player)
-            s_next, r, done, info = self.play_move(a, player=-1)
-            r = r * player
-            return s_next, a, r, done, info
-
     def play_round(self, s, update=True):
         s = s.copy()
         s_intermediate, own_a, r, done, info = self.get_and_play_moves(s)
         if done:
-            self.policy_wins += 1
+            if r== 1:
+                self.policy_wins += 1
             if update:
                 self.policy.update(s, own_a, r, done, s_intermediate)
             return s_intermediate, done, r
         else:
             s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
             if done:
-                self.opponent_wins += 1
+                if r == -1:
+                    self.opponent_wins += 1
             if update:
                 self.policy.update(s, own_a, r, done, s_next)
             return s_next, done, r
 
+
+    def swap_state(self, s):
+        # Make state as opposing policy will see it
+        return s * -1
+
+    def get_and_play_moves(self, s, player=1):
+        if player == 1:
+            a = self.policy(s)
+            s_next, r, done, info = self.play_move(a, player=1)
+            return s_next, a, r, done, info
+        else:
+            opp_s = self.swap_state(s)
+            a = self.opposing_policy(opp_s)
+            s_next, r, done, info = self.play_move(a, player=-1)
+            r = r * player
+            return s_next, a, r, done, info
+
+
+
     def play_move(self, a, player=1):
-        self.policy.play_action(a)
+        self.policy.play_action(a, player)
         return self.env.step(a, player=player)
 
     def evaluate_weights(self):
