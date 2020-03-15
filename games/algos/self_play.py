@@ -113,7 +113,7 @@ class SelfPlay:
                     print("episode number", episode)
             if episode % 50 == 0 and episode > 0:
                 self.update_target_net()
-            if episode % 2000 == 0 and episode > 0:
+            if episode % 500 == 0 and episode > 0:
                 saved_name = os.path.join(self.save_dir, datetime.datetime.now().isoformat() + ":" + str(episode))
                 torch.save(self.policy.state_dict(), saved_name)
 
