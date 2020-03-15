@@ -6,7 +6,7 @@ from anytree import NodeMixin
 from torch import nn
 from torch.functional import F
 import random
-
+from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
@@ -15,6 +15,10 @@ Move = namedtuple(
     ("state", "action", "predicted_val", "actual_val", "network_probs", "tree_probs"),
 )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+
+
 
 
 class MCNode(NodeMixin):
@@ -43,7 +47,7 @@ class MCNode(NodeMixin):
 
     @property
     def select_prob(self):  # TODO check if this works? might need to be ther other way round
-        return -1*self.player * self.q + self.u
+        return -1 * self.player * self.q + self.u
 
     def backup(self, v):
         self.w += v
@@ -156,7 +160,7 @@ class MCTreeSearch:
     def update(self, s, a, r, done, next_s):
         if done:
             for experience in self.temp_memory:
-                experience._replace(actual_val=torch.tensor(r).to(device))
+                experience = experience._replace(actual_val=torch.tensor(r).to(device))
                 # experience.actual_val =
                 self.memory.add(experience)
             self.temp_memory = []
@@ -169,16 +173,30 @@ class MCTreeSearch:
         batch_t = Move(*zip(*batch))  # transposed batch
         s, a, predict_val, actual_val, net_probs, tree_probs = batch_t
         s_batch = torch.stack(s)
-        a_batch = torch.cat(a)
-        predict_val_batch = torch.cat(predict_val)
-        actual_val_batch = torch.cat(actual_val)
-        net_probs_batch = torch.stack(net_probs)
+        # a_batch = torch.stack(a)
+        # predict_val_batch = torch.stack(predict_val)
+        net_probs_batch, predict_val_batch = self.evaluator.forward (s_batch)
+        predict_val_batch = predict_val_batch.view(-1)
+        actual_val_batch = torch.stack(actual_val)
+        # net_probs_batch = torch.stack(net_probs)
         tree_probs_batch = torch.stack(tree_probs)
+        tree_best_move = torch.argmax(tree_probs_batch,dim=1)
 
-        value_loss = F.mse_loss(predict_val_batch, actual_val_batch)
-        prob_loss = F.cross_entropy(net_probs_batch, tree_probs_batch)
+        # value_loss = F.smooth_l1_loss(predict_val_batch, actual_val_batch)
 
+        c = MSELossFlat(floatify=True)
+        value_loss = c(predict_val_batch, actual_val_batch)
+
+        prob_loss = F.cross_entropy(net_probs_batch, tree_best_move)
+
+        # value_loss = torch.autograd.Variable(value_loss,requires_grad=
+        #                                True)
+        # prob_loss = torch.autograd.Variable(prob_loss,requires_grad=
+        #                                True)
+        #
         loss = value_loss + prob_loss
+        # loss = torch.autograd.Variable(loss,requires_grad=
+        #                                True)
         self.optim.zero_grad()
         loss.backward()
         for param in self.evaluator.parameters():  # see if this ends up doing anything - should just be relu
@@ -250,7 +268,7 @@ class MCTreeSearch:
     @property
     def ready(self):
         # Hard code value for the moment
-        return len(self.memory) >= 1000
+        return len(self.memory) >= 64
 
     def state_dict(self):
         return self.evaluator.state_dict()
