@@ -103,7 +103,7 @@ class SelfPlay:
             epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1.0 * episode / self.eps_decay)
             self.policy.epsilon = epsilon
 
-            if episode % self.update_lag == 0 and episode > 0:
+            if episode % self.update_lag == 0:# and episode > 0:
                 # weight_sum = self.evaluate_weights()
                 # writer.add_scalar('weight_sum', weight_sum, episode)
                 self.update_opponent_model(episode)

@@ -15,11 +15,11 @@ save_dir = "saves"
 def run_training():
     env = TicTacToeEnv()
     # policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
-    policy = MCTreeSearch(ConvNetTicTacToe(3, 3, 9), TicTacToeEnv, temperature_cutoff=1, iterations=200)
+    policy = MCTreeSearch(ConvNetTicTacToe(3, 3, 9), TicTacToeEnv, temperature_cutoff=1, iterations=200, min_memory=64)
     opposing_policy = EpsilonGreedy(
         QConvTicTacToe(env), 1
     )  # Make it not act greedily for the moment- exploration Acts greedily
-    self_play = SelfPlay(policy, opposing_policy, env=env,swap_sides=True)
+    self_play = SelfPlay(policy, opposing_policy, env=env, swap_sides=True)
     self_play.train_model(20000, resume=False)
     print("Training Done")
 
