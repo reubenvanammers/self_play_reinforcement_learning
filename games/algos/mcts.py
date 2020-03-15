@@ -79,7 +79,7 @@ class MCNode(NodeMixin):
 class MCTreeSearch:
     def __init__(self, evaluator, env_gen, iterations=100, temperature_cutoff=5, batch_size=64):
         self.iterations = iterations
-        self.evaluator = evaluator
+        self.evaluator = evaluator.to(device)
         self.env_gen = env_gen
         self.env = env_gen()
         self.root_node = None
