@@ -6,7 +6,7 @@ check if it works in simple case
 add multithreading capability
 check on connect 4
 add async self-play - network training
-
+add skip connection
 
 
 

@@ -17,10 +17,6 @@ Move = namedtuple(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-
-
-
-
 class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
@@ -77,7 +73,8 @@ class MCNode(NodeMixin):
 # TODO deal with opposite player choosing moves
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
-    def __init__(self, evaluator, env_gen, iterations=100, temperature_cutoff=5, batch_size=64):
+    def __init__(self, evaluator, env_gen, iterations=100, temperature_cutoff=5, batch_size=64, memory_size=20000,
+                 min_memory=5000):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
         self.env_gen = env_gen
@@ -86,8 +83,8 @@ class MCTreeSearch:
         self.reset()
 
         self.temp_memory = []
-        self.memory = Memory(5000)
-
+        self.memory = Memory(memory_size)
+        self.min_memory = min_memory
         self.temperature_cutoff = temperature_cutoff
         self.actions = self.env.action_space.n
 
@@ -175,12 +172,12 @@ class MCTreeSearch:
         s_batch = torch.stack(s)
         # a_batch = torch.stack(a)
         # predict_val_batch = torch.stack(predict_val)
-        net_probs_batch, predict_val_batch = self.evaluator.forward (s_batch)
+        net_probs_batch, predict_val_batch = self.evaluator.forward(s_batch)
         predict_val_batch = predict_val_batch.view(-1)
         actual_val_batch = torch.stack(actual_val)
         # net_probs_batch = torch.stack(net_probs)
         tree_probs_batch = torch.stack(tree_probs)
-        tree_best_move = torch.argmax(tree_probs_batch,dim=1)
+        tree_best_move = torch.argmax(tree_probs_batch, dim=1)
 
         # value_loss = F.smooth_l1_loss(predict_val_batch, actual_val_batch)
 
@@ -268,7 +265,7 @@ class MCTreeSearch:
     @property
     def ready(self):
         # Hard code value for the moment
-        return len(self.memory) >= 2000
+        return len(self.memory) >= self.min_memory
 
     def state_dict(self):
         return self.evaluator.state_dict()
@@ -342,6 +339,95 @@ class ConvNetTicTacToe(nn.Module):
         x = F.leaky_relu(self.bn1(self.conv1(x)))
         x = F.leaky_relu(self.bn2(self.conv2(x)))
         x = F.leaky_relu(self.bn3(self.conv3(x)))
+        # x = x.view(x.size(0), -1)
+
+        policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
+        policy = self.softmax(self.linear_policy(policy))
+
+        value = F.leaky_relu(self.value_bn(self.conv_value(x))).view(x.size(0), -1)
+        value = F.leaky_relu(self.fc_value(value))
+        value = torch.tanh(self.linear_output(value))
+
+        return policy, value
+
+
+class ConvNetConnect4(nn.Module):
+    def __init__(self, width=7, height=6, action_size=7):
+        super().__init__()
+        self.conv1 = nn.Conv2d(
+            3, 128, kernel_size=3, stride=1, padding=1, bias=True
+        )  # Deal with padding?
+        self.bn1 = nn.BatchNorm2d(128)
+
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn2 = nn.BatchNorm2d(128)
+
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn2 = nn.BatchNorm2d(128)
+
+        self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn3 = nn.BatchNorm2d(128)
+
+        self.conv4 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn4 = nn.BatchNorm2d(128)
+
+        self.conv5 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn5 = nn.BatchNorm2d(128)
+
+        self.conv6 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1, bias=True)
+        self.bn6 = nn.BatchNorm2d(64)
+
+        def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
+            return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
+
+        convw = conv2d_size_out(
+            conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)
+        convh = conv2d_size_out(
+            conv2d_size_out(conv2d_size_out(conv2d_size_out(height))), 1, 1, 0)
+        linear_input_size = convw * convh
+
+        # Policy Head
+        self.conv_policy = nn.Conv2d(64, 2, kernel_size=1, stride=1)
+        self.policy_bn = nn.BatchNorm2d(2)
+        self.linear_policy = nn.Linear(linear_input_size * 2, action_size)
+        self.softmax = nn.Softmax()
+
+        # Value head
+        self.conv_value = nn.Conv2d(64, 1, kernel_size=1, stride=1)
+        self.value_bn = nn.BatchNorm2d(1)
+        self.fc_value = nn.Linear(linear_input_size * 1, 256)
+        self.linear_output = nn.Linear(256, 1)
+
+        self.apply(init_weights)
+
+    def __call__(self, state, player=1):
+        state = state * player
+        policy, value = super().__call__(state)
+        return policy.tolist()[0], value.item() * player
+
+    def preprocess(self, s):
+        s = torch.tensor(s)
+        s = s.to(device)
+        s = s.view(-1, 7, 6)
+        # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
+        empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
+        own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
+        enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
+        x = torch.stack(
+            [empty_channel, own_channel, enemy_channel], 1
+        ).to(device)  # stack along channel dimension
+
+        return x
+
+    def forward(self, s):
+        x = self.preprocess(s)
+        x = F.leaky_relu(self.bn1(self.conv1(x)))
+        x = F.leaky_relu(self.bn2(self.conv2(x)))
+        x = F.leaky_relu(self.bn3(self.conv3(x)))
+        x = F.leaky_relu(self.bn4(self.conv4(x)))
+        x = F.leaky_relu(self.bn5(self.conv5(x)))
+        x = F.leaky_relu(self.bn6(self.conv6(x)))
+
         # x = x.view(x.size(0), -1)
 
         policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
