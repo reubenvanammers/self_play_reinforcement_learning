@@ -268,7 +268,7 @@ class MCTreeSearch:
     @property
     def ready(self):
         # Hard code value for the moment
-        return len(self.memory) >= 64
+        return len(self.memory) >= 2000
 
     def state_dict(self):
         return self.evaluator.state_dict()
