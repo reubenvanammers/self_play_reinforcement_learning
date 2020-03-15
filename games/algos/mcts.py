@@ -333,7 +333,7 @@ class ConvNetTicTacToe(nn.Module):
         enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
         x = torch.stack(
             [empty_channel, own_channel, enemy_channel], 1
-        )  # stack along channel dimension
+        ).to(device)  # stack along channel dimension
 
         return x
 
