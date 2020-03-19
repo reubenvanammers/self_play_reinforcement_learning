@@ -7,6 +7,7 @@ add multithreading capability
 check on connect 4
 add async self-play - network training
 add skip connection
+Save memory buffer as well as model weights
 
 
 

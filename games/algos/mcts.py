@@ -73,7 +73,8 @@ class MCNode(NodeMixin):
 # TODO deal with opposite player choosing moves
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
-    def __init__(self, evaluator, env_gen, iterations=100, temperature_cutoff=5, batch_size=64, memory_size=20000,
+    def __init__(self, evaluator, env_gen, memory_queue, iterations=100, temperature_cutoff=5, batch_size=64,
+                 memory_size=20000,
                  min_memory=5000):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
@@ -82,6 +83,7 @@ class MCTreeSearch:
         self.root_node = None
         self.reset()
 
+        self.memory_queue = memory_queue
         self.temp_memory = []
         self.memory = Memory(memory_size)
         self.min_memory = min_memory
@@ -155,15 +157,24 @@ class MCTreeSearch:
         self.set_root(node)
 
     def update(self, s, a, r, done, next_s):
+        self.send_to_queue(done)
+        self.pull_from_queue()
+        # TODO atm start of with running update, then maybe move to async model like in paper
+        if self.ready:
+            self.update_from_memory()
+
+    def pull_from_queue(self):
+        while not self.memory_queue.empty():
+            experience = self.memory_queue.pull()
+            self.memory.add(experience)
+
+    def send_to_queue(self, done):
         if done:
             for experience in self.temp_memory:
                 experience = experience._replace(actual_val=torch.tensor(r).to(device))
                 # experience.actual_val =
                 self.memory.add(experience)
             self.temp_memory = []
-        # TODO atm start of with running update, then maybe move to async model like in paper
-        if self.ready:
-            self.update_from_memory()
 
     def update_from_memory(self):
         batch = self.memory.sample(self.batch_size)
