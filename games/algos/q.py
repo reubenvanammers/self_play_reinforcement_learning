@@ -33,8 +33,8 @@ class EpsilonGreedy:
             # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
             weights = self.q(s).detach().cpu().numpy()  # TODO maybe do this with tensors
             mask = (
-                           -1000000000 * ~np.array(self.q.env.valid_moves())
-                   ) + 1  # just a really big negative number? is quite hacky
+                -1000000000 * ~np.array(self.q.env.valid_moves())
+            ) + 1  # just a really big negative number? is quite hacky
             a = np.argmax(weights + mask)
         return a
 
@@ -253,8 +253,9 @@ class ConvNetTicTacToe(nn.Module):
         empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
         own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
         enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
-        x = torch.stack([empty_channel, own_channel, enemy_channel, s.float().detach()],
-                        1)  # stack along channel dimension
+        x = torch.stack(
+            [empty_channel, own_channel, enemy_channel, s.float().detach()], 1
+        )  # stack along channel dimension
 
         return x
 
@@ -284,10 +285,7 @@ class QConvConnect4(Q):
         self.policy_net.apply(init_weights)
         self.target_net.apply(init_weights)
 
-        self.optim = torch.optim.SGD(
-            self.policy_net.parameters(), weight_decay=weight_decay,
-            momentum=momentum, lr=lr
-        )
+        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr)
 
 
 class QConvTicTacToe(Q):
@@ -306,7 +304,4 @@ class QConvTicTacToe(Q):
         #         self.optim = torch.optim.Adam(
         #             self.policy_net.parameters(), weight_decay=weight_decay
         #         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
-        self.optim = torch.optim.SGD(
-            self.policy_net.parameters(), weight_decay=weight_decay,
-            momentum=momentum, lr=lr
-        )
+        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr)

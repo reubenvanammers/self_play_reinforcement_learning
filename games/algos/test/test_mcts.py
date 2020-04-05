@@ -6,10 +6,9 @@ from games.tictactoe.tictactoe_env import TicTacToeEnv
 
 
 class TestEvaluator:
-
     def __init__(self, actions):
         self.actions = actions
-        self.probs = list(softmax(np.arange(actions)/10))
+        self.probs = list(softmax(np.arange(actions) / 10))
         self.value = 1
 
     def parameters(self):

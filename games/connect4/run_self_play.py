@@ -18,7 +18,7 @@ def run_training():
     opposing_policy = EpsilonGreedy(
         QConvConnect4(env), 1
     )  # Make it not act greedily for the moment- exploration Acts greedily
-    self_play = SelfPlay(policy, opposing_policy,env)
+    self_play = SelfPlay(policy, opposing_policy, env)
     self_play.train_model(5000, resume=False)
     print("Training Done")
 

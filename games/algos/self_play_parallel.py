@@ -16,15 +16,24 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 writer = SummaryWriter()
 
 
-class SelfPlayScheduler():
-
-    def __init__(self, policy_gen, opposing_policy_gen, env_gen, policy_args=[], policy_kwargs={},
-                 opposing_policy_args=[],
-                 opposing_policy_kwargs={}, swap_sides=True, save_dir='saves', epoch_length=500):
+class SelfPlayScheduler:
+    def __init__(
+        self,
+        policy_gen,
+        opposing_policy_gen,
+        env_gen,
+        policy_args=[],
+        policy_kwargs={},
+        opposing_policy_args=[],
+        opposing_policy_kwargs={},
+        swap_sides=True,
+        save_dir="saves",
+        epoch_length=500,
+    ):
         self.policy_gen = policy_gen
         self.policy = policy_gen(*policy_args, **policy_kwargs)
-        self.policy_args = policy_args,
-        self.policy_args = policy_kwargs
+        self.policy_args = (policy_args,)
+        self.policy_kwargs = policy_kwargs
         self.opposing_policy_gen = opposing_policy_gen
         self.opposing_policy = opposing_policy_gen(*opposing_policy_args, **opposing_policy_kwargs)
         self.opposing_policy_args = opposing_policy_args
@@ -50,14 +59,27 @@ class SelfPlayScheduler():
             self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
 
         num_workers = num_workers or multiprocessing.cpu_count()
-        player_workers = [SelfPlayWorker(self.task_queue, self.memory_queue) for _ in range(num_workers - 1)]
+        player_workers = [
+            SelfPlayWorker(
+                self.task_queue,
+                self.memory_queue,
+                env_gen=self.env_gen,
+                policy_gen=self.policy_gen,
+                opposing_policy_gen=self.opposing_policy_gen,
+                policy_args=self.policy_args,
+                policy_kwargs=self.policy_kwargs,
+                opposing_policy_args=self.opposing_policy_args,
+                opposing_policy_kwargs=self.opposing_policy_kwargs,
+            )
+            for _ in range(num_workers - 1)
+        ]
         for w in player_workers:
             w.start()
 
         while not self.policy.ready:
             if self.tasks.empty():
                 for _ in range(10 * num_workers):
-                    self.tasks.put('play_episode')
+                    self.tasks.put("play_episode")
                 time.sleep(1)
             # push stuff to task quee
             pass
@@ -70,18 +92,28 @@ class SelfPlayScheduler():
         for epoch in range(num_epochs):
             pause_update.unset()
             for _ in range(self.epoch_length):
-                self.task_queue.put('play_episode')
-            saved_name = os.path.join(self.save_dir,
-                                      datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch))
+                self.task_queue.put("play_episode")
+            saved_name = os.path.join(
+                self.save_dir, datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch)
+            )
             torch.save(self.policy.state_dict(), saved_name)  # also save memory
             pause_update.set()
             # Do some evaluation?
 
 
 class SelfPlayWorker(multiprocessing.Process):
-    def __init__(self, task_queue, memory_queue, env_gen, policy_gen, opposing_policy_gen, policy_args=[],
-                 policy_kwargs={},
-                 opposing_policy_args=[], opposing_policy_kwargs={}):
+    def __init__(
+        self,
+        task_queue,
+        memory_queue,
+        env_gen,
+        policy_gen,
+        opposing_policy_gen,
+        policy_args=[],
+        policy_kwargs={},
+        opposing_policy_args=[],
+        opposing_policy_kwargs={},
+    ):
         self.env = env_gen()
         self.policy = policy_gen(*policy_args, **policy_kwargs)
         self.opposing_policy = opposing_policy_gen(*opposing_policy_args, **opposing_policy_kwargs)
@@ -107,7 +139,8 @@ class SelfPlayWorker(multiprocessing.Process):
         if done:
             if r == 1:
                 if update:
-                    self.policy.update(s, own_a, r, done, s_intermediate)
+                    self.policy.push_to_queue(done, r)
+                    # self.policy.update(s, own_a, r, done, s_intermediate)
             return s_intermediate, done, r
         else:
             s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
@@ -115,7 +148,8 @@ class SelfPlayWorker(multiprocessing.Process):
                 if r == -1:
                     self.opponent_wins += 1
             if update:
-                self.policy.update(s, own_a, r, done, s_next)
+                self.policy.push_to_queue(done, r)
+                # self.policy.update(s, own_a, r, done, s_next)
             return s_next, done, r
 
     def swap_state(self, s):
@@ -136,7 +170,6 @@ class SelfPlayWorker(multiprocessing.Process):
 
 
 class UpdateWorker(multiprocessing.Process):
-
     def __init__(self, memory_queue, policy, pause_update):
         self.memory_queue = memory_queue
         self.policy = policy

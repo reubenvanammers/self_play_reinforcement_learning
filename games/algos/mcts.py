@@ -10,10 +10,7 @@ from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
-Move = namedtuple(
-    "Move",
-    ("state", "action", "predicted_val", "actual_val", "network_probs", "tree_probs"),
-)
+Move = namedtuple("Move", ("state", "action", "predicted_val", "actual_val", "network_probs", "tree_probs"),)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -73,15 +70,25 @@ class MCNode(NodeMixin):
 # TODO deal with opposite player choosing moves
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
-    def __init__(self, evaluator, env_gen, memory_queue, iterations=100, temperature_cutoff=5, batch_size=64,
-                 memory_size=20000,
-                 min_memory=5000):
+    def __init__(
+        self,
+        evaluator,
+        env_gen,
+        memory_queue,
+        iterations=100,
+        temperature_cutoff=5,
+        batch_size=64,
+        memory_size=20000,
+        min_memory=5000,
+        update_nn=True,
+    ):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
         self.env_gen = env_gen
         self.env = env_gen()
         self.root_node = None
         self.reset()
+        self.update_nn = update_nn
 
         self.memory_queue = memory_queue
         self.temp_memory = []
@@ -90,10 +97,7 @@ class MCTreeSearch:
         self.temperature_cutoff = temperature_cutoff
         self.actions = self.env.action_space.n
 
-        self.optim = torch.optim.SGD(
-            self.evaluator.parameters(), weight_decay=0.0001,
-            momentum=0.9, lr=0.0001
-        )
+        self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=0.0001)
         self.batch_size = batch_size
 
     def reset(self, player=1):
@@ -157,7 +161,7 @@ class MCTreeSearch:
         self.set_root(node)
 
     def update(self, s, a, r, done, next_s):
-        self.send_to_queue(done)
+        self.send_to_queue(done, r)
         self.pull_from_queue()
         # TODO atm start of with running update, then maybe move to async model like in paper
         if self.ready:
@@ -168,7 +172,7 @@ class MCTreeSearch:
             experience = self.memory_queue.pull()
             self.memory.add(experience)
 
-    def send_to_queue(self, done):
+    def send_to_queue(self, done, r):
         if done:
             for experience in self.temp_memory:
                 experience = experience._replace(actual_val=torch.tensor(r).to(device))
@@ -256,8 +260,9 @@ class MCTreeSearch:
         for i in range(self.iterations):
             node = self.root_node
             while True:
-                select_probs = [child.select_prob if child.valid else -10000000000 for child in
-                                node.children]  # real big negative nuber
+                select_probs = [
+                    child.select_prob if child.valid else -10000000000 for child in node.children
+                ]  # real big negative nuber
                 action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
                 # except ValueError:
                 #     action = np.random.choice(np.arange(self.actions))
@@ -276,7 +281,7 @@ class MCTreeSearch:
     @property
     def ready(self):
         # Hard code value for the moment
-        return len(self.memory) >= self.min_memory
+        return len(self.memory) >= self.min_memory and self.update_nn
 
     def state_dict(self):
         return self.evaluator.state_dict()
@@ -292,9 +297,7 @@ class MCTreeSearch:
 class ConvNetTicTacToe(nn.Module):
     def __init__(self, width=3, height=3, action_size=3):
         super().__init__()
-        self.conv1 = nn.Conv2d(
-            3, 128, kernel_size=3, stride=1, padding=1, bias=True
-        )  # Deal with padding?
+        self.conv1 = nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1, bias=True)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(128)
 
         self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
@@ -306,10 +309,8 @@ class ConvNetTicTacToe(nn.Module):
         def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
             return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
 
-        convw = conv2d_size_out(
-            conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)
-        convh = conv2d_size_out(
-            conv2d_size_out(conv2d_size_out(conv2d_size_out(height))), 1, 1, 0)
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(height))), 1, 1, 0)
         linear_input_size = convw * convh
 
         # Policy Head
@@ -339,9 +340,7 @@ class ConvNetTicTacToe(nn.Module):
         empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
         own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
         enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
-        x = torch.stack(
-            [empty_channel, own_channel, enemy_channel], 1
-        ).to(device)  # stack along channel dimension
+        x = torch.stack([empty_channel, own_channel, enemy_channel], 1).to(device)  # stack along channel dimension
 
         return x
 
@@ -365,9 +364,7 @@ class ConvNetTicTacToe(nn.Module):
 class ConvNetConnect4(nn.Module):
     def __init__(self, width=7, height=6, action_size=7):
         super().__init__()
-        self.conv1 = nn.Conv2d(
-            3, 128, kernel_size=3, stride=1, padding=1, bias=True
-        )  # Deal with padding?
+        self.conv1 = nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1, bias=True)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(128)
 
         self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
@@ -391,10 +388,8 @@ class ConvNetConnect4(nn.Module):
         def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
             return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
 
-        convw = conv2d_size_out(
-            conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)
-        convh = conv2d_size_out(
-            conv2d_size_out(conv2d_size_out(conv2d_size_out(height))), 1, 1, 0)
+        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(height))), 1, 1, 0)
         linear_input_size = convw * convh
 
         # Policy Head
@@ -424,9 +419,7 @@ class ConvNetConnect4(nn.Module):
         empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
         own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
         enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
-        x = torch.stack(
-            [empty_channel, own_channel, enemy_channel], 1
-        ).to(device)  # stack along channel dimension
+        x = torch.stack([empty_channel, own_channel, enemy_channel], 1).to(device)  # stack along channel dimension
 
         return x
 

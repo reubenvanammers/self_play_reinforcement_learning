@@ -18,16 +18,16 @@ class SelfPlay:
     # Given a learning policy, opponent policy , learns by playing opponent and then updating opponents model
     # TODO add evaluation function
     def __init__(
-            self,
-            policy,
-            opposing_policy,
-            env,
-            swap_sides=False,
-            benchmark_policy=None,
-            eps_start=0.3,
-            eps_end=0.01,
-            eps_decay=5000,
-            save_dir='saves',
+        self,
+        policy,
+        opposing_policy,
+        env,
+        swap_sides=False,
+        benchmark_policy=None,
+        eps_start=0.3,
+        eps_end=0.01,
+        eps_decay=5000,
+        save_dir="saves",
     ):
         self.policy = policy
         self.opposing_policy = opposing_policy
@@ -74,8 +74,9 @@ class SelfPlay:
 
         starts = ["first", "second"]
         for j, start in enumerate(starts):
-            wins = len([i for k, i in enumerate(reward_list) if
-                        i == 1 and (k + 1) % 2 == j])  # k+1 as initial step is going second
+            wins = len(
+                [i for k, i in enumerate(reward_list) if i == 1 and (k + 1) % 2 == j]
+            )  # k+1 as initial step is going second
             draws = len([i for k, i in enumerate(reward_list) if i == 0 and (k + 1) % 2 == j])
             losses = len([i for k, i in enumerate(reward_list) if i == -1 and (k + 1) % 2 == j])
             print(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
@@ -84,8 +85,9 @@ class SelfPlay:
         return episode_list, reward_list
 
     def train_model(self, num_episodes, resume=False):
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.optim, 'max', patience=10, factor=0.2,
-                                                                    verbose=True)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self.policy.optim, "max", patience=10, factor=0.2, verbose=True
+        )
         if resume:
             saves = [f for f in listdir(os.path.join(self.save_dir)) if isfile(join(self.save_dir, f))]
             recent_file = max(saves)
@@ -103,7 +105,7 @@ class SelfPlay:
             epsilon = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1.0 * episode / self.eps_decay)
             self.policy.epsilon = epsilon
 
-            if episode % self.update_lag == 0:# and episode > 0:
+            if episode % self.update_lag == 0:  # and episode > 0:
                 # weight_sum = self.evaluate_weights()
                 # writer.add_scalar('weight_sum', weight_sum, episode)
                 self.update_opponent_model(episode)
@@ -134,7 +136,7 @@ class SelfPlay:
         s = s.copy()
         s_intermediate, own_a, r, done, info = self.get_and_play_moves(s)
         if done:
-            if r== 1:
+            if r == 1:
                 self.policy_wins += 1
             if update:
                 self.policy.update(s, own_a, r, done, s_intermediate)
@@ -147,7 +149,6 @@ class SelfPlay:
             if update:
                 self.policy.update(s, own_a, r, done, s_next)
             return s_next, done, r
-
 
     def swap_state(self, s):
         # Make state as opposing policy will see it
@@ -164,8 +165,6 @@ class SelfPlay:
             s_next, r, done, info = self.play_move(a, player=-1)
             r = r * player
             return s_next, a, r, done, info
-
-
 
     def play_move(self, a, player=1):
         self.policy.play_action(a, player)
@@ -198,7 +197,7 @@ class SelfPlay:
         self.historical_rewards.append(reward_list)
         print("updating policy")
 
-        writer.add_scalar('total_reward', total_rewards, n)
+        writer.add_scalar("total_reward", total_rewards, n)
         # writer.add_scalar()
         # self.opposing_policy.q.policy_net.load_state_dict(self.policy.q.policy_net.state_dict())
         # self.policy.q.memory.reset()

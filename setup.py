@@ -6,7 +6,7 @@ setuptools.setup(
     author="Example Author",
     author_email="author@example.com",
     description="A small example package",
-    packages=['games', 'rl_utils'],
-    install_requires=['torch', 'gym'],
-    python_requires='>=3.6',
+    packages=["games", "rl_utils"],
+    install_requires=["torch", "gym"],
+    python_requires=">=3.6",
 )
