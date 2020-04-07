@@ -14,7 +14,7 @@ from torch import multiprocessing
 # save_dir = "saves/temp"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 writer = SummaryWriter()
-
+multiprocessing.set_start_method('spawn')
 
 class SelfPlayScheduler:
     def __init__(
