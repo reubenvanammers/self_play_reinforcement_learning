@@ -97,7 +97,7 @@ class MCTreeSearch:
         self.temperature_cutoff = temperature_cutoff
         self.actions = self.env.action_space.n
 
-        self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=0.0001)
+        self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=0.001)
         self.batch_size = batch_size
 
     def reset(self, player=1):

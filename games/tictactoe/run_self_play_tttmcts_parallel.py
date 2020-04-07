@@ -8,7 +8,7 @@ from games.algos.mcts import MCTreeSearch, ConvNetTicTacToe
 from games.algos.q import EpsilonGreedy, QConvTicTacToe
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.tictactoe.tictactoe_env import TicTacToeEnv
-
+from torch import multiprocessing
 save_dir = "saves_parallel"
 
 
@@ -23,6 +23,7 @@ def run_training():
     opposing_policy_args = []
     opposing_policy_kwargs = dict(q=QConvTicTacToe(env), epsilon=1)
     # policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
+    multiprocessing.set_start_method('spawn')
 
     self_play = SelfPlayScheduler(
         env_gen=TicTacToeEnv,

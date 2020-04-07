@@ -14,7 +14,7 @@ from torch import multiprocessing
 # save_dir = "saves/temp"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 writer = SummaryWriter()
-multiprocessing.set_start_method('spawn')
+
 
 class SelfPlayScheduler:
     def __init__(
@@ -101,7 +101,7 @@ class SelfPlayScheduler:
         update_worker = UpdateWorker(self.memory_queue, policy, update_flag)
 
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            policy.optim, "max", patience=10, factor=0.2, verbose=True
+            policy.optim, "max", patience=30, factor=0.2, verbose=True, min_lr=0.00001
         )
 
         # for w in update_workers:
