@@ -161,7 +161,7 @@ class MCTreeSearch:
         self.set_root(node)
 
     def update(self, s, a, r, done, next_s):
-        self.send_to_queue(done, r)
+        self.push_to_queue(done, r)
         self.pull_from_queue()
         # TODO atm start of with running update, then maybe move to async model like in paper
         if self.ready:
@@ -172,7 +172,7 @@ class MCTreeSearch:
             experience = self.memory_queue.pull()
             self.memory.add(experience)
 
-    def send_to_queue(self, done, r):
+    def push_to_queue(self, done, r):
         if done:
             for experience in self.temp_memory:
                 experience = experience._replace(actual_val=torch.tensor(r).to(device))
