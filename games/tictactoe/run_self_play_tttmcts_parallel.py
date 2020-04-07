@@ -16,7 +16,7 @@ def run_training():
     env = TicTacToeEnv()
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(temperature_cutoff=1, iterations=200, min_memory=64, env_gen=TicTacToeEnv,
+    policy_kwargs = dict(temperature_cutoff=1, iterations=200, min_memory=20000,memory_size=200000, env_gen=TicTacToeEnv,
                          evaluator=ConvNetTicTacToe(3, 3, 9))
 
     opposing_policy_gen = EpsilonGreedy
@@ -32,6 +32,7 @@ def run_training():
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
+        initial_games=100
     )
 
     # policy = MCTreeSearch(ConvNetTicTacToe(3, 3, 9), TicTacToeEnv, temperature_cutoff=1, iterations=200, min_memory=64)

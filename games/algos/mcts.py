@@ -78,8 +78,8 @@ class MCTreeSearch:
         iterations=100,
         temperature_cutoff=5,
         batch_size=64,
-        memory_size=20000,
-        min_memory=5000,
+        memory_size=200000,
+        min_memory=20000,
         update_nn=True,
     ):
         self.iterations = iterations
@@ -169,7 +169,7 @@ class MCTreeSearch:
 
     def pull_from_queue(self):
         while not self.memory_queue.empty():
-            experience = self.memory_queue.pull()
+            experience = self.memory_queue.get()
             self.memory.add(experience)
 
     def push_to_queue(self, done, r):
@@ -177,7 +177,7 @@ class MCTreeSearch:
             for experience in self.temp_memory:
                 experience = experience._replace(actual_val=torch.tensor(r).to(device))
                 # experience.actual_val =
-                self.memory.add(experience)
+                self.memory_queue.put(experience)
             self.temp_memory = []
 
     def update_from_memory(self):

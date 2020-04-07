@@ -29,6 +29,7 @@ class SelfPlayScheduler:
             swap_sides=True,
             save_dir="saves",
             epoch_length=500,
+            initial_games=20000,
     ):
         self.policy_gen = policy_gen
         self.policy_args = policy_args
@@ -44,8 +45,8 @@ class SelfPlayScheduler:
 
         self.task_queue = multiprocessing.JoinableQueue()
         self.memory_queue = multiprocessing.Queue()
-
-        self.min_memory=50000
+        self.result_queue = multiprocessing.Queue()
+        self.initial_games = initial_games
         # self.memory = self.policy.memory.get()
 
     def train_model(self, num_epochs=10, resume=False, num_workers=None):
@@ -64,6 +65,7 @@ class SelfPlayScheduler:
             SelfPlayWorker(
                 self.task_queue,
                 self.memory_queue,
+                self.result_queue,
                 self.env_gen,
                 policy_gen=self.policy_gen,
                 opposing_policy_gen=self.opposing_policy_gen,
@@ -87,25 +89,70 @@ class SelfPlayScheduler:
         #     policy.pull_from_queue()
         #     # push stuff to task quee
         #     pass
-        for i in range(self.min_memory):
-            self.task_queue.put("play_episode")
+        for i in range(self.initial_games):
+            swap_sides = not i % 2 == 0
+            self.task_queue.put({"swap_sides": swap_sides, "update": True})
         self.task_queue.join()
+        while not self.result_queue.empty():
+            self.result_queue.get()
+        # self.result_queue.clearI
 
-        pause_update = multiprocessing.Event()
-        update_workers = [UpdateWorker(self.memory_queue, policy, pause_update)]
-        for w in update_workers:
-            w.start()
+        update_flag = multiprocessing.Event()
+        update_worker = UpdateWorker(self.memory_queue, policy, update_flag)
 
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            policy.optim, "max", patience=10, factor=0.2, verbose=True
+        )
+
+        # for w in update_workers:
+        #     w.start()
+        update_worker.start()
         for epoch in range(num_epochs):
-            pause_update.unset()
-            for _ in range(self.epoch_length):
-                self.task_queue.put("play_episode")
+            update_flag.set()
+            for i in range(self.epoch_length):
+                swap_sides = not i % 2 == 0
+                self.task_queue.put({"swap_sides": swap_sides, "update": True})
+            self.task_queue.join()
+
             saved_name = os.path.join(
                 self.save_dir, datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch)
             )
-            torch.save(self.policy.state_dict(), saved_name)  # also save memory
-            pause_update.set()
+            torch.save(policy.state_dict(), saved_name)  # also save memory
+            update_flag.clear()
+            self.evaluate_policy(epoch)
             # Do some evaluation?
+
+    def evaluate_policy(self, epoch):
+        reward_list = []
+
+        while not self.result_queue.empty():
+            reward_list.append(self.result_queue.get())
+
+        #             print(f"player {r if r == 1 else 2} won")
+        win_percent = sum(1 if r > 0 else 0 for r in reward_list) / len(reward_list) * 100
+        wins = len([i for i in reward_list if i == 1])
+        draws = len([i for i in reward_list if i == 0])
+        losses = len([i for i in reward_list if i == -1])
+
+        print(f"win percent : {win_percent}%")
+        print(f"wins: {wins}, draws: {draws}, losses: {losses}")
+
+        starts = ["first", "second"]
+        for j, start in enumerate(starts):
+            wins = len(
+                [i for k, i in enumerate(reward_list) if i == 1 and (k + 1) % 2 == j]
+            )  # k+1 as initial step is going second
+            draws = len([i for k, i in enumerate(reward_list) if i == 0 and (k + 1) % 2 == j])
+            losses = len([i for k, i in enumerate(reward_list) if i == -1 and (k + 1) % 2 == j])
+            print(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
+
+        total_rewards = np.sum(reward_list)
+        print(f"total rewards are {total_rewards}")
+        self.scheduler.step(total_rewards)
+
+        writer.add_scalar("total_reward", total_rewards, epoch * self.epoch_length)
+
+        return reward_list
 
 
 class SelfPlayWorker(multiprocessing.Process):
@@ -113,6 +160,7 @@ class SelfPlayWorker(multiprocessing.Process):
             self,
             task_queue,
             memory_queue,
+            result_queue,
             env_gen,
             policy_gen,
             opposing_policy_gen,
@@ -123,17 +171,19 @@ class SelfPlayWorker(multiprocessing.Process):
     ):
         self.env = env_gen()
         policy_kwargs['memory_queue'] = memory_queue
-        self.policy = policy_gen(*policy_args,**policy_kwargs)
+        self.policy = policy_gen(*policy_args, **policy_kwargs)
         self.opposing_policy = opposing_policy_gen(*opposing_policy_args, **opposing_policy_kwargs)
         self.task_queue = task_queue
         self.memory_queue = memory_queue
-
+        self.result_queue = result_queue
         super().__init__()
 
     def run(self):
         while True:
             task = self.task_queue.get()
-            self.play_episode()
+
+            self.play_episode(**task)
+            self.task_queue.task_done()
 
     def play_episode(self, swap_sides=False, update=True):
         s = self.env.reset()
@@ -146,6 +196,7 @@ class SelfPlayWorker(multiprocessing.Process):
             state_list.append(copy.deepcopy(s))
             if done:
                 break
+        self.result_queue.put(r)
         return state_list, r
 
     def play_round(self, s, update=True):
@@ -160,8 +211,9 @@ class SelfPlayWorker(multiprocessing.Process):
         else:
             s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
             if done:
-                if r == -1:
-                    self.opponent_wins += 1
+                pass
+                # if r == -1:
+                # self.opponent_wins += 1
             if update:
                 self.policy.push_to_queue(done, r)
                 # self.policy.update(s, own_a, r, done, s_next)
@@ -189,10 +241,10 @@ class SelfPlayWorker(multiprocessing.Process):
 
 
 class UpdateWorker(multiprocessing.Process):
-    def __init__(self, memory_queue, policy, pause_update):
+    def __init__(self, memory_queue, policy, update_flag):
         self.memory_queue = memory_queue
         self.policy = policy
-        self.pause_update = pause_update
+        self.update_flag = update_flag
 
         super().__init__()
 
@@ -201,6 +253,7 @@ class UpdateWorker(multiprocessing.Process):
 
     def update(self):
         while True:
-            if not self.pause_update.is_set():
-                self.policy.pull_from_queue()
-                self.policy.update_from_memory()
+            # if not self.update_flag.is_set():
+            self.update_flag.wait()
+            self.policy.pull_from_queue()
+            self.policy.update_from_memory()
