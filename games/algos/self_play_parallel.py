@@ -173,6 +173,7 @@ class SelfPlayWorker(multiprocessing.Process):
         policy_kwargs['memory_queue'] = memory_queue
         self.policy = policy_gen(*policy_args, **policy_kwargs)
         self.opposing_policy = opposing_policy_gen(*opposing_policy_args, **opposing_policy_kwargs)
+        self.opposing_policy.env = self.env #TODO: make this a more stabel solution -
         self.task_queue = task_queue
         self.memory_queue = memory_queue
         self.result_queue = result_queue
@@ -237,6 +238,7 @@ class SelfPlayWorker(multiprocessing.Process):
 
     def play_move(self, a, player=1):
         self.policy.play_action(a, player)
+        # self.opposing_policy.play_action(a, player)
         return self.env.step(a, player=player)
 
 
