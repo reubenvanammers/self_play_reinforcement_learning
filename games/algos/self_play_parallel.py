@@ -4,6 +4,7 @@ import math
 import os
 from os import listdir
 from os.path import isfile, join
+import pickle
 
 import numpy as np
 import torch
@@ -89,16 +90,10 @@ class SelfPlayScheduler:
         #     policy.pull_from_queue()
         #     # push stuff to task quee
         #     pass
-        for i in range(self.initial_games):
-            swap_sides = not i % 2 == 0
-            self.task_queue.put({"swap_sides": swap_sides, "update": True})
-        self.task_queue.join()
-        while not self.result_queue.empty():
-            self.result_queue.get()
-        # self.result_queue.clearI
 
         update_flag = multiprocessing.Event()
-        update_worker = UpdateWorker(self.memory_queue, policy, update_flag)
+        update_flag.clear()
+        update_worker = UpdateWorker(self.memory_queue, policy, update_flag, save_dir=self.save_dir, resume=resume)
 
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             policy.optim, "max", patience=30, factor=0.2, verbose=True, min_lr=0.00001
@@ -107,6 +102,15 @@ class SelfPlayScheduler:
         # for w in update_workers:
         #     w.start()
         update_worker.start()
+
+        for i in range(self.initial_games):
+            swap_sides = not i % 2 == 0
+            self.task_queue.put({"swap_sides": swap_sides, "update": True})
+        self.task_queue.join()
+        while not self.result_queue.empty():
+            self.result_queue.get()
+        # self.result_queue.clearI
+
         for epoch in range(num_epochs):
             update_flag.set()
             for i in range(self.epoch_length):
@@ -115,7 +119,7 @@ class SelfPlayScheduler:
             self.task_queue.join()
 
             saved_name = os.path.join(
-                self.save_dir, datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch)
+                self.save_dir, "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch)
             )
             torch.save(policy.state_dict(), saved_name)  # also save memory
             update_flag.clear()
@@ -248,19 +252,47 @@ class SelfPlayWorker(multiprocessing.Process):
 
 
 class UpdateWorker(multiprocessing.Process):
-    def __init__(self, memory_queue, policy, update_flag):
+    def __init__(self, memory_queue, policy, update_flag, save_dir="saves", resume=False):
         self.memory_queue = memory_queue
         self.policy = policy
         self.update_flag = update_flag
+        self.save_dir = save_dir
+        if resume:
+            self.load_memory()
+
+        self.memory_size = 0
 
         super().__init__()
 
     def run(self):
-        self.update()
+        while True:
+            if self.update_flag.is_set():
+                self.update()
+            else:
+                self.pull()
+
+    def pull(self):
+        self.policy.pull_from_queue()
+        new_memory_size = len(self.policy.memory)
+        if new_memory_size // 1000 - self.memory_size // 1000 > 0:
+            self.save_memory()
+        self.memory_size = new_memory_size
+
+    def save_memory(self):
+        saved_name = os.path.join(
+            self.save_dir, "memory-" + datetime.datetime.now().isoformat() + ":" + str(self.memory_size)
+        )
+        with open(saved_name, 'wb') as f:
+            pickle.dump(f, self.policy.memory)
+
+    def load_memory(self):
+        saves = [f for f in listdir(os.path.join(self.save_dir)) if isfile(join(self.save_dir, f))]
+        recent_file = max(saves)
+        with open(recent_file) as f:
+            self.policy.memory = pickle.load(f)
 
     def update(self):
-        while True:
-            # if not self.update_flag.is_set():
-            self.update_flag.wait()
-            self.policy.pull_from_queue()
-            self.policy.update_from_memory()
+        # if not self.update_flag.is_set():
+        # self.update_flag.wait()
+        self.policy.pull_from_queue()
+        self.policy.update_from_memory()

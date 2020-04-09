@@ -10,7 +10,11 @@ from games.algos.q import EpsilonGreedy, QConvConnect4
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 
-save_dir = "saves__c4mtcs_par"
+try:
+    save_dir = "saves__c4mtcs_par"
+    os.mkdir(save_dir)
+except Exception:
+    pass
 
 
 def run_training():

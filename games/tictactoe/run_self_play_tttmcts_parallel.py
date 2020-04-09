@@ -10,7 +10,7 @@ from games.algos.self_play_parallel import SelfPlayScheduler
 from games.tictactoe.tictactoe_env import TicTacToeEnv
 from torch import multiprocessing
 save_dir = "saves_parallel"
-
+os.mkdirs(save_dir)
 
 def run_training():
     env = TicTacToeEnv()
