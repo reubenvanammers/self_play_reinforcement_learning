@@ -283,7 +283,7 @@ class UpdateWorker(multiprocessing.Process):
             self.save_dir, "memory-" + datetime.datetime.now().isoformat() + ":" + str(self.memory_size)
         )
         with open(saved_name, 'wb') as f:
-            pickle.dump(f, self.policy.memory)
+            pickle.dump(self.policy.memory, f)
 
     def load_memory(self):
         saves = [f for f in listdir(os.path.join(self.save_dir)) if isfile(join(self.save_dir, f))]
