@@ -18,16 +18,16 @@ class SelfPlay:
     # Given a learning policy, opponent policy , learns by playing opponent and then updating opponents model
     # TODO add evaluation function
     def __init__(
-        self,
-        policy,
-        opposing_policy,
-        env,
-        swap_sides=False,
-        benchmark_policy=None,
-        eps_start=0.3,
-        eps_end=0.01,
-        eps_decay=5000,
-        save_dir="saves",
+            self,
+            policy,
+            opposing_policy,
+            env,
+            swap_sides=False,
+            benchmark_policy=None,
+            eps_start=0.3,
+            eps_end=0.01,
+            eps_decay=5000,
+            save_dir="saves",
     ):
         self.policy = policy
         self.opposing_policy = opposing_policy
@@ -122,6 +122,7 @@ class SelfPlay:
     def play_episode(self, swap_sides=False, update=True):
         s = self.env.reset()
         self.policy.reset(player=-(1 if swap_sides else 1))
+        self.opposing_policy.reset()
         state_list = []
         if swap_sides:
             s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
@@ -168,6 +169,7 @@ class SelfPlay:
 
     def play_move(self, a, player=1):
         self.policy.play_action(a, player)
+        self.opposing_policy.play_action(a, player)
         return self.env.step(a, player=player)
 
     def evaluate_weights(self):

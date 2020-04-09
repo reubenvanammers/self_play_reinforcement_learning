@@ -170,10 +170,12 @@ class SelfPlayWorker(multiprocessing.Process):
             opposing_policy_kwargs={},
     ):
         self.env = env_gen()
+        # opposing_policy_kwargs =copy.deepcopy(opposing_policy_kwargs) #TODO make a longer term solutions
         policy_kwargs['memory_queue'] = memory_queue
         self.policy = policy_gen(*policy_args, **policy_kwargs)
         self.opposing_policy = opposing_policy_gen(*opposing_policy_args, **opposing_policy_kwargs)
-        self.opposing_policy.env = self.env #TODO: make this a more stabel solution -
+        # self.opposing_policy.env = self.env
+        self.opposing_policy.env = env_gen() #TODO: make this a more stabel solution -
         self.task_queue = task_queue
         self.memory_queue = memory_queue
         self.result_queue = result_queue
@@ -189,6 +191,7 @@ class SelfPlayWorker(multiprocessing.Process):
     def play_episode(self, swap_sides=False, update=True):
         s = self.env.reset()
         self.policy.reset(player=-(1 if swap_sides else 1))
+        self.opposing_policy.reset()
         state_list = []
         if swap_sides:
             s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
@@ -238,7 +241,7 @@ class SelfPlayWorker(multiprocessing.Process):
 
     def play_move(self, a, player=1):
         self.policy.play_action(a, player)
-        # self.opposing_policy.play_action(a, player)
+        self.opposing_policy.play_action(a, player)
         return self.env.step(a, player=player)
 
 

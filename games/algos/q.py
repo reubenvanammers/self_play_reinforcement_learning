@@ -61,14 +61,15 @@ class EpsilonGreedy:
         return self.q.policy_net.train(train_state)
 
     def reset(self):
-        pass
+        self.q.env.reset()
 
     @property
     def optim(self):
         return self.q.optim
 
-    def play_action(self):
-        pass  # does nothign atm - mostly for the mcts
+    def play_action(self, action, player):
+        self.q.env.step(action,player)
+        # pass  # does nothign atm - mostly for the mcts
 
 
 class Q:
