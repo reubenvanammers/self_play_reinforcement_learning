@@ -2,6 +2,9 @@ Deal with how it works with enemy moves better - read up!!!!!!!!
 
 
 ADD MCTS evaluator
+
+save buffer as well as network stategcloud au
+
 check if it works in simple case
 add multithreading capability
 check on connect 4

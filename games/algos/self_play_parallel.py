@@ -175,7 +175,7 @@ class SelfPlayWorker(multiprocessing.Process):
         self.policy = policy_gen(*policy_args, **policy_kwargs)
         self.opposing_policy = opposing_policy_gen(*opposing_policy_args, **opposing_policy_kwargs)
         # self.opposing_policy.env = self.env
-        self.opposing_policy.env = env_gen() #TODO: make this a more stabel solution -
+        self.opposing_policy.env = env_gen()  # TODO: make this a more stabel solution -
         self.task_queue = task_queue
         self.memory_queue = memory_queue
         self.result_queue = result_queue
@@ -184,8 +184,10 @@ class SelfPlayWorker(multiprocessing.Process):
     def run(self):
         while True:
             task = self.task_queue.get()
-
-            self.play_episode(**task)
+            try:
+                self.play_episode(**task)
+            except:
+                self.task_queue.task_done()
             self.task_queue.task_done()
 
     def play_episode(self, swap_sides=False, update=True):
