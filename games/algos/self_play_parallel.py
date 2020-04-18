@@ -188,11 +188,11 @@ class SelfPlayWorker(multiprocessing.Process):
             self.load_model()
 
     def load_model(self):
-        saves = [f for f in listdir(os.path.join(self.save_dir)) if
+        saves = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
                  isfile(join(self.save_dir, f)) and os.path.split(f)[1].startswith('model')]
         recent_file = max(saves)
         # self.policy.load_state_dict()
-        self.policy.load_state_dict(torch.load(join(self.save_dir, recent_file)), target=True)
+        self.policy.load_state_dict(torch.load(recent_file), target=True)
         # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
         # self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
 
@@ -299,7 +299,7 @@ class UpdateWorker(multiprocessing.Process):
             pickle.dump(self.policy.memory, f)
 
     def load_memory(self):
-        saves = [f for f in listdir(os.path.join(self.save_dir)) if
+        saves = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
                  isfile(join(self.save_dir, f)) and os.path.split(f)[1].startswith('memory')]
         recent_file = max(saves)
         with open(recent_file) as f:
