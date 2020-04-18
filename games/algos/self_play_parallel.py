@@ -5,7 +5,7 @@ import os
 from os import listdir
 from os.path import isfile, join
 import pickle
-
+from copy import deepcopy
 import numpy as np
 import torch
 import time
@@ -14,7 +14,6 @@ from torch import multiprocessing
 
 # save_dir = "saves/temp"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-writer = SummaryWriter()
 
 
 class SelfPlayScheduler:
@@ -30,7 +29,7 @@ class SelfPlayScheduler:
             swap_sides=True,
             save_dir="saves",
             epoch_length=500,
-            initial_games=20000,
+            initial_games=64,
     ):
         self.policy_gen = policy_gen
         self.policy_args = policy_args
@@ -48,18 +47,13 @@ class SelfPlayScheduler:
         self.memory_queue = multiprocessing.Queue()
         self.result_queue = multiprocessing.Queue()
         self.initial_games = initial_games
+        self.writer = SummaryWriter()
+
         # self.memory = self.policy.memory.get()
 
     def train_model(self, num_epochs=10, resume=False, num_workers=None):
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.optim, 'max', patience=10, factor=0.2,
         #                                                             verbose=True)
-        if resume:
-            saves = [f for f in listdir(os.path.join(self.save_dir)) if isfile(join(self.save_dir, f))]
-            recent_file = max(saves)
-            # self.policy.load_state_dict()
-            self.policy.load_state_dict(torch.load(join(self.save_dir, recent_file)), target=True)
-            # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
-            self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
 
         num_workers = num_workers or multiprocessing.cpu_count()
         player_workers = [
@@ -70,17 +64,19 @@ class SelfPlayScheduler:
                 self.env_gen,
                 policy_gen=self.policy_gen,
                 opposing_policy_gen=self.opposing_policy_gen,
-                policy_args=self.policy_args,
-                policy_kwargs=self.policy_kwargs,
-                opposing_policy_args=self.opposing_policy_args,
-                opposing_policy_kwargs=self.opposing_policy_kwargs,
+                policy_args=deepcopy(self.policy_args),
+                policy_kwargs=deepcopy(self.policy_kwargs),
+                opposing_policy_args=deepcopy(self.opposing_policy_args),
+                opposing_policy_kwargs=deepcopy(self.opposing_policy_kwargs),
+                save_dir=self.save_dir,
+                resume=resume,
             )
             for _ in range(num_workers - 1)
         ]
         for w in player_workers:
             w.start()
 
-        policy = self.policy_gen(*self.policy_args, **self.policy_kwargs)
+        policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue)
 
         # while not policy.ready:
         #     if self.task_queue.empty():
@@ -122,6 +118,7 @@ class SelfPlayScheduler:
                 self.save_dir, "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch)
             )
             torch.save(policy.state_dict(), saved_name)  # also save memory
+            [w.load_model() for w in player_workers]
             update_flag.clear()
             self.evaluate_policy(epoch)
             # Do some evaluation?
@@ -154,7 +151,7 @@ class SelfPlayScheduler:
         print(f"total rewards are {total_rewards}")
         self.scheduler.step(total_rewards)
 
-        writer.add_scalar("total_reward", total_rewards, epoch * self.epoch_length)
+        self.writer.add_scalar("total_reward", total_rewards, epoch * self.epoch_length)
 
         return reward_list
 
@@ -172,6 +169,8 @@ class SelfPlayWorker(multiprocessing.Process):
             policy_kwargs={},
             opposing_policy_args=[],
             opposing_policy_kwargs={},
+            save_dir='save_dir',
+            resume=False,
     ):
         self.env = env_gen()
         # opposing_policy_kwargs =copy.deepcopy(opposing_policy_kwargs) #TODO make a longer term solutions
@@ -183,7 +182,19 @@ class SelfPlayWorker(multiprocessing.Process):
         self.task_queue = task_queue
         self.memory_queue = memory_queue
         self.result_queue = result_queue
+        self.save_dir = save_dir
         super().__init__()
+        if resume:
+            self.load_model()
+
+    def load_model(self):
+        saves = [f for f in listdir(os.path.join(self.save_dir)) if
+                 isfile(join(self.save_dir, f)) and os.path.split(f)[1].startswith('model')]
+        recent_file = max(saves)
+        # self.policy.load_state_dict()
+        self.policy.load_state_dict(torch.load(join(self.save_dir, recent_file)), target=True)
+        # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
+        self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
 
     def run(self):
         while True:
@@ -275,8 +286,10 @@ class UpdateWorker(multiprocessing.Process):
         self.policy.pull_from_queue()
         new_memory_size = len(self.policy.memory)
         if new_memory_size // 1000 - self.memory_size // 1000 > 0:
+            self.memory_size = new_memory_size
             self.save_memory()
         self.memory_size = new_memory_size
+        time.sleep(1)
 
     def save_memory(self):
         saved_name = os.path.join(
@@ -286,7 +299,8 @@ class UpdateWorker(multiprocessing.Process):
             pickle.dump(self.policy.memory, f)
 
     def load_memory(self):
-        saves = [f for f in listdir(os.path.join(self.save_dir)) if isfile(join(self.save_dir, f))]
+        saves = [f for f in listdir(os.path.join(self.save_dir)) if
+                 isfile(join(self.save_dir, f)) and os.path.split(f)[1].startswith('memory')]
         recent_file = max(saves)
         with open(recent_file) as f:
             self.policy.memory = pickle.load(f)

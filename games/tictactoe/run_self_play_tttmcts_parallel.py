@@ -33,7 +33,8 @@ def run_training():
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
-        initial_games=100
+        initial_games=100,
+        resume=True
     )
 
     # policy = MCTreeSearch(ConvNetTicTacToe(3, 3, 9), TicTacToeEnv, temperature_cutoff=1, iterations=200, min_memory=64)
