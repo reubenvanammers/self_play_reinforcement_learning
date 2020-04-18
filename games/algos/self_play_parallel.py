@@ -194,7 +194,7 @@ class SelfPlayWorker(multiprocessing.Process):
         # self.policy.load_state_dict()
         self.policy.load_state_dict(torch.load(join(self.save_dir, recent_file)), target=True)
         # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
-        self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
+        # self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
 
     def run(self):
         while True:
