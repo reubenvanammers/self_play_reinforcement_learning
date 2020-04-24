@@ -4,13 +4,20 @@ import math
 import os
 from os import listdir
 from os.path import isfile, join
-import pickle
+# import pickle
 from copy import deepcopy
 import numpy as np
 import torch
 import time
 from torch.utils.tensorboard import SummaryWriter
 from torch import multiprocessing
+
+
+# if torch.cuda.is_available():is_available
+#     map_location = lambda storage, loc: storage.cuda()
+# else:
+#     # map_location = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#     map_location='cpu'
 
 # save_dir = "saves/temp"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -278,6 +285,7 @@ class UpdateWorker(multiprocessing.Process):
     def run(self):
         while True:
             if self.update_flag.is_set():
+
                 self.update()
             else:
                 self.pull()
@@ -296,17 +304,21 @@ class UpdateWorker(multiprocessing.Process):
             self.save_dir, "memory-" + datetime.datetime.now().isoformat() + ":" + str(self.memory_size)
         )
         with open(saved_name, 'wb') as f:
-            pickle.dump(self.policy.memory, f)
+            torch.save(self.policy.memory, f)
 
     def load_memory(self):
+
         saves = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
                  isfile(join(self.save_dir, f)) and os.path.split(f)[1].startswith('memory')]
         recent_file = max(saves)
-        with open(recent_file) as f:
-            self.policy.memory = pickle.load(f)
+        with open(recent_file, 'rb') as f:
+            self.policy.memory = torch.load(f)
+        self.memory_size = len(self.policy.memory)
+
 
     def update(self):
         # if not self.update_flag.is_set():
         # self.update_flag.wait()
-        self.policy.pull_from_queue()
+        # self.policy.pull_from_queue()
+        self.pull()
         self.policy.update_from_memory()

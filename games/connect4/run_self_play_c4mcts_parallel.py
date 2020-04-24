@@ -6,7 +6,8 @@ from os.path import isfile, join
 import torch
 from torch import multiprocessing
 from games.algos.mcts import MCTreeSearch, ConvNetConnect4
-from games.algos.q import EpsilonGreedy, QConvConnect4
+# from games.algos.q import EpsilonGreedy, QConvConnect4
+from games.connect4.onesteplookahead import OnestepLookahead
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 
@@ -32,9 +33,9 @@ def run_training():
                          env_gen=Connect4Env,
                          evaluator=network)
 
-    opposing_policy_gen = EpsilonGreedy
+    opposing_policy_gen = OnestepLookahead
     opposing_policy_args = []
-    opposing_policy_kwargs = dict(q=QConvConnect4(env), epsilon=1)
+    opposing_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
 
     # policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
 
@@ -46,7 +47,7 @@ def run_training():
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
-        initial_games=100,
+        initial_games=5000,
         epoch_length=500,
         save_dir=save_dir,
     )
@@ -56,7 +57,7 @@ def run_training():
     #     QConvTicTacToe(env), 1
     # )  # Make it not act greedily for the moment- exploration Acts greedily
     # self_play = SelfPlay(policy, opposing_policy, env=env, swap_sides=True)
-    self_play.train_model(100, resume=False)
+    self_play.train_model(100, resume=False, num_workers=2)
     print("Training Done")
 
     saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())

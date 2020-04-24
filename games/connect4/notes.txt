@@ -1,5 +1,5 @@
 Deal with how it works with enemy moves better - read up!!!!!!!!
-
+ADD enemy one step lookahead
 
 ADD MCTS evaluator
 
