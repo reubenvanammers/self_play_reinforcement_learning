@@ -10,37 +10,38 @@ from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
-Move = namedtuple("Move", ("state", "action", "predicted_val", "actual_val", "network_probs", "tree_probs"),)
+Move = namedtuple("Move", ("state", "action", "actual_val", "tree_probs"), )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
-    def __init__(self, state=None, n=0, w=0, p=0, parent=None, cpuct=2, player=1, v=None, valid=True):
+    def __init__(self, state=None, n=0, w=0, p=0, parent=None, cpuct=4, player=1, v=None, valid=True):
         self.state = state
         self.n = n
         self.w = w
         self.p = p
         self.parent = parent
         self.player = -1 * self.parent.player if self.parent else player
-        self.valid = valid
-        self.cpuct = cpuct
+        self.valid = valid  # Whether an action is valid - don't play moves that you cannot
+        self.cpuct = cpuct  # exploration factor
 
         self.active_root = False
         self.v = v
 
     @property
-    def q(self):
+    def q(self):  # Attractiveness of a node from player ones pespective - average of downstream results
         return self.w / self.n if self.n else 0
 
     @property
-    def u(self):
+    def u(self):  # Factor to encourage exploration - higher values of cpuct increase exploration
         return self.cpuct * self.p * np.sqrt(self.parent.n) / (1 + self.n)
 
     @property
     def select_prob(self):  # TODO check if this works? might need to be ther other way round
-        return -1 * self.player * self.q + self.u
+        return -1 * self.player * self.q + self.u  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
+        # return self.player * self.q * self.u
 
     def backup(self, v):
         self.w += v
@@ -71,16 +72,16 @@ class MCNode(NodeMixin):
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
     def __init__(
-        self,
-        evaluator,
-        env_gen,
-        memory_queue,
-        iterations=100,
-        temperature_cutoff=5,
-        batch_size=64,
-        memory_size=200000,
-        min_memory=20000,
-        update_nn=True,
+            self,
+            evaluator,
+            env_gen,
+            memory_queue,
+            iterations=100,
+            temperature_cutoff=5,
+            batch_size=64,
+            memory_size=200000,
+            min_memory=20000,
+            update_nn=True,
     ):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
@@ -127,7 +128,8 @@ class MCTreeSearch:
         # return a
 
     def search_and_play(self):
-        temperature = 1 if self.moves_played < self.temperature_cutoff else 0.01
+        final_temp = 1
+        temperature = 1 if self.moves_played < self.temperature_cutoff else final_temp
         self.search()
         move = self.play(temperature)
         return move
@@ -163,7 +165,6 @@ class MCTreeSearch:
     def update(self, s, a, r, done, next_s):
         self.push_to_queue(done, r)
         self.pull_from_queue()
-        # TODO atm start of with running update, then maybe move to async model like in paper
         if self.ready:
             self.update_from_memory()
 
@@ -183,7 +184,7 @@ class MCTreeSearch:
     def update_from_memory(self):
         batch = self.memory.sample(self.batch_size)
         batch_t = Move(*zip(*batch))  # transposed batch
-        s, a, predict_val, actual_val, net_probs, tree_probs = batch_t
+        s, a, actual_val, tree_probs = batch_t
         s_batch = torch.stack(s)
         # a_batch = torch.stack(a)
         # predict_val_batch = torch.stack(predict_val)
@@ -200,6 +201,7 @@ class MCTreeSearch:
         value_loss = c(predict_val_batch, actual_val_batch)
 
         prob_loss = F.cross_entropy(net_probs_batch, tree_best_move)
+
 
         # value_loss = torch.autograd.Variable(value_loss,requires_grad=
         #                                True)
@@ -229,9 +231,9 @@ class MCTreeSearch:
             Move(
                 torch.tensor(self.root_node.state).to(device),
                 torch.tensor(action).to(device),
-                torch.tensor(self.root_node.v).to(device),
+                # torch.tensor(self.root_node.v).to(device),
                 None,
-                torch.tensor(move_probs).to(device),
+                # torch.tensor(move_probs).to(device),
                 torch.tensor(play_probs).to(device),
             )
         )

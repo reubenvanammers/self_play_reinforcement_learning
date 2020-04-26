@@ -121,7 +121,7 @@ class SelfPlay:
 
     def play_episode(self, swap_sides=False, update=True):
         s = self.env.reset()
-        self.policy.reset(player=-(1 if swap_sides else 1))
+        self.policy.reset(player=(-1 if swap_sides else 1))
         self.opposing_policy.reset()
         state_list = []
         if swap_sides:

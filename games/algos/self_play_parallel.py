@@ -228,7 +228,7 @@ class SelfPlayWorker(multiprocessing.Process):
 
     def play_episode(self, swap_sides=False, update=True):
         s = self.env.reset()
-        self.policy.reset(player=-(1 if swap_sides else 1))
+        self.policy.reset(player=(-1 if swap_sides else 1))
         self.opposing_policy.reset()
         state_list = []
         if swap_sides:
@@ -245,17 +245,11 @@ class SelfPlayWorker(multiprocessing.Process):
         s = s.copy()
         s_intermediate, own_a, r, done, info = self.get_and_play_moves(s)
         if done:
-            if r == 1:
-                if update:
-                    self.policy.push_to_queue(done, r)
-                    # self.policy.update(s, own_a, r, done, s_intermediate)
+            if update:
+                self.policy.push_to_queue(done, r)
             return s_intermediate, done, r
         else:
             s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
-            if done:
-                pass
-                # if r == -1:
-                # self.opponent_wins += 1
             if update:
                 self.policy.push_to_queue(done, r)
                 # self.policy.update(s, own_a, r, done, s_next)
