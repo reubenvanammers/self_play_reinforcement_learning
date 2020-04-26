@@ -11,7 +11,8 @@ import torch
 import time
 from torch.utils.tensorboard import SummaryWriter
 from torch import multiprocessing
-
+import pickle
+import traceback
 
 # if torch.cuda.is_available():is_available
 #     map_location = lambda storage, loc: storage.cuda()
@@ -50,6 +51,9 @@ class SelfPlayScheduler:
         self.save_dir = save_dir
         self.epoch_length = epoch_length
 
+        self.start_time = datetime.datetime.now().isoformat()
+        os.mkdir(os.path.join(save_dir, self.start_time))
+
         self.task_queue = multiprocessing.JoinableQueue()
         self.memory_queue = multiprocessing.Queue()
         self.result_queue = multiprocessing.Queue()
@@ -58,7 +62,7 @@ class SelfPlayScheduler:
 
         # self.memory = self.policy.memory.get()
 
-    def train_model(self, num_epochs=10, resume=False, num_workers=None):
+    def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None):
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.optim, 'max', patience=10, factor=0.2,
         #                                                             verbose=True)
 
@@ -76,7 +80,7 @@ class SelfPlayScheduler:
                 opposing_policy_args=deepcopy(self.opposing_policy_args),
                 opposing_policy_kwargs=deepcopy(self.opposing_policy_kwargs),
                 save_dir=self.save_dir,
-                resume=resume,
+                resume=resume_model,
             )
             for _ in range(num_workers - 1)
         ]
@@ -96,7 +100,9 @@ class SelfPlayScheduler:
 
         update_flag = multiprocessing.Event()
         update_flag.clear()
-        update_worker = UpdateWorker(self.memory_queue, policy, update_flag, save_dir=self.save_dir, resume=resume)
+        update_worker = UpdateWorker(self.memory_queue, policy, update_flag, save_dir=self.save_dir,
+                                     resume=resume_memory,
+                                     start_time=self.start_time)
 
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             policy.optim, "max", patience=30, factor=0.2, verbose=True, min_lr=0.00001
@@ -122,7 +128,8 @@ class SelfPlayScheduler:
             self.task_queue.join()
 
             saved_name = os.path.join(
-                self.save_dir, "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch)
+                self.save_dir, self.start_time,
+                "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch)
             )
             torch.save(policy.state_dict(), saved_name)  # also save memory
             [w.load_model() for w in player_workers]
@@ -195,8 +202,14 @@ class SelfPlayWorker(multiprocessing.Process):
             self.load_model()
 
     def load_model(self):
-        saves = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
-                 isfile(join(self.save_dir, f)) and os.path.split(f)[1].startswith('model')]
+
+        folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
+                   not isfile(join(self.save_dir, f))]
+        recent_folder = max(folders)
+
+        saves = [join(recent_folder, f) for f in listdir(os.path.join(recent_folder)) if
+                 isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith('model')]
+
         recent_file = max(saves)
         # self.policy.load_state_dict()
         self.policy.load_state_dict(torch.load(recent_file), target=True)
@@ -208,7 +221,8 @@ class SelfPlayWorker(multiprocessing.Process):
             task = self.task_queue.get()
             try:
                 self.play_episode(**task)
-            except:
+            except Exception as e:
+                print(str(e))
                 self.task_queue.task_done()
             self.task_queue.task_done()
 
@@ -270,15 +284,16 @@ class SelfPlayWorker(multiprocessing.Process):
 
 
 class UpdateWorker(multiprocessing.Process):
-    def __init__(self, memory_queue, policy, update_flag, save_dir="saves", resume=False):
+    def __init__(self, memory_queue, policy, update_flag, start_time, save_dir="saves", resume=False):
         self.memory_queue = memory_queue
         self.policy = policy
         self.update_flag = update_flag
         self.save_dir = save_dir
+        self.start_time = start_time
+        self.memory_size = 0
+
         if resume:
             self.load_memory()
-
-        self.memory_size = 0
 
         super().__init__()
 
@@ -301,20 +316,24 @@ class UpdateWorker(multiprocessing.Process):
 
     def save_memory(self):
         saved_name = os.path.join(
-            self.save_dir, "memory-" + datetime.datetime.now().isoformat() + ":" + str(self.memory_size)
+            self.save_dir, self.start_time,
+            "memory-" + datetime.datetime.now().isoformat() + ":" + str(self.memory_size)
         )
         with open(saved_name, 'wb') as f:
-            torch.save(self.policy.memory, f)
+            pickle.dump(self.policy.memory, f)
 
     def load_memory(self):
 
-        saves = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
-                 isfile(join(self.save_dir, f)) and os.path.split(f)[1].startswith('memory')]
+        folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
+                   not isfile(join(self.save_dir, f))]
+        recent_folder = max(folders)
+
+        saves = [join(recent_folder, f) for f in listdir(os.path.join(recent_folder)) if
+                 isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith('memory')]
         recent_file = max(saves)
         with open(recent_file, 'rb') as f:
-            self.policy.memory = torch.load(f)
+            self.policy.memory = pickle.load(f)
         self.memory_size = len(self.policy.memory)
-
 
     def update(self):
         # if not self.update_flag.is_set():

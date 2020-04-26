@@ -1,6 +1,11 @@
 Deal with how it works with enemy moves better - read up!!!!!!!!
 ADD enemy one step lookahead
 
+add folder per run for saves
+fix overflow/power stuff
+write full stack trace error
+add seperate resume triggers for memory/model
+
 ADD MCTS evaluator
 
 save buffer as well as network stategcloud au
