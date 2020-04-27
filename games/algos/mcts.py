@@ -34,6 +34,7 @@ class MCNode(NodeMixin):
     def q(self):  # Attractiveness of a node from player ones pespective - average of downstream results
         return self.w / self.n if self.n else 0
         # return self.w / self.n if self.n else self.p
+
     @property
     def u(self):  # Factor to encourage exploration - higher values of cpuct increase exploration
         return self.cpuct * self.p * np.sqrt(self.parent.n) / (1 + self.n)
@@ -181,8 +182,7 @@ class MCTreeSearch:
                 self.memory_queue.put(experience)
             self.temp_memory = []
 
-    def update_from_memory(self):
-        batch = self.memory.sample(self.batch_size)
+    def loss(self, batch):
         batch_t = Move(*zip(*batch))  # transposed batch
         s, a, actual_val, tree_probs = batch_t
         s_batch = torch.stack(s)
@@ -193,7 +193,7 @@ class MCTreeSearch:
         actual_val_batch = torch.stack(actual_val)
         # net_probs_batch = torch.stack(net_probs)
         tree_probs_batch = torch.stack(tree_probs)
-        tree_best_move = torch.argmax(tree_probs_batch, dim=1) #TODO - fix this?
+        tree_best_move = torch.argmax(tree_probs_batch, dim=1)  # TODO - fix this?
 
         # value_loss = F.smooth_l1_loss(predict_val_batch, actual_val_batch)
 
@@ -202,13 +202,19 @@ class MCTreeSearch:
 
         prob_loss = F.cross_entropy(net_probs_batch, tree_best_move)
 
-
         # value_loss = torch.autograd.Variable(value_loss,requires_grad=
         #                                True)
         # prob_loss = torch.autograd.Variable(prob_loss,requires_grad=
         #                                True)
         #
         loss = value_loss + prob_loss
+        return loss
+
+    def update_from_memory(self):
+        batch = self.memory.sample(self.batch_size)
+
+        loss = self.loss(batch)
+
         # loss = torch.autograd.Variable(loss,requires_grad=
         #                                True)
         self.optim.zero_grad()
