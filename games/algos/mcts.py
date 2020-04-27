@@ -33,7 +33,7 @@ class MCNode(NodeMixin):
     @property
     def q(self):  # Attractiveness of a node from player ones pespective - average of downstream results
         return self.w / self.n if self.n else 0
-
+        # return self.w / self.n if self.n else self.p
     @property
     def u(self):  # Factor to encourage exploration - higher values of cpuct increase exploration
         return self.cpuct * self.p * np.sqrt(self.parent.n) / (1 + self.n)
@@ -193,7 +193,7 @@ class MCTreeSearch:
         actual_val_batch = torch.stack(actual_val)
         # net_probs_batch = torch.stack(net_probs)
         tree_probs_batch = torch.stack(tree_probs)
-        tree_best_move = torch.argmax(tree_probs_batch, dim=1)
+        tree_best_move = torch.argmax(tree_probs_batch, dim=1) #TODO - fix this?
 
         # value_loss = F.smooth_l1_loss(predict_val_batch, actual_val_batch)
 

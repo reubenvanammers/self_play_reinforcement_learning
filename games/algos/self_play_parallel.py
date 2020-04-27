@@ -73,6 +73,7 @@ class SelfPlayScheduler:
                 self.memory_queue,
                 self.result_queue,
                 self.env_gen,
+                start_time=self.start_time,
                 policy_gen=self.policy_gen,
                 opposing_policy_gen=self.opposing_policy_gen,
                 policy_args=deepcopy(self.policy_args),
@@ -105,7 +106,7 @@ class SelfPlayScheduler:
                                      start_time=self.start_time)
 
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            policy.optim, "max", patience=30, factor=0.2, verbose=True, min_lr=0.00001
+            policy.optim, "max", patience=50, factor=0.2, verbose=True, min_lr=0.00001
         )
 
         # for w in update_workers:
@@ -133,6 +134,7 @@ class SelfPlayScheduler:
             )
             torch.save(policy.state_dict(), saved_name)  # also save memory
             [w.load_model() for w in player_workers]
+            update_worker.save_memory()
             update_flag.clear()
             self.evaluate_policy(epoch)
             # Do some evaluation?
@@ -179,12 +181,13 @@ class SelfPlayWorker(multiprocessing.Process):
             env_gen,
             policy_gen,
             opposing_policy_gen,
+            start_time,
             policy_args=[],
             policy_kwargs={},
             opposing_policy_args=[],
             opposing_policy_kwargs={},
             save_dir='save_dir',
-            resume=False,
+            resume=False
     ):
         self.env = env_gen()
         # opposing_policy_kwargs =copy.deepcopy(opposing_policy_kwargs) #TODO make a longer term solutions
@@ -197,14 +200,19 @@ class SelfPlayWorker(multiprocessing.Process):
         self.memory_queue = memory_queue
         self.result_queue = result_queue
         self.save_dir = save_dir
+        self.start_time=start_time
         super().__init__()
         if resume:
-            self.load_model()
+            self.load_model(prev_run=True)
 
-    def load_model(self):
+    def load_model(self,prev_run=False):
 
-        folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
-                   not isfile(join(self.save_dir, f))]
+        if prev_run:
+            folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
+                       not isfile(join(self.save_dir, f)) and f != self.start_time]
+        else:
+            folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
+                       not isfile(join(self.save_dir, f))]
         recent_folder = max(folders)
 
         saves = [join(recent_folder, f) for f in listdir(os.path.join(recent_folder)) if
@@ -287,7 +295,7 @@ class UpdateWorker(multiprocessing.Process):
         self.memory_size = 0
 
         if resume:
-            self.load_memory()
+            self.load_memory(prev_run=True)
 
         super().__init__()
 
@@ -316,10 +324,13 @@ class UpdateWorker(multiprocessing.Process):
         with open(saved_name, 'wb') as f:
             pickle.dump(self.policy.memory, f)
 
-    def load_memory(self):
-
-        folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
-                   not isfile(join(self.save_dir, f))]
+    def load_memory(self, prev_run=False):
+        if prev_run:
+            folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
+                       not isfile(join(self.save_dir, f)) and f != self.start_time]
+        else:
+            folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
+                       not isfile(join(self.save_dir, f))]
         recent_folder = max(folders)
 
         saves = [join(recent_folder, f) for f in listdir(os.path.join(recent_folder)) if

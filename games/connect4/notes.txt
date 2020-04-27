@@ -1,14 +1,21 @@
-Deal with how it works with enemy moves better - read up!!!!!!!!
-ADD enemy one step lookahead
+Think about using rollout n numbers vs probablibiteis - deals with nonzero tempereature better
+Will need to change cross entropy - see if there is a better alternative
+Maybe run supervised learning on sample games to debug?
+#Change model loading to be done via queues (maybe?) Also for saving memory, models
+# Need to fix overfitting issues - might be related to above
 
-add folder per run for saves
-fix overflow/power stuff
-write full stack trace error
-add seperate resume triggers for memory/model
+#Deal with how it works with enemy moves better - read up!!!!!!!!
+#ADD enemy one step lookahead
+
+
+#add folder per run for saves
+#fix overflow/power stuff
+#write full stack trace error
+#add seperate resume triggers for memory/model
 
 ADD MCTS evaluator
 
-save buffer as well as network stategcloud au
+#save buffer as well as network stategcloud au
 
 check if it works in simple case
 add multithreading capability
