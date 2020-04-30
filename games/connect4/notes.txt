@@ -1,4 +1,9 @@
 Think about using rollout n numbers vs probablibiteis - deals with nonzero tempereature better
+
+change convolutional layer - test 4 or 5 size
+
+debug model - show loss?
+
 Will need to change cross entropy - see if there is a better alternative
 Maybe run supervised learning on sample games to debug?
 #Change model loading to be done via queues (maybe?) Also for saving memory, models

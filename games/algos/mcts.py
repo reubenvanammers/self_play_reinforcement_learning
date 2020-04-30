@@ -99,7 +99,7 @@ class MCTreeSearch:
         self.temperature_cutoff = temperature_cutoff
         self.actions = self.env.action_space.n
 
-        self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=0.001)
+        self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=0.0002)
         self.batch_size = batch_size
 
     def reset(self, player=1):
@@ -193,15 +193,15 @@ class MCTreeSearch:
         actual_val_batch = torch.stack(actual_val)
         # net_probs_batch = torch.stack(net_probs)
         tree_probs_batch = torch.stack(tree_probs)
-        tree_best_move = torch.argmax(tree_probs_batch, dim=1)  # TODO - fix this?
+        # tree_best_move = torch.argmax(tree_probs_batch, dim=1)  # TODO - fix this?
 
         # value_loss = F.smooth_l1_loss(predict_val_batch, actual_val_batch)
 
         c = MSELossFlat(floatify=True)
         value_loss = c(predict_val_batch, actual_val_batch)
 
-        prob_loss = F.cross_entropy(net_probs_batch, tree_best_move)
-
+        # prob_loss = F.cross_entropy(net_probs_batch, tree_best_move)
+        prob_loss = - (net_probs_batch.log() * tree_probs_batch).sum()/net_probs_batch.size()[0]
         # value_loss = torch.autograd.Variable(value_loss,requires_grad=
         #                                True)
         # prob_loss = torch.autograd.Variable(prob_loss,requires_grad=
