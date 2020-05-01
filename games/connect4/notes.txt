@@ -1,7 +1,7 @@
 Think about using rollout n numbers vs probablibiteis - deals with nonzero tempereature better
-
+add better logging for multiprocessing
 change convolutional layer - test 4 or 5 size
-
+add dropout - test
 debug model - show loss?
 
 Will need to change cross entropy - see if there is a better alternative

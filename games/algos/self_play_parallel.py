@@ -13,6 +13,11 @@ from torch.utils.tensorboard import SummaryWriter
 from torch import multiprocessing
 import pickle
 import traceback
+import logging
+import multiprocessing_logging
+
+logging.basicConfig()
+multiprocessing_logging.install_mp_handler()
 
 # if torch.cuda.is_available():is_available
 #     map_location = lambda storage, loc: storage.cuda()
@@ -59,6 +64,9 @@ class SelfPlayScheduler:
         self.result_queue = multiprocessing.Queue()
         self.initial_games = initial_games
         self.writer = SummaryWriter()
+
+        logging.basicConfig(filename=join(save_dir, self.start_time, 'log'), level=logging.INFO)
+        multiprocessing_logging.install_mp_handler()
 
         # self.memory = self.policy.memory.get()
 
@@ -140,6 +148,7 @@ class SelfPlayScheduler:
             # Do some evaluation?
 
     def evaluate_policy(self, epoch):
+        logging.info('evaluation policy')
         reward_list = []
 
         while not self.result_queue.empty():
@@ -200,12 +209,13 @@ class SelfPlayWorker(multiprocessing.Process):
         self.memory_queue = memory_queue
         self.result_queue = result_queue
         self.save_dir = save_dir
-        self.start_time=start_time
+        self.start_time = start_time
         super().__init__()
         if resume:
             self.load_model(prev_run=True)
 
-    def load_model(self,prev_run=False):
+    def load_model(self, prev_run=False):
+        logging.info('loading model')
 
         if prev_run:
             folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
@@ -317,6 +327,7 @@ class UpdateWorker(multiprocessing.Process):
         time.sleep(1)
 
     def save_memory(self):
+        logging.info('saving memory')
         saved_name = os.path.join(
             self.save_dir, self.start_time,
             "memory-" + datetime.datetime.now().isoformat() + ":" + str(self.memory_size)
@@ -325,6 +336,7 @@ class UpdateWorker(multiprocessing.Process):
             pickle.dump(self.policy.memory, f)
 
     def load_memory(self, prev_run=False):
+        logging.info('loading memory')
         if prev_run:
             folders = [join(self.save_dir, f) for f in listdir(os.path.join(self.save_dir)) if
                        not isfile(join(self.save_dir, f)) and f != self.start_time]
