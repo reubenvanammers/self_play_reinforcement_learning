@@ -1,4 +1,4 @@
-from connect4env import Connect4Env
+# from games.connect4.connect4env import Connect4Env
 from copy import copy
 import random
 
