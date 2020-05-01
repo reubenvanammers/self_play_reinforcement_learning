@@ -201,7 +201,7 @@ class MCTreeSearch:
         value_loss = c(predict_val_batch, actual_val_batch)
 
         # prob_loss = F.cross_entropy(net_probs_batch, tree_best_move)
-        prob_loss = - (net_probs_batch.log() * tree_probs_batch).sum()/net_probs_batch.size()[0]
+        prob_loss = - (net_probs_batch.log() * tree_probs_batch).sum() / net_probs_batch.size()[0]
         # value_loss = torch.autograd.Variable(value_loss,requires_grad=
         #                                True)
         # prob_loss = torch.autograd.Variable(prob_loss,requires_grad=
@@ -443,9 +443,11 @@ class ConvNetConnect4(nn.Module):
         # x = x.view(x.size(0), -1)
 
         policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
+        policy = F.dropout(policy, p=0.3, training=True)  # change training method
         policy = self.softmax(self.linear_policy(policy))
 
         value = F.leaky_relu(self.value_bn(self.conv_value(x))).view(x.size(0), -1)
+        value = F.dropout(value, p=0.3, training=True)  # change training method
         value = F.leaky_relu(self.fc_value(value))
         value = torch.tanh(self.linear_output(value))
 
