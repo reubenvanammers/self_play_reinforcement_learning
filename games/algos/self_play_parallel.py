@@ -107,9 +107,13 @@ class SelfPlayScheduler:
         #     # push stuff to task quee
         #     pass
 
+        save_model_queue = multiprocessing.Queue()
+
         update_flag = multiprocessing.Event()
         update_flag.clear()
-        update_worker = UpdateWorker(self.memory_queue, policy, update_flag, save_dir=self.save_dir,
+
+        update_worker = UpdateWorker(self.memory_queue, policy, update_flag=update_flag,
+                                     save_model_queue=save_model_queue, save_dir=self.save_dir,
                                      resume=resume_memory,
                                      start_time=self.start_time)
 
@@ -129,21 +133,23 @@ class SelfPlayScheduler:
             self.result_queue.get()
         # self.result_queue.clearI
 
+        saved_model_name = None
         for epoch in range(num_epochs):
             update_flag.set()
             for i in range(self.epoch_length):
                 swap_sides = not i % 2 == 0
-                self.task_queue.put({"swap_sides": swap_sides, "update": True})
+                self.task_queue.put({"swap_sides": swap_sides, "update": True, 'saved_name': saved_model_name})
             self.task_queue.join()
 
-            saved_name = os.path.join(
+            saved_model_name = os.path.join(
                 self.save_dir, self.start_time,
                 "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch)
             )
-            torch.save(policy.state_dict(), saved_name)  # also save memory
-            [w.load_model() for w in player_workers]
-            update_worker.save_memory()
+            # torch.save(policy.state_dict(), saved_name)  # also save memory
+            # [w.load_model() for w in player_workers]
             update_flag.clear()
+            # update_wer.save_memory()
+            save_model_queue.put(saved_model_name)
             self.evaluate_policy(epoch)
             # Do some evaluation?
 
@@ -210,6 +216,9 @@ class SelfPlayWorker(multiprocessing.Process):
         self.result_queue = result_queue
         self.save_dir = save_dir
         self.start_time = start_time
+
+        self.current_model_file = None
+
         super().__init__()
         if resume:
             self.load_model(prev_run=True)
@@ -229,6 +238,7 @@ class SelfPlayWorker(multiprocessing.Process):
                  isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith('model')]
 
         recent_file = max(saves)
+        self.current_model_file = recent_file
         # self.policy.load_state_dict()
         self.policy.load_state_dict(torch.load(recent_file), target=True)
         # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
@@ -238,13 +248,18 @@ class SelfPlayWorker(multiprocessing.Process):
         while True:
             task = self.task_queue.get()
             try:
+                if task.get('saved_name') and task.get('saved_name') != self.current_model_file:
+                    time.sleep(5)
+                    print('loading model')
+                    self.load_model()
+
                 self.play_episode(**task)
             except Exception as e:
                 print(str(e))
                 self.task_queue.task_done()
             self.task_queue.task_done()
 
-    def play_episode(self, swap_sides=False, update=True):
+    def play_episode(self, swap_sides=False, update=True, saved_name=None):
         s = self.env.reset()
         self.policy.reset(player=(-1 if swap_sides else 1))
         self.opposing_policy.reset()
@@ -296,10 +311,11 @@ class SelfPlayWorker(multiprocessing.Process):
 
 
 class UpdateWorker(multiprocessing.Process):
-    def __init__(self, memory_queue, policy, update_flag, start_time, save_dir="saves", resume=False):
+    def __init__(self, memory_queue, policy, update_flag, save_model_queue, start_time, save_dir="saves", resume=False):
         self.memory_queue = memory_queue
         self.policy = policy
         self.update_flag = update_flag
+        self.save_model_queue = save_model_queue
         self.save_dir = save_dir
         self.start_time = start_time
         self.memory_size = 0
@@ -311,11 +327,18 @@ class UpdateWorker(multiprocessing.Process):
 
     def run(self):
         while True:
-            if self.update_flag.is_set():
-
+            if not self.save_model_queue.empty():
+                saved_name = self.save_model_queue.get()
+                self.pull()
+                self.save_memory()
+                self.save_model(saved_name)
+            elif self.update_flag.is_set():
                 self.update()
             else:
                 self.pull()
+
+    def save_model(self, saved_name):
+        torch.save(self.policy.state_dict(), saved_name)
 
     def pull(self):
         self.policy.pull_from_queue()
@@ -353,8 +376,8 @@ class UpdateWorker(multiprocessing.Process):
         self.memory_size = len(self.policy.memory)
 
     def update(self):
-        # if not self.update_flag.is_set():
-        # self.update_flag.wait()
+        # if not self.save_model_queue.is_set():
+        # self.save_model_queue.wait()
         # self.policy.pull_from_queue()
         self.pull()
         self.policy.update_from_memory()
