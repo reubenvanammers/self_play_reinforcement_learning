@@ -76,7 +76,7 @@ class MCTreeSearch:
             self,
             evaluator,
             env_gen,
-            memory_queue,
+            memory_queue=None,
             iterations=100,
             temperature_cutoff=5,
             batch_size=64,
@@ -108,6 +108,7 @@ class MCTreeSearch:
         self.set_root(MCNode(state=base_state, v=v, player=player))
         self.root_node.create_children(probs, self.env.valid_moves())
         self.moves_played = 0
+        self.temp_memory=[]
 
         return base_state
 
@@ -324,12 +325,15 @@ class ConvNetTicTacToe(nn.Module):
         # Policy Head
         self.conv_policy = nn.Conv2d(64, 2, kernel_size=1, stride=1)
         self.policy_bn = nn.BatchNorm2d(2)
+        self.policy_dropout = nn.Dropout(p=0.5)
         self.linear_policy = nn.Linear(linear_input_size * 2, action_size)
         self.softmax = nn.Softmax()
 
         # Value head
         self.conv_value = nn.Conv2d(64, 1, kernel_size=1, stride=1)
         self.value_bn = nn.BatchNorm2d(1)
+        self.value_dropout = nn.Dropout(p=0.5)
+
         self.fc_value = nn.Linear(linear_input_size * 1, 256)
         self.linear_output = nn.Linear(256, 1)
 
@@ -403,12 +407,14 @@ class ConvNetConnect4(nn.Module):
         # Policy Head
         self.conv_policy = nn.Conv2d(64, 2, kernel_size=1, stride=1)
         self.policy_bn = nn.BatchNorm2d(2)
+        self.policy_dropout = nn.Dropout(p=0.5)
         self.linear_policy = nn.Linear(linear_input_size * 2, action_size)
         self.softmax = nn.Softmax()
 
         # Value head
         self.conv_value = nn.Conv2d(64, 1, kernel_size=1, stride=1)
         self.value_bn = nn.BatchNorm2d(1)
+        self.value_dropout = nn.Dropout(p=0.5)
         self.fc_value = nn.Linear(linear_input_size * 1, 256)
         self.linear_output = nn.Linear(256, 1)
 
@@ -443,11 +449,13 @@ class ConvNetConnect4(nn.Module):
         # x = x.view(x.size(0), -1)
 
         policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
-        policy = F.dropout(policy, p=0.3, training=True)  # change training method
+        policy = self.policy_dropout(policy)
+        # policy = F.dropout(policy, p=0.3, training=True)  # change training method
         policy = self.softmax(self.linear_policy(policy))
 
         value = F.leaky_relu(self.value_bn(self.conv_value(x))).view(x.size(0), -1)
-        value = F.dropout(value, p=0.3, training=True)  # change training method
+        value = self.value_dropout(value)
+        # value = F.dropout(value, p=0.3, training=True)  # change training method
         value = F.leaky_relu(self.fc_value(value))
         value = torch.tanh(self.linear_output(value))
 
