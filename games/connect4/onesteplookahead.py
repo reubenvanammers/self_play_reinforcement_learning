@@ -28,7 +28,6 @@ class OnestepLookahead:
         a = random.choice(possible_moves)
         return a
 
-
     def load_state_dict(self, *args, **kwargs):
         pass
 
@@ -49,7 +48,7 @@ class OnestepLookahead:
     def train(self, train_state):
         pass
 
-    def reset(self):
+    def reset(self, player=None):
         self.env.reset()
 
     @property

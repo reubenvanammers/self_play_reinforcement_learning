@@ -117,17 +117,6 @@ class MCTreeSearch:
     def __call__(self, s):  # not using player
         move = self.search_and_play()
         return move
-        # if np.random.rand() < self.epsilon:
-        #     possible_moves = [i for i, move in enumerate(self.q.env.valid_moves()) if move]
-        #     a = random.choice(possible_moves)
-        # else:
-        #     # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
-        #     weights = self.q(s).detach().cpu().numpy()  # TODO maybe do this with tensors
-        #     mask = (
-        #                    -1000000000 * ~np.array(self.q.env.valid_moves())
-        #            ) + 1  # just a really big negative number? is quite hacky
-        #     a = np.argmax(weights + mask)
-        # return a
 
     def search_and_play(self):
         final_temp = 1
@@ -137,9 +126,6 @@ class MCTreeSearch:
         return move
 
     def play_action(self, action, player):
-        # self.prune(action)
-        # if self.root_node.is_root: #TODO this shouldnt be necessary
-        #     self.root_node.player = player
         self.set_node(action)
 
     def set_root(self, node):

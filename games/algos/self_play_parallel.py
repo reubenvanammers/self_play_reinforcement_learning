@@ -32,22 +32,22 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class SelfPlayScheduler:
     def __init__(
-        self,
-        policy_gen,
-        opposing_policy_gen,
-        env_gen,
-        policy_args=[],
-        policy_kwargs={},
-        opposing_policy_args=[],
-        opposing_policy_kwargs={},
-        swap_sides=True,
-        save_dir="saves",
-        epoch_length=500,
-        initial_games=64,
-        self_play=False,
-        evaluation_policy_gen=None,
-        evaluation_policy_args=[],
-        evaluation_policy_kwargs={},
+            self,
+            policy_gen,
+            opposing_policy_gen,
+            env_gen,
+            policy_args=[],
+            policy_kwargs={},
+            opposing_policy_args=[],
+            opposing_policy_kwargs={},
+            swap_sides=True,
+            save_dir="saves",
+            epoch_length=500,
+            initial_games=64,
+            self_play=False,
+            evaluation_policy_gen=None,
+            evaluation_policy_args=[],
+            evaluation_policy_kwargs={},
     ):
         self.policy_gen = policy_gen
         self.policy_args = policy_args
@@ -65,6 +65,7 @@ class SelfPlayScheduler:
         self.evaluation_policy_gen = evaluation_policy_gen
         self.evaluation_policy_args = evaluation_policy_args
         self.evaluation_policy_kwargs = evaluation_policy_kwargs
+        self.evaluation_games = 100
 
         self.start_time = datetime.datetime.now().isoformat()
         os.mkdir(os.path.join(save_dir, self.start_time))
@@ -147,7 +148,7 @@ class SelfPlayScheduler:
             for i in range(self.epoch_length):
                 swap_sides = not i % 2 == 0
                 self.task_queue.put(
-                    {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name,}
+                    {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name, }
                 )
             self.task_queue.join()
 
@@ -163,14 +164,15 @@ class SelfPlayScheduler:
             self.evaluate_policy(epoch)
             # Do some evaluation?
 
-    def evaluate_policy(self, epoch):
-        logging.info("evaluation policy")
-        reward_list = []
+    def run_evaluation_games(self):
+        for i in range(self.evaluation_games):
+            swap_sides = not i % 2 == 0
+            self.task_queue.put(
+                {"play": {"swap_sides": swap_sides, "update": False}, 'evaluate': True}
+            )
+        self.task_queue.join()
 
-        while not self.result_queue.empty():
-            reward_list.append(self.result_queue.get())
-
-        #             print(f"player {r if r == 1 else 2} won")
+    def parse_results(self, reward_list):
         win_percent = sum(1 if r["reward"] > 0 else 0 for r in reward_list) / len(reward_list) * 100
         wins = len([i["reward"] for i in reward_list if i["reward"] == 1])
         draws = len([i["reward"] for i in reward_list if i["reward"] == 0])
@@ -188,33 +190,59 @@ class SelfPlayScheduler:
 
         total_rewards = np.sum([r["reward"] for r in reward_list])
         print(f"total rewards are {total_rewards}")
+        return total_rewards
+
+    def evaluate_policy(self, epoch):
+        logging.info("evaluation policy")
+        reward_list = []
+
+        while not self.result_queue.empty():
+            reward_list.append(self.result_queue.get())
+
+
+
+        total_rewards = self.parse_results(reward_list)
+
+        if self.self_play:
+            reward_list = []
+            print("Running evaluation games")
+            self.run_evaluation_games()
+            while not self.result_queue.empty():
+                reward_list.append(self.result_queue.get())
+            print("Evaluation games are: \n")
+            total_rewards = self.parse_results(reward_list)
+
+
         self.scheduler.step(total_rewards)
         print(f"epoch is {epoch}")
         self.writer.add_scalar("total_reward", total_rewards, epoch * self.epoch_length)
+
+
+
 
         return reward_list
 
 
 class SelfPlayWorker(multiprocessing.Process):
     def __init__(
-        self,
-        task_queue,
-        memory_queue,
-        result_queue,
-        env_gen,
-        policy_gen,
-        opposing_policy_gen,
-        start_time,
-        policy_args=[],
-        policy_kwargs={},
-        opposing_policy_args=[],
-        opposing_policy_kwargs={},
-        save_dir="save_dir",
-        resume=False,
-        self_play=False,
-        evaluation_policy_gen=None,
-        evaluation_policy_args=[],
-        evaluation_policy_kwargs={},
+            self,
+            task_queue,
+            memory_queue,
+            result_queue,
+            env_gen,
+            policy_gen,
+            opposing_policy_gen,
+            start_time,
+            policy_args=[],
+            policy_kwargs={},
+            opposing_policy_args=[],
+            opposing_policy_kwargs={},
+            save_dir="save_dir",
+            resume=False,
+            self_play=False,
+            evaluation_policy_gen=None,
+            evaluation_policy_args=[],
+            evaluation_policy_kwargs={},
     ):
         self.env = env_gen()
         # opposing_policy_kwargs =copy.deepcopy(opposing_policy_kwargs) #TODO make a longer term solutions
@@ -298,10 +326,10 @@ class SelfPlayWorker(multiprocessing.Process):
 
                 episode_args = task["play"]
                 self.play_episode(**episode_args)
+                self.task_queue.task_done()
             except Exception as e:
                 print(str(e))
                 self.task_queue.task_done()
-            self.task_queue.task_done()
 
     def play_episode(self, swap_sides=False, update=True):
 
@@ -357,7 +385,7 @@ class SelfPlayWorker(multiprocessing.Process):
 
 class UpdateWorker(multiprocessing.Process):
     def __init__(
-        self, memory_queue, policy, update_flag, save_model_queue, start_time, save_dir="saves", resume=False,
+            self, memory_queue, policy, update_flag, save_model_queue, start_time, save_dir="saves", resume=False,
     ):
         self.memory_queue = memory_queue
         self.policy = policy

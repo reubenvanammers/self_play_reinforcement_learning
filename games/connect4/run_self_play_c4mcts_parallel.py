@@ -41,10 +41,18 @@ def run_training():
                                       memory_size=50000,
                                       env_gen=Connect4Env,
                                       evaluator=network)
+
+        evaluation_policy_gen = OnestepLookahead
+        evaluation_policy_args = []
+        evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
+
     else:
         opposing_policy_gen = OnestepLookahead
         opposing_policy_args = []
         opposing_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
+        evaluation_policy_gen = None
+        evaluation_policy_args = []
+        evaluation_policy_kwargs = {}
 
     # policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
 
@@ -56,9 +64,13 @@ def run_training():
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
-        initial_games=20,
-        epoch_length=50,
+        initial_games=500,
+        epoch_length=500,
         save_dir=save_dir,
+        self_play=self_play,
+        evaluation_policy_gen=evaluation_policy_gen,
+        evaluation_policy_args=evaluation_policy_args,
+        evaluation_policy_kwargs=evaluation_policy_kwargs
     )
 
     # policy = MCTreeSearch(ConvNetTicTacToe(3, 3, 9), TicTacToeEnv, temperature_cutoff=1, iterations=200, min_memory=64)
