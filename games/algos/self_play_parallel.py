@@ -129,7 +129,7 @@ class SelfPlayScheduler:
         )
 
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            policy.optim, "max", patience=50, factor=0.2, verbose=True, min_lr=0.00001
+            policy.optim, "max", patience=20, factor=0.2, verbose=True, min_lr=0.00001
         )
 
         update_worker.start()
@@ -303,7 +303,7 @@ class SelfPlayWorker(multiprocessing.Process):
         # self.policy.load_state_dict()
         self.policy.load_state_dict(torch.load(recent_file), target=True)
         if self.self_play:
-            self.opposing_policy.load_state_dict(torch.load(recent_file), target=True)
+            self.opposing_policy_train.load_state_dict(torch.load(recent_file), target=True)
         # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
         # self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
 
