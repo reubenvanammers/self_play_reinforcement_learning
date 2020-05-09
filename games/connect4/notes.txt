@@ -1,13 +1,17 @@
 Think about using rollout n numbers vs probablibiteis - deals with nonzero tempereature better
 add better logging for multiprocessing
 change convolutional layer - test 4 or 5 size
-add dropout - test
+add dropout - test done
 add training/evaluation/exploration modes?
-add lr to mcts args
+add lr to mcts args done
 allow changing of buffer size when loading
 debug model - show loss?
 increase training window slowly? maybe
-add dirichlet noise
+add dirichlet noise # done? might want to remove for evaluation games
+
+add position deduplication?
+
+
 
 Will need to change cross entropy - see if there is a better alternative
 Maybe run supervised learning on sample games to debug?

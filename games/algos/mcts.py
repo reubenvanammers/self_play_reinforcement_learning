@@ -17,11 +17,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
-    def __init__(self, state=None, n=0, w=0, p=0, parent=None, cpuct=4, player=1, v=None, valid=True):
+    def __init__(self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True):
         self.state = state
         self.n = n
         self.w = w
         self.p = p
+        self.x = x  # Dirichlet parameter - 0 means no effect, 1 means completely dirchlet
+
+        self.noise_active = False
+        self.p_noise = 0
+
+        self.alpha = 1  # Dirichlet parameter
         self.parent = parent
         self.player = -1 * self.parent.player if self.parent else player
         self.valid = valid  # Whether an action is valid - don't play moves that you cannot
@@ -30,14 +36,31 @@ class MCNode(NodeMixin):
         self.active_root = False
         self.v = v
 
+    def add_noise(self):  # Adds noise to childrens p value
+        dirichlet_distribution = np.random.dirichlet([self.alpha] * len(self.children))
+        for i, c in enumerate(self.children):
+            c.noise_active = True
+            c.p_noise = dirichlet_distribution[i]
+
+    def remove_noise(self):
+        for i, c in enumerate(self.children):
+            c.noise_active = False
+
     @property
     def q(self):  # Attractiveness of a node from player ones pespective - average of downstream results
         return self.w / self.n if self.n else 0
         # return self.w / self.n if self.n else self.p
 
+    @property  # effective p - p if noise isn't active, otherwise adds noise factor
+    def p_eff(self):
+        if self.noise_active:
+            return self.p_noise * self.x + self.p * (1 - self.x)
+        else:
+            return self.p
+
     @property
     def u(self):  # Factor to encourage exploration - higher values of cpuct increase exploration
-        return self.cpuct * self.p * np.sqrt(self.parent.n) / (1 + self.n)
+        return self.cpuct * self.p_eff * np.sqrt(self.parent.n) / (1 + self.n)
 
     @property
     def select_prob(self):  # TODO check if this works? might need to be ther other way round
@@ -175,7 +198,7 @@ class MCTreeSearch:
 
     def loss(self, batch):
         batch_t = Move(*zip(*batch))  # transposed batch
-        s, a, actual_val, tree_probs = batch_t
+        s, _, actual_val, tree_probs = batch_t
         s_batch = torch.stack(s)
         # a_batch = torch.stack(a)
         # predict_val_batch = torch.stack(predict_val)
@@ -215,8 +238,8 @@ class MCTreeSearch:
         self.optim.step()
 
     def play(self, temp=0.05):
-        if self.evaluating:
-            temp = temp / 2  # More likely to choose higher visited nodes
+        if self.evaluating:  # Might want to just make this greedy
+            temp = temp / 20  # More likely to choose higher visited nodes
 
         play_probs = [child.play_prob(temp) for child in self.root_node.children]
         play_probs = play_probs / sum(play_probs)
@@ -259,6 +282,7 @@ class MCTreeSearch:
         return child_node, v
 
     def search(self):
+        self.root_node.add_noise() # Might want to remove this in evaluation?
         for i in range(self.iterations):
             node = self.root_node
             while True:
@@ -275,6 +299,7 @@ class MCTreeSearch:
                     break
                 else:
                     node = node.children[action]
+        self.root_node.remove_noise()  # Don't think this is necessary?
 
     def load_state_dict(self, state_dict, target=False):
         self.evaluator.load_state_dict(state_dict)
@@ -374,7 +399,8 @@ class ConvNetTicTacToe(nn.Module):
 class ConvNetConnect4(nn.Module):
     def __init__(self, width=7, height=6, action_size=7, default_kernel_size=3):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)  # Deal with padding?
+        self.conv1 = nn.Conv2d(3, 128, kernel_size=default_kernel_size, stride=1, padding=1,
+                               bias=True)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(128)
 
         self.conv2 = nn.Conv2d(128, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
