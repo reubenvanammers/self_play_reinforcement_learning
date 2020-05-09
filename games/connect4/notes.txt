@@ -6,6 +6,8 @@ add training/evaluation/exploration modes?
 add lr to mcts args
 allow changing of buffer size when loading
 debug model - show loss?
+increase training window slowly? maybe
+add dirichlet noise
 
 Will need to change cross entropy - see if there is a better alternative
 Maybe run supervised learning on sample games to debug?

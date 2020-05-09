@@ -129,7 +129,7 @@ class SelfPlayScheduler:
         )
 
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            policy.optim, "max", patience=20, factor=0.2, verbose=True, min_lr=0.00001
+            policy.optim, "max", patience=5, factor=0.2, verbose=True, min_lr=0.00001
         )
 
         update_worker.start()
@@ -199,8 +199,6 @@ class SelfPlayScheduler:
         while not self.result_queue.empty():
             reward_list.append(self.result_queue.get())
 
-
-
         total_rewards = self.parse_results(reward_list)
 
         if self.self_play:
@@ -212,13 +210,9 @@ class SelfPlayScheduler:
             print("Evaluation games are: \n")
             total_rewards = self.parse_results(reward_list)
 
-
         self.scheduler.step(total_rewards)
         print(f"epoch is {epoch}")
         self.writer.add_scalar("total_reward", total_rewards, epoch * self.epoch_length)
-
-
-
 
         return reward_list
 
@@ -248,7 +242,11 @@ class SelfPlayWorker(multiprocessing.Process):
         # opposing_policy_kwargs =copy.deepcopy(opposing_policy_kwargs) #TODO make a longer term solutions
         policy_kwargs["memory_queue"] = memory_queue
         self.policy = policy_gen(*policy_args, **policy_kwargs)
+        self.policy.train(False)
+
         self.opposing_policy_train = opposing_policy_gen(*opposing_policy_args, **opposing_policy_kwargs)
+
+        self.opposing_policy_train.train(False)
         # self.opposing_policy.env = self.env
         self.opposing_policy_train.env = env_gen()  # TODO: make this a more stabel solution -
 
@@ -258,6 +256,7 @@ class SelfPlayWorker(multiprocessing.Process):
             else None
         )
         if self.opposing_policy_evaluate:
+            self.opposing_policy_evaluate.train(False)
             self.opposing_policy_evaluate.env = env_gen()  # TODO: make this a more stabel solution -
 
         self.opposing_policy = self.opposing_policy_train
@@ -320,9 +319,11 @@ class SelfPlayWorker(multiprocessing.Process):
                 if evaluate:
                     self.opposing_policy = self.opposing_policy_evaluate
                     self.policy.train(False)
+                    self.policy.evaluate(True)
                 else:
                     self.opposing_policy = self.opposing_policy_train
-                    self.policy.train(True)
+                    self.policy.train(False)
+                    self.policy.evaluate(False)
 
                 episode_args = task["play"]
                 self.play_episode(**episode_args)
@@ -394,6 +395,7 @@ class UpdateWorker(multiprocessing.Process):
         self.save_dir = save_dir
         self.start_time = start_time
         self.memory_size = 0
+        self.policy.train()
 
         if resume:
             self.load_memory(prev_run=True)

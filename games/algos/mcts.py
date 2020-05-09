@@ -100,6 +100,7 @@ class MCTreeSearch:
         self.temperature_cutoff = temperature_cutoff
         self.actions = self.env.action_space.n
 
+        self.evaluating = False
 
         self.lr = lr
         self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=lr)
@@ -214,9 +215,12 @@ class MCTreeSearch:
         self.optim.step()
 
     def play(self, temp=0.05):
+        if self.evaluating:
+            temp = temp / 2  # More likely to choose higher visited nodes
+
         play_probs = [child.play_prob(temp) for child in self.root_node.children]
         play_probs = play_probs / sum(play_probs)
-        move_probs = [child.p for child in self.root_node.children]
+        # move_probs = [child.p for child in self.root_node.children]
 
         action = np.random.choice(self.actions, p=play_probs)
         # self.prune(action) #Do this in the self play step
@@ -288,8 +292,13 @@ class MCTreeSearch:
         # No target net so pass
         pass
 
-    def train(self, train_state):
+    def train(self, train_state=True):
+        # Sets training true/false
         return self.evaluator.train(train_state)
+
+    def evaluate(self, evaluate_state=False):
+        # like train - sets evaluate state
+        self.evaluating = evaluate_state
 
 
 class ConvNetTicTacToe(nn.Module):
@@ -363,30 +372,30 @@ class ConvNetTicTacToe(nn.Module):
 
 
 class ConvNetConnect4(nn.Module):
-    def __init__(self, width=7, height=6, action_size=7):
+    def __init__(self, width=7, height=6, action_size=7, default_kernel_size=3):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1, bias=True)  # Deal with padding?
+        self.conv1 = nn.Conv2d(3, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(128)
 
-        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
         self.bn2 = nn.BatchNorm2d(128)
 
-        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
         self.bn2 = nn.BatchNorm2d(128)
 
-        self.conv3 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.conv3 = nn.Conv2d(128, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
         self.bn3 = nn.BatchNorm2d(128)
 
-        self.conv4 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.conv4 = nn.Conv2d(128, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
         self.bn4 = nn.BatchNorm2d(128)
 
-        self.conv5 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
+        self.conv5 = nn.Conv2d(128, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
         self.bn5 = nn.BatchNorm2d(128)
 
-        self.conv6 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1, bias=True)
+        self.conv6 = nn.Conv2d(128, 64, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
         self.bn6 = nn.BatchNorm2d(64)
 
-        def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
+        def conv2d_size_out(size, kernel_size=default_kernel_size, stride=1, padding=1):
             return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
 
         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)

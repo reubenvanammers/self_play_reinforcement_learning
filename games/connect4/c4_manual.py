@@ -45,6 +45,7 @@ def manual_play():
 
     recent_file = max(saves)
     opposing_policy.load_state_dict(torch.load(recent_file), target=True)
+    opposing_policy.evaluate(True)
 
     manual = ManualPlay(env, opposing_policy)
     manual.play()

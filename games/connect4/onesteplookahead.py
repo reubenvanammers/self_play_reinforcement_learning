@@ -45,7 +45,10 @@ class OnestepLookahead:
     def update_target_net(self):
         pass
 
-    def train(self, train_state):
+    def train(self, train_state=False):
+        pass
+
+    def evaluate(self,evaluate_state=False):
         pass
 
     def reset(self, player=None):

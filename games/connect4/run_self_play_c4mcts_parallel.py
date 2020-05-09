@@ -28,7 +28,7 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(temperature_cutoff=3, iterations=200, min_memory=20000,
+    policy_kwargs = dict(lr=0.001, iterations=200, min_memory=20000,
                          memory_size=50000,
                          env_gen=Connect4Env,
                          evaluator=network)
@@ -37,7 +37,7 @@ def run_training():
     if self_play:
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
-        opposing_policy_kwargs = dict(temperature_cutoff=3, iterations=200, min_memory=20000,
+        opposing_policy_kwargs = dict(lr=0.001, iterations=200, min_memory=20000,
                                       memory_size=50000,
                                       env_gen=Connect4Env,
                                       evaluator=network)
