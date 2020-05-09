@@ -83,6 +83,7 @@ class MCTreeSearch:
             memory_size=200000,
             min_memory=20000,
             update_nn=True,
+            lr=0.001
     ):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
@@ -99,7 +100,9 @@ class MCTreeSearch:
         self.temperature_cutoff = temperature_cutoff
         self.actions = self.env.action_space.n
 
-        self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=0.001)
+
+        self.lr = lr
+        self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=lr)
         self.batch_size = batch_size
 
     def reset(self, player=1):
@@ -108,7 +111,7 @@ class MCTreeSearch:
         self.set_root(MCNode(state=base_state, v=v, player=player))
         self.root_node.create_children(probs, self.env.valid_moves())
         self.moves_played = 0
-        self.temp_memory=[]
+        self.temp_memory = []
 
         return base_state
 
