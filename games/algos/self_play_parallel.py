@@ -4,7 +4,6 @@ import math
 import os
 from os import listdir
 from os.path import isfile, join
-
 # import pickle
 from copy import deepcopy
 import numpy as np
@@ -113,7 +112,7 @@ class SelfPlayScheduler:
 
         policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue)
 
-        save_model_queue = multiprocessing.Queue()
+        save_model_queue = multiprocessing.JoinableQueue()
 
         update_flag = multiprocessing.Event()
         update_flag.clear()
@@ -162,6 +161,7 @@ class SelfPlayScheduler:
             update_flag.clear()
             save_model_queue.put(saved_model_name)
             self.evaluate_policy(epoch)
+            save_model_queue.join()
             # Do some evaluation?
 
     def run_evaluation_games(self):
@@ -311,7 +311,7 @@ class SelfPlayWorker(multiprocessing.Process):
             task = self.task_queue.get()
             try:
                 if task.get("saved_name") and task.get("saved_name") != self.current_model_file:
-                    time.sleep(5)
+                    # time.sleep(5)
                     print("loading model")
                     self.load_model()
 
@@ -329,6 +329,7 @@ class SelfPlayWorker(multiprocessing.Process):
                 self.play_episode(**episode_args)
                 self.task_queue.task_done()
             except Exception as e:
+                # traceback.print_exc()
                 print(str(e))
                 self.task_queue.task_done()
 
@@ -407,8 +408,10 @@ class UpdateWorker(multiprocessing.Process):
             if not self.save_model_queue.empty():
                 saved_name = self.save_model_queue.get()
                 self.pull()
+                # self.deduplicate_memory()
                 self.save_memory()
                 self.save_model(saved_name)
+                self.save_model_queue.task_done()
             elif self.update_flag.is_set():
                 self.update()
             else:
@@ -425,6 +428,11 @@ class UpdateWorker(multiprocessing.Process):
             self.save_memory()
         self.memory_size = new_memory_size
         time.sleep(1)
+
+    def deduplicate_memory(self):
+        print("deduplicating memory")
+        self.policy.deduplicate()
+        print("deduplication finished")
 
     def save_memory(self):
         logging.info("saving memory")

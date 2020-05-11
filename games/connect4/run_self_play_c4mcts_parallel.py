@@ -64,8 +64,8 @@ def run_training():
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
-        initial_games=20,
-        epoch_length=30,
+        initial_games=100,
+        epoch_length=50,
         save_dir=save_dir,
         self_play=self_play,
         evaluation_policy_gen=evaluation_policy_gen,
@@ -78,7 +78,7 @@ def run_training():
     #     QConvTicTacToe(env), 1
     # )  # Make it not act greedily for the moment- exploration Acts greedily
     # self_play = SelfPlay(policy, opposing_policy, env=env, swap_sides=True)
-    self_play.train_model(100, resume_memory=False, resume_model=False, num_workers=2)
+    self_play.train_model(100, resume_memory=False, resume_model=False)
     print("Training Done")
 
     saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())

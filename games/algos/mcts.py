@@ -10,7 +10,7 @@ from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
-Move = namedtuple("Move", ("state", "action", "actual_val", "tree_probs"), )
+Move = namedtuple("Move", ("state", "actual_val", "tree_probs"), )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -191,14 +191,14 @@ class MCTreeSearch:
     def push_to_queue(self, done, r):
         if done:
             for experience in self.temp_memory:
-                experience = experience._replace(actual_val=torch.tensor(r).to(device))
+                experience = experience._replace(actual_val=torch.tensor(r).float().to(device))
                 # experience.actual_val =
                 self.memory_queue.put(experience)
             self.temp_memory = []
 
     def loss(self, batch):
         batch_t = Move(*zip(*batch))  # transposed batch
-        s, _, actual_val, tree_probs = batch_t
+        s, actual_val, tree_probs = batch_t
         s_batch = torch.stack(s)
         # a_batch = torch.stack(a)
         # predict_val_batch = torch.stack(predict_val)
@@ -253,11 +253,11 @@ class MCTreeSearch:
         self.temp_memory.append(
             Move(
                 torch.tensor(self.root_node.state).to(device),
-                torch.tensor(action).to(device),
+                # torch.tensor(action).to(devi      ce),
                 # torch.tensor(self.root_node.v).to(device),
                 None,
                 # torch.tensor(move_probs).to(device),
-                torch.tensor(play_probs).to(device),
+                torch.tensor(play_probs).float().to(device),
             )
         )
         return action
@@ -282,7 +282,7 @@ class MCTreeSearch:
         return child_node, v
 
     def search(self):
-        self.root_node.add_noise() # Might want to remove this in evaluation?
+        self.root_node.add_noise()  # Might want to remove this in evaluation?
         for i in range(self.iterations):
             node = self.root_node
             while True:
@@ -316,6 +316,9 @@ class MCTreeSearch:
     def update_target_net(self):
         # No target net so pass
         pass
+
+    def deduplicate(self):
+        self.memory.deduplicate('state', ['actual_val', 'tree_probs'], Move)
 
     def train(self, train_state=True):
         # Sets training true/false

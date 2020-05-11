@@ -1,3 +1,5 @@
+Need joinable queue for deduplication - can take some time?
+
 Think about using rollout n numbers vs probablibiteis - deals with nonzero tempereature better
 add better logging for multiprocessing
 change convolutional layer - test 4 or 5 size
