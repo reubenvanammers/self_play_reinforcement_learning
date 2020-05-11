@@ -1,5 +1,7 @@
 Need joinable queue for deduplication - can take some time?
 
+use apex - move optimizer out of mcts and pass directly
+
 Think about using rollout n numbers vs probablibiteis - deals with nonzero tempereature better
 add better logging for multiprocessing
 change convolutional layer - test 4 or 5 size

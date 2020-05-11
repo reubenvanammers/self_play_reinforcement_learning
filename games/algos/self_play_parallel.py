@@ -4,6 +4,7 @@ import math
 import os
 from os import listdir
 from os.path import isfile, join
+
 # import pickle
 from copy import deepcopy
 import numpy as np
@@ -19,14 +20,16 @@ import multiprocessing_logging
 logging.basicConfig()
 multiprocessing_logging.install_mp_handler()
 
-# if torch.cuda.is_available():is_available
-#     map_location = lambda storage, loc: storage.cuda()
-# else:
-#     # map_location = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#     map_location='cpu'
-
 # save_dir = "saves/temp"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+try:
+    from apex import amp
+
+    print("Apex available")
+    APEX_AVAILABLE = True
+except ModuleNotFoundError:
+    APEX_AVAILABLE = False
+    print("apex not available")
 
 
 class SelfPlayScheduler:
@@ -47,6 +50,7 @@ class SelfPlayScheduler:
             evaluation_policy_gen=None,
             evaluation_policy_args=[],
             evaluation_policy_kwargs={},
+            lr=0.001,
     ):
         self.policy_gen = policy_gen
         self.policy_args = policy_args
@@ -60,6 +64,7 @@ class SelfPlayScheduler:
         self.save_dir = save_dir
         self.epoch_length = epoch_length
         self.self_play = self_play
+        self.lr = lr
 
         self.evaluation_policy_gen = evaluation_policy_gen
         self.evaluation_policy_args = evaluation_policy_args
@@ -83,6 +88,15 @@ class SelfPlayScheduler:
     def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None):
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.policy.optim, 'max', patience=10, factor=0.2,
         #                                                             verbose=True)
+
+        evaluator = self.policy_kwargs["evaluator"]  # TODO - fix make nicer
+        optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
+
+        if APEX_AVAILABLE:
+            opt_level = "O1"
+            evaluator, optim = amp.initialize(evaluator, optim, opt_level=opt_level)
+
+        self.policy_kwargs["evaluator"] = evaluator
 
         num_workers = num_workers or multiprocessing.cpu_count()
         player_workers = [
@@ -110,7 +124,7 @@ class SelfPlayScheduler:
         for w in player_workers:
             w.start()
 
-        policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue)
+        policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue, optim=optim)
 
         save_model_queue = multiprocessing.JoinableQueue()
 
@@ -167,9 +181,7 @@ class SelfPlayScheduler:
     def run_evaluation_games(self):
         for i in range(self.evaluation_games):
             swap_sides = not i % 2 == 0
-            self.task_queue.put(
-                {"play": {"swap_sides": swap_sides, "update": False}, 'evaluate': True}
-            )
+            self.task_queue.put({"play": {"swap_sides": swap_sides, "update": False}, "evaluate": True})
         self.task_queue.join()
 
     def parse_results(self, reward_list):
@@ -217,7 +229,76 @@ class SelfPlayScheduler:
         return reward_list
 
 
-class SelfPlayWorker(multiprocessing.Process):
+class Worker(multiprocessing.Process):
+    def load_model(self, prev_run=False):
+        logging.info("loading model")
+
+        if prev_run:
+            folders = [
+                join(self.save_dir, f)
+                for f in listdir(os.path.join(self.save_dir))
+                if not isfile(join(self.save_dir, f)) and f != self.start_time
+            ]
+        else:
+            folders = [
+                join(self.save_dir, f)
+                for f in listdir(os.path.join(self.save_dir))
+                if not isfile(join(self.save_dir, f))
+            ]
+        recent_folder = max(folders)
+
+        saves = [
+            join(recent_folder, f)
+            for f in listdir(os.path.join(recent_folder))
+            if isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith("model")
+        ]
+
+        recent_file = max(saves)
+        self.current_model_file = recent_file
+        # self.policy.load_state_dict()
+        self.load_checkpoint(recent_file)
+        # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
+        # self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
+
+    def load_checkpoint(self, recent_file):
+        checkpoint = torch.load(recent_file)
+
+        self.policy.load_state_dict(checkpoint["model"], target=True)
+
+        if self.self_play:
+            self.opposing_policy_train.load_state_dict(checkpoint["model"], target=True)
+
+        if APEX_AVAILABLE:
+            amp.load_state_dict(checkpoint['amp'])
+
+    def load_memory(self, prev_run=False):
+        logging.info("loading memory")
+        if prev_run:
+            folders = [
+                join(self.save_dir, f)
+                for f in listdir(os.path.join(self.save_dir))
+                if not isfile(join(self.save_dir, f)) and f != self.start_time
+            ]
+        else:
+            folders = [
+                join(self.save_dir, f)
+                for f in listdir(os.path.join(self.save_dir))
+                if not isfile(join(self.save_dir, f))
+            ]
+        recent_folder = max(folders)
+
+        saves = [
+            join(recent_folder, f)
+            for f in listdir(os.path.join(recent_folder))
+            if isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith("memory")
+        ]
+        recent_file = max(saves)
+        with open(recent_file, "rb") as f:
+            self.policy.memory = pickle.load(f)
+        self.memory_size = len(self.policy.memory)
+
+
+class SelfPlayWorker(Worker):
     def __init__(
             self,
             task_queue,
@@ -273,38 +354,6 @@ class SelfPlayWorker(multiprocessing.Process):
         super().__init__()
         if resume:
             self.load_model(prev_run=True)
-
-    def load_model(self, prev_run=False):
-        logging.info("loading model")
-
-        if prev_run:
-            folders = [
-                join(self.save_dir, f)
-                for f in listdir(os.path.join(self.save_dir))
-                if not isfile(join(self.save_dir, f)) and f != self.start_time
-            ]
-        else:
-            folders = [
-                join(self.save_dir, f)
-                for f in listdir(os.path.join(self.save_dir))
-                if not isfile(join(self.save_dir, f))
-            ]
-        recent_folder = max(folders)
-
-        saves = [
-            join(recent_folder, f)
-            for f in listdir(os.path.join(recent_folder))
-            if isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith("model")
-        ]
-
-        recent_file = max(saves)
-        self.current_model_file = recent_file
-        # self.policy.load_state_dict()
-        self.policy.load_state_dict(torch.load(recent_file), target=True)
-        if self.self_play:
-            self.opposing_policy_train.load_state_dict(torch.load(recent_file), target=True)
-        # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
-        # self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
 
     def run(self):
         while True:
@@ -385,7 +434,7 @@ class SelfPlayWorker(multiprocessing.Process):
         return self.env.step(a, player=player)
 
 
-class UpdateWorker(multiprocessing.Process):
+class UpdateWorker(Worker):
     def __init__(
             self, memory_queue, policy, update_flag, save_model_queue, start_time, save_dir="saves", resume=False,
     ):
@@ -400,6 +449,9 @@ class UpdateWorker(multiprocessing.Process):
 
         if resume:
             self.load_memory(prev_run=True)
+            self.load_model(prev_run=True)
+
+            ##LOAD MODEL STEP!!!!!!!!!!!!! with amp
 
         super().__init__()
 
@@ -418,7 +470,19 @@ class UpdateWorker(multiprocessing.Process):
                 self.pull()
 
     def save_model(self, saved_name):
-        torch.save(self.policy.state_dict(), saved_name)
+        if APEX_AVAILABLE:
+            checkpoint = {
+                "model": self.policy.state_dict(),
+                # 'optimizer': optimizer.state_dict(),
+                "amp": amp.state_dict(),
+            }
+        else:
+            checkpoint = {
+                "model": self.policy.state_dict(),
+                # 'optimizer': optimizer.state_dict(),
+                # 'amp': amp.state_dict()
+            }
+        torch.save(checkpoint, saved_name)
 
     def pull(self):
         self.policy.pull_from_queue()
@@ -443,32 +507,6 @@ class UpdateWorker(multiprocessing.Process):
         )
         with open(saved_name, "wb") as f:
             pickle.dump(self.policy.memory, f)
-
-    def load_memory(self, prev_run=False):
-        logging.info("loading memory")
-        if prev_run:
-            folders = [
-                join(self.save_dir, f)
-                for f in listdir(os.path.join(self.save_dir))
-                if not isfile(join(self.save_dir, f)) and f != self.start_time
-            ]
-        else:
-            folders = [
-                join(self.save_dir, f)
-                for f in listdir(os.path.join(self.save_dir))
-                if not isfile(join(self.save_dir, f))
-            ]
-        recent_folder = max(folders)
-
-        saves = [
-            join(recent_folder, f)
-            for f in listdir(os.path.join(recent_folder))
-            if isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith("memory")
-        ]
-        recent_file = max(saves)
-        with open(recent_file, "rb") as f:
-            self.policy.memory = pickle.load(f)
-        self.memory_size = len(self.policy.memory)
 
     def update(self):
         # if not self.save_model_queue.is_set():

@@ -12,6 +12,16 @@ from rl_utils.weights import init_weights
 
 Move = namedtuple("Move", ("state", "actual_val", "tree_probs"), )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+try:
+    from apex import amp
+    APEX_AVAILABLE = True
+except ModuleNotFoundError:
+    APEX_AVAILABLE = False
+
+
+
+
 
 
 class MCNode(NodeMixin):
@@ -99,6 +109,7 @@ class MCTreeSearch:
             self,
             evaluator,
             env_gen,
+            optim=None,
             memory_queue=None,
             iterations=100,
             temperature_cutoff=5,
@@ -106,11 +117,11 @@ class MCTreeSearch:
             memory_size=200000,
             min_memory=20000,
             update_nn=True,
-            lr=0.001
     ):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
         self.env_gen = env_gen
+        self.optim = optim
         self.env = env_gen()
         self.root_node = None
         self.reset()
@@ -125,8 +136,6 @@ class MCTreeSearch:
 
         self.evaluating = False
 
-        self.lr = lr
-        self.optim = torch.optim.SGD(self.evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=lr)
         self.batch_size = batch_size
 
     def reset(self, player=1):
@@ -232,9 +241,17 @@ class MCTreeSearch:
         # loss = torch.autograd.Variable(loss,requires_grad=
         #                                True)
         self.optim.zero_grad()
-        loss.backward()
-        for param in self.evaluator.parameters():  # see if this ends up doing anything - should just be relu
-            param.grad.data.clamp_(-1, 1)
+
+        if APEX_AVAILABLE:
+            with amp.scale_loss(loss, self.optim) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
+
+
+
+        # for param in self.evaluator.parameters():  # see if this ends up doing anything - should just be relu
+        #     param.grad.data.clamp_(-1, 1)
         self.optim.step()
 
     def play(self, temp=0.05):
