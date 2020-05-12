@@ -138,6 +138,15 @@ class MCTreeSearch:
 
         self.batch_size = batch_size
 
+
+        if APEX_AVAILABLE and self.optim:
+            opt_level = "O1"
+            self.evaluator, self.optim = amp.initialize(self.evaluator,self.optim,opt_level=opt_level)
+        elif APEX_AVAILABLE:
+            opt_level = "O1"
+            self.evaluator = amp.initialize(self.evaluator,opt_level=opt_level)
+
+
     def reset(self, player=1):
         base_state = self.env.reset()
         probs, v = self.evaluator(base_state)

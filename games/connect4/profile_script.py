@@ -2,7 +2,7 @@ import datetime
 import os
 from os import listdir
 from os.path import isfile, join
-
+import sys
 import torch
 from torch import multiprocessing
 from games.algos.mcts import MCTreeSearch, ConvNetConnect4
@@ -78,12 +78,9 @@ def run_training():
     #     QConvTicTacToe(env), 1
     # )  # Make it not act greedily for the moment- exploration Acts greedily
     # self_play = SelfPlay(policy, opposing_policy, env=env, swap_sides=True)
-    self_play.train_model(5, resume_memory=False, resume_model=False)
+    self_play.train_model(1, resume_memory=False, resume_model=False)
     print("Training Done")
-
-    saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())
-    torch.save(self_play.policy.q.policy_net.state_dict(), saved_name)
-
+    sys.exit()
 
 
 

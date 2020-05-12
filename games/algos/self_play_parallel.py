@@ -92,9 +92,9 @@ class SelfPlayScheduler:
         evaluator = self.policy_kwargs["evaluator"]  # TODO - fix make nicer
         optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
 
-        if APEX_AVAILABLE:
-            opt_level = "O1"
-            evaluator, optim = amp.initialize(evaluator, optim, opt_level=opt_level)
+        # if APEX_AVAILABLE:
+        #     opt_level = "O1"
+        #     evaluator, optim = amp.initialize(evaluator, optim, opt_level=opt_level)
 
         self.policy_kwargs["evaluator"] = evaluator
 
@@ -125,6 +125,7 @@ class SelfPlayScheduler:
             w.start()
 
         policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue, optim=optim)
+        self.policy_kwargs['optim'] = optim
 
         save_model_queue = multiprocessing.JoinableQueue()
 
@@ -133,7 +134,9 @@ class SelfPlayScheduler:
 
         update_worker = UpdateWorker(
             self.memory_queue,
-            policy,
+            policy_gen=self.policy_gen,
+            policy_args=deepcopy(self.policy_args),
+            policy_kwargs=deepcopy(self.policy_kwargs),
             update_flag=update_flag,
             save_model_queue=save_model_queue,
             save_dir=self.save_dir,
@@ -141,7 +144,7 @@ class SelfPlayScheduler:
             start_time=self.start_time,
         )
 
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
             policy.optim, "max", patience=5, factor=0.2, verbose=True, min_lr=0.00001
         )
 
@@ -436,15 +439,21 @@ class SelfPlayWorker(Worker):
 
 class UpdateWorker(Worker):
     def __init__(
-            self, memory_queue, policy, update_flag, save_model_queue, start_time, save_dir="saves", resume=False,
+            self, memory_queue, policy_gen, policy_args, policy_kwargs, update_flag, save_model_queue, start_time,
+            save_dir="saves", resume=False,
     ):
         self.memory_queue = memory_queue
-        self.policy = policy
+        # self.policy = policy
+        self.policy_gen = policy_gen,
+        self.policy_args = policy_args,
+        self.policy_kwargs = policy_kwargs,
         self.update_flag = update_flag
         self.save_model_queue = save_model_queue
         self.save_dir = save_dir
         self.start_time = start_time
         self.memory_size = 0
+
+        self.policy = policy_gen(*policy_args, **policy_kwargs, memory_queue=memory_queue)
         self.policy.train()
 
         if resume:

@@ -1,5 +1,6 @@
 Add loading model for evaluation
 use apex - move optimizer out of mcts and pass directly
+load policy in update script from generator
 profile the script
 add better logging for multiprocessing
 change convolutional layer - test 4 or 5 size
