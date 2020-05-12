@@ -470,7 +470,7 @@ class UpdateWorker(Worker):
         super().__init__()
 
     def run(self):
-        self.policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue)
+        self.policy = self.policy_gen(memory_queue=self.memory_queue,*self.policy_args, **self.policy_kwargs, )
         self.policy.train()
 
         while True:
