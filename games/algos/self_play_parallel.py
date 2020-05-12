@@ -128,8 +128,8 @@ class SelfPlayScheduler:
         for w in player_workers:
             w.start()
 
-        policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue, optim=optim)
-        self.policy_kwargs['optim'] = optim
+        policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue, optim=optim, )
+        self.policy_kwargs["optim"] = optim
 
         save_model_queue = multiprocessing.JoinableQueue()
 
@@ -279,7 +279,7 @@ class Worker(multiprocessing.Process):
             self.opposing_policy_train.load_state_dict(checkpoint["model"], target=True)
 
         if APEX_AVAILABLE:
-            amp.load_state_dict(checkpoint['amp'])
+            amp.load_state_dict(checkpoint["amp"])
 
     def load_memory(self, prev_run=False):
         logging.info("loading memory")
@@ -329,28 +329,20 @@ class SelfPlayWorker(Worker):
             evaluation_policy_args=[],
             evaluation_policy_kwargs={},
     ):
+        self.env_gen = env_gen
         self.env = env_gen()
         # opposing_policy_kwargs =copy.deepcopy(opposing_policy_kwargs) #TODO make a longer term solutions
         policy_kwargs["memory_queue"] = memory_queue
-        self.policy = policy_gen(*policy_args, **policy_kwargs)
-        self.policy.train(False)
 
-        self.opposing_policy_train = opposing_policy_gen(*opposing_policy_args, **opposing_policy_kwargs)
-
-        self.opposing_policy_train.train(False)
-        # self.opposing_policy.env = self.env
-        self.opposing_policy_train.env = env_gen()  # TODO: make this a more stabel solution -
-
-        self.opposing_policy_evaluate = (
-            evaluation_policy_gen(*evaluation_policy_args, **evaluation_policy_kwargs)
-            if evaluation_policy_gen
-            else None
-        )
-        if self.opposing_policy_evaluate:
-            self.opposing_policy_evaluate.train(False)
-            self.opposing_policy_evaluate.env = env_gen()  # TODO: make this a more stabel solution -
-
-        self.opposing_policy = self.opposing_policy_train
+        self.policy_gen = policy_gen
+        self.opposing_policy_gen = opposing_policy_gen
+        self.policy_args = policy_args
+        self.policy_kwargs = policy_kwargs
+        self.opposing_policy_args = opposing_policy_args
+        self.opposing_policy_kwargs = opposing_policy_kwargs
+        self.evaluation_policy_gen = evaluation_policy_gen
+        self.evaluation_policy_args = evaluation_policy_args
+        self.evaluation_policy_kwargs = evaluation_policy_kwargs
 
         self.task_queue = task_queue
         self.memory_queue = memory_queue
@@ -360,12 +352,37 @@ class SelfPlayWorker(Worker):
         self.self_play = self_play
 
         self.current_model_file = None
+        self.resume = resume
 
         super().__init__()
-        if resume:
-            self.load_model(prev_run=True)
+
+    def set_up_policies(self):
+        self.policy = self.policy_gen(*self.policy_args, **self.policy_kwargs)
+        self.policy.train(False)
+
+        self.opposing_policy_train = self.opposing_policy_gen(*self.opposing_policy_args, **self.opposing_policy_kwargs)
+
+        self.opposing_policy_train.train(False)
+        # self.opposing_policy.env = self.env
+        self.opposing_policy_train.env = self.env_gen()  # TODO: make this a more stabel solution -
+
+        self.opposing_policy_evaluate = (
+            self.evaluation_policy_gen(*self.evaluation_policy_args, **self.evaluation_policy_kwargs)
+            if self.evaluation_policy_gen
+            else None
+        )
+        if self.opposing_policy_evaluate:
+            self.opposing_policy_evaluate.train(False)
+            self.opposing_policy_evaluate.env = self.env_gen()  # TODO: make this a more stabel solution -
+
+        self.opposing_policy = self.opposing_policy_train
 
     def run(self):
+
+        self.set_up_policies()  # dont do in init because of global apex
+        if self.resume:
+            self.load_model(prev_run=True)
+
         while True:
             task = self.task_queue.get()
             try:
@@ -446,8 +463,16 @@ class SelfPlayWorker(Worker):
 
 class UpdateWorker(Worker):
     def __init__(
-            self, memory_queue, policy_gen, policy_args, policy_kwargs, update_flag, save_model_queue, start_time,
-            save_dir="saves", resume=False,
+            self,
+            memory_queue,
+            policy_gen,
+            policy_args,
+            policy_kwargs,
+            update_flag,
+            save_model_queue,
+            start_time,
+            save_dir="saves",
+            resume=False,
     ):
         self.memory_queue = memory_queue
         # self.policy = policy
