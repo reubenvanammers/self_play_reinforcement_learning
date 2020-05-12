@@ -10,7 +10,7 @@ from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
-Move = namedtuple("Move", ("state", "actual_val", "tree_probs"),)
+Move = namedtuple("Move", ("state", "actual_val", "tree_probs"), )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
     from apex import amp
@@ -30,7 +30,7 @@ class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
     def __init__(
-        self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True,
+            self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True,
     ):
         self.state = state
         self.n = n
@@ -61,7 +61,7 @@ class MCNode(NodeMixin):
             c.noise_active = False
 
     @property
-    def q(self,):  # Attractiveness of a node from player ones pespective - average of downstream results
+    def q(self, ):  # Attractiveness of a node from player ones pespective - average of downstream results
         return self.w / self.n if self.n else 0
         # return self.w / self.n if self.n else self.p
 
@@ -73,13 +73,13 @@ class MCNode(NodeMixin):
             return self.p
 
     @property
-    def u(self,):  # Factor to encourage exploration - higher values of cpuct increase exploration
+    def u(self, ):  # Factor to encourage exploration - higher values of cpuct increase exploration
         return self.cpuct * self.p_eff * np.sqrt(self.parent.n) / (1 + self.n)
 
     @property
-    def select_prob(self,):  # TODO check if this works? might need to be ther other way round
+    def select_prob(self, ):  # TODO check if this works? might need to be ther other way round
         return (
-            -1 * self.player * self.q + self.u
+                -1 * self.player * self.q + self.u
         )  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
         # return self.player * self.q * self.u
 
@@ -112,17 +112,18 @@ class MCNode(NodeMixin):
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
     def __init__(
-        self,
-        evaluator,
-        env_gen,
-        optim=None,
-        memory_queue=None,
-        iterations=100,
-        temperature_cutoff=5,
-        batch_size=64,
-        memory_size=200000,
-        min_memory=20000,
-        update_nn=True,
+            self,
+            evaluator,
+            env_gen,
+            optim=None,
+            memory_queue=None,
+            iterations=100,
+            temperature_cutoff=5,
+            batch_size=64,
+            memory_size=200000,
+            min_memory=20000,
+            update_nn=True,
+            starting_state_dict=None,
     ):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
@@ -132,6 +133,9 @@ class MCTreeSearch:
         self.root_node = None
         self.reset()
         self.update_nn = update_nn
+        self.starting_state_dict =starting_state_dict
+
+
 
         self.memory_queue = memory_queue
         self.temp_memory = []
@@ -158,6 +162,10 @@ class MCTreeSearch:
         elif APEX_AVAILABLE:
             opt_level = "O1"
             print(vars(amp._amp_state))
+
+        if self.starting_state_dict:
+            print("laoding state dict")
+            self.load_state_dict(self.starting_state_dict['model'])
 
     def reset(self, player=1):
         base_state = self.env.reset()

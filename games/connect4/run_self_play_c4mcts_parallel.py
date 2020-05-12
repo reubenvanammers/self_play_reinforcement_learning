@@ -29,7 +29,7 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,)
+    policy_kwargs = dict(iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network, )
 
     self_play = True
     if self_play:
@@ -39,9 +39,19 @@ def run_training():
             iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,
         )
 
-        evaluation_policy_gen = OnestepLookahead
+        # evaluation_policy_gen = OnestepLookahead
+        # evaluation_policy_args = []
+        # evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
+        opposing_state_dict = torch.load(
+            '/Users/reuben/PycharmProjects/reinforcement_learning/games/connect4/saves__c4mtcs_par/2020-05-12T17:28:34.659107/model-2020-05-12T18:39:28.650785:210')
+
+        evaluation_policy_gen = MCTreeSearch
         evaluation_policy_args = []
-        evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
+        evaluation_policy_kwargs = dict(
+            iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,
+            starting_state_dict=opposing_state_dict
+        )
+
 
     else:
         opposing_policy_gen = OnestepLookahead
@@ -61,8 +71,8 @@ def run_training():
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
-        initial_games=20,
-        epoch_length=10,
+        initial_games=50,
+        epoch_length=200,
         save_dir=save_dir,
         self_play=self_play,
         evaluation_policy_gen=evaluation_policy_gen,

@@ -38,23 +38,23 @@ except ModuleNotFoundError:
 
 class SelfPlayScheduler:
     def __init__(
-        self,
-        policy_gen,
-        opposing_policy_gen,
-        env_gen,
-        policy_args=[],
-        policy_kwargs={},
-        opposing_policy_args=[],
-        opposing_policy_kwargs={},
-        swap_sides=True,
-        save_dir="saves",
-        epoch_length=500,
-        initial_games=64,
-        self_play=False,
-        evaluation_policy_gen=None,
-        evaluation_policy_args=[],
-        evaluation_policy_kwargs={},
-        lr=0.001,
+            self,
+            policy_gen,
+            opposing_policy_gen,
+            env_gen,
+            policy_args=[],
+            policy_kwargs={},
+            opposing_policy_args=[],
+            opposing_policy_kwargs={},
+            swap_sides=True,
+            save_dir="saves",
+            epoch_length=500,
+            initial_games=64,
+            self_play=False,
+            evaluation_policy_gen=None,
+            evaluation_policy_args=[],
+            evaluation_policy_kwargs={},
+            lr=0.001,
     ):
         self.policy_gen = policy_gen
         self.policy_args = policy_args
@@ -131,7 +131,7 @@ class SelfPlayScheduler:
         # policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue, optim=optim, )
         self.policy_kwargs["optim"] = optim
 
-        save_model_queue = multiprocessing.JoinableQueue()
+        update_worker_queue = multiprocessing.JoinableQueue()
 
         update_flag = multiprocessing.Event()
         update_flag.clear()
@@ -142,7 +142,7 @@ class SelfPlayScheduler:
             policy_args=deepcopy(self.policy_args),
             policy_kwargs=deepcopy(self.policy_kwargs),
             update_flag=update_flag,
-            save_model_queue=save_model_queue,
+            update_worker_queue=update_worker_queue,
             save_dir=self.save_dir,
             resume=resume_memory,
             start_time=self.start_time,
@@ -168,7 +168,7 @@ class SelfPlayScheduler:
             for i in range(self.epoch_length):
                 swap_sides = not i % 2 == 0
                 self.task_queue.put(
-                    {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name,}
+                    {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name, }
                 )
             self.task_queue.join()
 
@@ -180,9 +180,12 @@ class SelfPlayScheduler:
             # torch.save(policy.state_dict(), saved_name)  # also save memory
             # [w.load_model() for w in player_workers]
             update_flag.clear()
-            save_model_queue.put(saved_model_name)
-            self.evaluate_policy(epoch)
-            save_model_queue.join()
+            update_worker_queue.put({'saved_name': saved_model_name})
+            reward = self.evaluate_policy(epoch)
+
+            update_worker_queue.join()
+            update_worker_queue.put({'reward': reward})
+
             # Do some evaluation?
 
         update_worker.terminate()
@@ -236,7 +239,7 @@ class SelfPlayScheduler:
         print(f"epoch is {epoch}")
         self.writer.add_scalar("total_reward", total_rewards, epoch * self.epoch_length)
 
-        return reward_list
+        return total_rewards
 
 
 class Worker(multiprocessing.Process):
@@ -310,24 +313,24 @@ class Worker(multiprocessing.Process):
 
 class SelfPlayWorker(Worker):
     def __init__(
-        self,
-        task_queue,
-        memory_queue,
-        result_queue,
-        env_gen,
-        policy_gen,
-        opposing_policy_gen,
-        start_time,
-        policy_args=[],
-        policy_kwargs={},
-        opposing_policy_args=[],
-        opposing_policy_kwargs={},
-        save_dir="save_dir",
-        resume=False,
-        self_play=False,
-        evaluation_policy_gen=None,
-        evaluation_policy_args=[],
-        evaluation_policy_kwargs={},
+            self,
+            task_queue,
+            memory_queue,
+            result_queue,
+            env_gen,
+            policy_gen,
+            opposing_policy_gen,
+            start_time,
+            policy_args=[],
+            policy_kwargs={},
+            opposing_policy_args=[],
+            opposing_policy_kwargs={},
+            save_dir="save_dir",
+            resume=False,
+            self_play=False,
+            evaluation_policy_gen=None,
+            evaluation_policy_args=[],
+            evaluation_policy_kwargs={},
     ):
         self.env_gen = env_gen
         self.env = env_gen()
@@ -382,6 +385,7 @@ class SelfPlayWorker(Worker):
         self.set_up_policies()  # dont do in init because of global apex
         if self.resume:
             self.load_model(prev_run=True)
+
 
         while True:
             task = self.task_queue.get()
@@ -463,16 +467,16 @@ class SelfPlayWorker(Worker):
 
 class UpdateWorker(Worker):
     def __init__(
-        self,
-        memory_queue,
-        policy_gen,
-        policy_args,
-        policy_kwargs,
-        update_flag,
-        save_model_queue,
-        start_time,
-        save_dir="saves",
-        resume=False,
+            self,
+            memory_queue,
+            policy_gen,
+            policy_args,
+            policy_kwargs,
+            update_flag,
+            update_worker_queue,
+            start_time,
+            save_dir="saves",
+            resume=False,
     ):
         self.memory_queue = memory_queue
         # self.policy = policy
@@ -480,7 +484,7 @@ class UpdateWorker(Worker):
         self.policy_args = policy_args
         self.policy_kwargs = policy_kwargs
         self.update_flag = update_flag
-        self.save_model_queue = save_model_queue
+        self.update_worker_queue = update_worker_queue
         self.save_dir = save_dir
         self.start_time = start_time
         self.memory_size = 0
@@ -497,14 +501,25 @@ class UpdateWorker(Worker):
         self.policy = self.policy_gen(memory_queue=self.memory_queue, *self.policy_args, **self.policy_kwargs)
         self.policy.train()
 
+
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
+            self.policy.optim, "max", patience=5, factor=0.2, verbose=True, min_lr=0.00001
+        )
+
+
         while True:
-            if not self.save_model_queue.empty():
-                saved_name = self.save_model_queue.get()
-                self.pull()
-                # self.deduplicate_memory()
-                self.save_memory()
-                self.save_model(saved_name)
-                self.save_model_queue.task_done()
+            if not self.update_worker_queue.empty():
+                task = self.update_worker_queue.get()
+                if task.get('saved_name'):
+                    saved_name = task['saved_name']
+                    self.pull()
+                    # self.deduplicate_memory()
+                    self.save_memory()
+                    self.save_model(saved_name)
+                elif task.get('reward'):
+                    reward = task.get('reward')
+                    self.scheduler.step(reward)
+                self.update_worker_queue.task_done()
             elif self.update_flag.is_set():
                 self.update()
             else:
@@ -550,10 +565,5 @@ class UpdateWorker(Worker):
             pickle.dump(self.policy.memory, f)
 
     def update(self):
-        # if APEX_AVAILABLE:
-        #     amp.load_state_dict(self.policy.state_dict)
-        # if not self.save_model_queue.is_set():
-        # self.save_model_queue.wait()
-        # self.policy.pull_from_queue()
         self.pull()
         self.policy.update_from_memory()
