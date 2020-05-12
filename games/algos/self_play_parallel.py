@@ -27,7 +27,7 @@ try:
 
     if torch.cuda.is_available():
         print("Apex available")
-        APEX_AVAILABLE = True
+        APEX_AVAILABLE = False
     else:
         APEX_AVAILABLE = False
         print("apex not available")

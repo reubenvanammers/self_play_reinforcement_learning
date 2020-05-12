@@ -12,13 +12,12 @@ from rl_utils.weights import init_weights
 
 Move = namedtuple("Move", ("state", "actual_val", "tree_probs"),)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
     from apex import amp
 
     if torch.cuda.is_available():
         print("Apex available")
-        APEX_AVAILABLE = True
+        APEX_AVAILABLE = False
     else:
         APEX_AVAILABLE = False
         print("apex not available")
