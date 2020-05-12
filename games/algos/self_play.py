@@ -18,16 +18,16 @@ class SelfPlay:
     # Given a learning policy, opponent policy , learns by playing opponent and then updating opponents model
     # TODO add evaluation function
     def __init__(
-            self,
-            policy,
-            opposing_policy,
-            env,
-            swap_sides=False,
-            benchmark_policy=None,
-            eps_start=0.3,
-            eps_end=0.01,
-            eps_decay=5000,
-            save_dir="saves",
+        self,
+        policy,
+        opposing_policy,
+        env,
+        swap_sides=False,
+        benchmark_policy=None,
+        eps_start=0.3,
+        eps_end=0.01,
+        eps_decay=5000,
+        save_dir="saves",
     ):
         self.policy = policy
         self.opposing_policy = opposing_policy
@@ -116,7 +116,7 @@ class SelfPlay:
             if episode % 50 == 0 and episode > 0:
                 self.update_target_net()
             if episode % 500 == 0 and episode > 0:
-                saved_name = os.path.join(self.save_dir, datetime.datetime.now().isoformat() + ":" + str(episode))
+                saved_name = os.path.join(self.save_dir, datetime.datetime.now().isoformat() + ":" + str(episode),)
                 torch.save(self.policy.state_dict(), saved_name)
 
     def play_episode(self, swap_sides=False, update=True):

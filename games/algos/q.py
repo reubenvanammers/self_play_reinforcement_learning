@@ -68,7 +68,7 @@ class EpsilonGreedy:
         return self.q.optim
 
     def play_action(self, action, player):
-        self.q.env.step(action,player)
+        self.q.env.step(action, player)
         # pass  # does nothign atm - mostly for the mcts
 
 
@@ -286,7 +286,7 @@ class QConvConnect4(Q):
         self.policy_net.apply(init_weights)
         self.target_net.apply(init_weights)
 
-        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr)
+        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr,)
 
 
 class QConvTicTacToe(Q):
@@ -305,4 +305,4 @@ class QConvTicTacToe(Q):
         #         self.optim = torch.optim.Adam(
         #             self.policy_net.parameters(), weight_decay=weight_decay
         #         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
-        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr)
+        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr,)

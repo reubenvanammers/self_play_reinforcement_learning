@@ -1,5 +1,4 @@
-class ManualPlay():
-
+class ManualPlay:
     def __init__(self, env, opponent):
         self.env = env
         self.opposing_policy = opponent
@@ -13,8 +12,8 @@ class ManualPlay():
         for i in range(100):  # Should be less than this
             s, done, r = self.play_round(s)
             if done:
-                print(f'reward was {r}')
-                play_again = input("Play again (y/n)").lower() == 'y'
+                print(f"reward was {r}")
+                play_again = input("Play again (y/n)").lower() == "y"
                 if play_again:
                     self.play(not swap_sides)
                 else:

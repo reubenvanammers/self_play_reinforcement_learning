@@ -6,13 +6,14 @@ from os.path import isfile, join
 import torch
 from torch import multiprocessing
 from games.algos.mcts import MCTreeSearch, ConvNetConnect4
+
 # from games.algos.q import EpsilonGreedy, QConvConnect4
 from games.connect4.onesteplookahead import OnestepLookahead
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 from games.general.manual import ManualPlay
 
-save_dir = 'saves__c4mtcs_par'
+save_dir = "saves__c4mtcs_par"
 
 
 def manual_play():
@@ -23,18 +24,18 @@ def manual_play():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(temperature_cutoff=3, iterations=400, min_memory=20000,
-                         memory_size=50000,
-                         env_gen=Connect4Env,
-                         evaluator=network)
+    policy_kwargs = dict(
+        temperature_cutoff=3,
+        iterations=400,
+        min_memory=20000,
+        memory_size=50000,
+        env_gen=Connect4Env,
+        evaluator=network,
+    )
 
     opposing_policy = policy_gen(**policy_kwargs)
 
-    folders = [
-        join(save_dir, f)
-        for f in listdir(os.path.join(save_dir))
-        if not isfile(join(save_dir, f))
-    ]
+    folders = [join(save_dir, f) for f in listdir(os.path.join(save_dir)) if not isfile(join(save_dir, f))]
     recent_folder = max(folders)
 
     saves = [

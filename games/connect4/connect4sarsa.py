@@ -15,7 +15,9 @@ from connect4env import Connect4Env, GameOver
 # use rollout/monte carlo tree search
 # might want to deep copy models if possible?
 class Connect4TD:
-    def __init__(self, epsilon=0.1, self_play_update_freq=10, gamma=1, num_iter=10, width=7, height=6):
+    def __init__(
+        self, epsilon=0.1, self_play_update_freq=10, gamma=1, num_iter=10, width=7, height=6,
+    ):
         self.epsilon = epsilon
         self.gamma = gamma
         self.self_play_update_freq = self_play_update_freq

@@ -15,7 +15,7 @@ save_dir = "saves"
 def run_training():
     env = Connect4Env()
     # policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
-    policy = MCTreeSearch(ConvNetConnect4(), Connect4Env, temperature_cutoff=3, iterations=200, min_memory=64)
+    policy = MCTreeSearch(ConvNetConnect4(), Connect4Env, temperature_cutoff=3, iterations=200, min_memory=64,)
     opposing_policy = EpsilonGreedy(
         QConvConnect4(env), 1
     )  # Make it not act greedily for the moment- exploration Acts greedily

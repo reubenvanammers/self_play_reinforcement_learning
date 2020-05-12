@@ -38,23 +38,23 @@ except ModuleNotFoundError:
 
 class SelfPlayScheduler:
     def __init__(
-            self,
-            policy_gen,
-            opposing_policy_gen,
-            env_gen,
-            policy_args=[],
-            policy_kwargs={},
-            opposing_policy_args=[],
-            opposing_policy_kwargs={},
-            swap_sides=True,
-            save_dir="saves",
-            epoch_length=500,
-            initial_games=64,
-            self_play=False,
-            evaluation_policy_gen=None,
-            evaluation_policy_args=[],
-            evaluation_policy_kwargs={},
-            lr=0.001,
+        self,
+        policy_gen,
+        opposing_policy_gen,
+        env_gen,
+        policy_args=[],
+        policy_kwargs={},
+        opposing_policy_args=[],
+        opposing_policy_kwargs={},
+        swap_sides=True,
+        save_dir="saves",
+        epoch_length=500,
+        initial_games=64,
+        self_play=False,
+        evaluation_policy_gen=None,
+        evaluation_policy_args=[],
+        evaluation_policy_kwargs={},
+        lr=0.001,
     ):
         self.policy_gen = policy_gen
         self.policy_args = policy_args
@@ -168,7 +168,7 @@ class SelfPlayScheduler:
             for i in range(self.epoch_length):
                 swap_sides = not i % 2 == 0
                 self.task_queue.put(
-                    {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name, }
+                    {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name,}
                 )
             self.task_queue.join()
 
@@ -310,24 +310,24 @@ class Worker(multiprocessing.Process):
 
 class SelfPlayWorker(Worker):
     def __init__(
-            self,
-            task_queue,
-            memory_queue,
-            result_queue,
-            env_gen,
-            policy_gen,
-            opposing_policy_gen,
-            start_time,
-            policy_args=[],
-            policy_kwargs={},
-            opposing_policy_args=[],
-            opposing_policy_kwargs={},
-            save_dir="save_dir",
-            resume=False,
-            self_play=False,
-            evaluation_policy_gen=None,
-            evaluation_policy_args=[],
-            evaluation_policy_kwargs={},
+        self,
+        task_queue,
+        memory_queue,
+        result_queue,
+        env_gen,
+        policy_gen,
+        opposing_policy_gen,
+        start_time,
+        policy_args=[],
+        policy_kwargs={},
+        opposing_policy_args=[],
+        opposing_policy_kwargs={},
+        save_dir="save_dir",
+        resume=False,
+        self_play=False,
+        evaluation_policy_gen=None,
+        evaluation_policy_args=[],
+        evaluation_policy_kwargs={},
     ):
         self.env_gen = env_gen
         self.env = env_gen()
@@ -463,16 +463,16 @@ class SelfPlayWorker(Worker):
 
 class UpdateWorker(Worker):
     def __init__(
-            self,
-            memory_queue,
-            policy_gen,
-            policy_args,
-            policy_kwargs,
-            update_flag,
-            save_model_queue,
-            start_time,
-            save_dir="saves",
-            resume=False,
+        self,
+        memory_queue,
+        policy_gen,
+        policy_args,
+        policy_kwargs,
+        update_flag,
+        save_model_queue,
+        start_time,
+        save_dir="saves",
+        resume=False,
     ):
         self.memory_queue = memory_queue
         # self.policy = policy

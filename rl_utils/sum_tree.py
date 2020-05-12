@@ -198,7 +198,10 @@ class WeightedMemory(object):  # stored as ( s, a, r, s_ ) in SumTree
         # Create a sample array that will contains the minibatch
         memory_b = []
 
-        b_idx, b_ISWeights = np.empty((n,), dtype=np.int32), np.empty((n, 1), dtype=np.float32)
+        b_idx, b_ISWeights = (
+            np.empty((n,), dtype=np.int32),
+            np.empty((n, 1), dtype=np.float32),
+        )
 
         # Calculate the priority segment
         # Here, as explained in the paper, we divide the Range[0, ptotal] into n ranges

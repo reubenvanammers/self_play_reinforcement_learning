@@ -10,7 +10,7 @@ from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
-Move = namedtuple("Move", ("state", "actual_val", "tree_probs"), )
+Move = namedtuple("Move", ("state", "actual_val", "tree_probs"),)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
@@ -30,7 +30,9 @@ except ModuleNotFoundError:
 class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
-    def __init__(self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True):
+    def __init__(
+        self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True,
+    ):
         self.state = state
         self.n = n
         self.w = w
@@ -60,7 +62,7 @@ class MCNode(NodeMixin):
             c.noise_active = False
 
     @property
-    def q(self):  # Attractiveness of a node from player ones pespective - average of downstream results
+    def q(self,):  # Attractiveness of a node from player ones pespective - average of downstream results
         return self.w / self.n if self.n else 0
         # return self.w / self.n if self.n else self.p
 
@@ -72,12 +74,14 @@ class MCNode(NodeMixin):
             return self.p
 
     @property
-    def u(self):  # Factor to encourage exploration - higher values of cpuct increase exploration
+    def u(self,):  # Factor to encourage exploration - higher values of cpuct increase exploration
         return self.cpuct * self.p_eff * np.sqrt(self.parent.n) / (1 + self.n)
 
     @property
-    def select_prob(self):  # TODO check if this works? might need to be ther other way round
-        return -1 * self.player * self.q + self.u  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
+    def select_prob(self,):  # TODO check if this works? might need to be ther other way round
+        return (
+            -1 * self.player * self.q + self.u
+        )  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
         # return self.player * self.q * self.u
 
     def backup(self, v):
@@ -109,17 +113,17 @@ class MCNode(NodeMixin):
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch:
     def __init__(
-            self,
-            evaluator,
-            env_gen,
-            optim=None,
-            memory_queue=None,
-            iterations=100,
-            temperature_cutoff=5,
-            batch_size=64,
-            memory_size=200000,
-            min_memory=20000,
-            update_nn=True,
+        self,
+        evaluator,
+        env_gen,
+        optim=None,
+        memory_queue=None,
+        iterations=100,
+        temperature_cutoff=5,
+        batch_size=64,
+        memory_size=200000,
+        min_memory=20000,
+        update_nn=True,
     ):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
@@ -242,7 +246,7 @@ class MCTreeSearch:
         value_loss = c(predict_val_batch, actual_val_batch)
 
         # prob_loss = F.cross_entropy(net_probs_batch, tree_best_move)
-        prob_loss = - (net_probs_batch.log() * tree_probs_batch).sum() / net_probs_batch.size()[0]
+        prob_loss = -(net_probs_batch.log() * tree_probs_batch).sum() / net_probs_batch.size()[0]
         # value_loss = torch.autograd.Variable(value_loss,requires_grad=
         #                                True)
         # prob_loss = torch.autograd.Variable(prob_loss,requires_grad=
@@ -259,7 +263,6 @@ class MCTreeSearch:
         # loss = torch.autograd.Variable(loss,requires_grad=
         #                                True)
         self.optim.zero_grad()
-
 
         if APEX_AVAILABLE:
             # print(vars(amp._amp_state))
@@ -353,7 +356,7 @@ class MCTreeSearch:
         pass
 
     def deduplicate(self):
-        self.memory.deduplicate('state', ['actual_val', 'tree_probs'], Move)
+        self.memory.deduplicate("state", ["actual_val", "tree_probs"], Move)
 
     def train(self, train_state=True):
         # Sets training true/false
@@ -437,8 +440,9 @@ class ConvNetTicTacToe(nn.Module):
 class ConvNetConnect4(nn.Module):
     def __init__(self, width=7, height=6, action_size=7, default_kernel_size=3):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 128, kernel_size=default_kernel_size, stride=1, padding=1,
-                               bias=True)  # Deal with padding?
+        self.conv1 = nn.Conv2d(
+            3, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True
+        )  # Deal with padding?
         self.bn1 = nn.BatchNorm2d(128)
 
         self.conv2 = nn.Conv2d(128, 128, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)

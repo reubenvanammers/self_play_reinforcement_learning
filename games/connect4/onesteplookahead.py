@@ -5,8 +5,7 @@ import random
 
 class OnestepLookahead:
     def __init__(self, env_gen, player=-1):
-        self.env = env_gen(
-        )
+        self.env = env_gen()
         self.env_gen = env_gen
         self.player = player
 
@@ -48,7 +47,7 @@ class OnestepLookahead:
     def train(self, train_state=False):
         pass
 
-    def evaluate(self,evaluate_state=False):
+    def evaluate(self, evaluate_state=False):
         pass
 
     def reset(self, player=None):

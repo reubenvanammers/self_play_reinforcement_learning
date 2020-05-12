@@ -9,21 +9,29 @@ from games.algos.q import EpsilonGreedy, QConvTicTacToe
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.tictactoe.tictactoe_env import TicTacToeEnv
 from torch import multiprocessing
+
 save_dir = "saves_parallel"
 os.mkdirs(save_dir)
+
 
 def run_training():
     env = TicTacToeEnv()
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(temperature_cutoff=1, iterations=200, min_memory=20000,memory_size=200000, env_gen=TicTacToeEnv,
-                         evaluator=ConvNetTicTacToe(3, 3, 9))
+    policy_kwargs = dict(
+        temperature_cutoff=1,
+        iterations=200,
+        min_memory=20000,
+        memory_size=200000,
+        env_gen=TicTacToeEnv,
+        evaluator=ConvNetTicTacToe(3, 3, 9),
+    )
 
     opposing_policy_gen = EpsilonGreedy
     opposing_policy_args = []
     opposing_policy_kwargs = dict(q=QConvTicTacToe(env), epsilon=1)
     # policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
-    multiprocessing.set_start_method('spawn')
+    multiprocessing.set_start_method("spawn")
 
     self_play = SelfPlayScheduler(
         env_gen=TicTacToeEnv,
@@ -34,7 +42,7 @@ def run_training():
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
         initial_games=100,
-        resume=True
+        resume=True,
     )
 
     # policy = MCTreeSearch(ConvNetTicTacToe(3, 3, 9), TicTacToeEnv, temperature_cutoff=1, iterations=200, min_memory=64)
