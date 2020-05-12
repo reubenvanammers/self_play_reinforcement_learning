@@ -460,7 +460,6 @@ class UpdateWorker(Worker):
         self.start_time = start_time
         self.memory_size = 0
 
-        self.policy.train()
 
         if resume:
             self.load_memory(prev_run=True)
@@ -472,6 +471,8 @@ class UpdateWorker(Worker):
 
     def run(self):
         self.policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue)
+        self.policy.train()
+
         while True:
             if not self.save_model_queue.empty():
                 saved_name = self.save_model_queue.get()
