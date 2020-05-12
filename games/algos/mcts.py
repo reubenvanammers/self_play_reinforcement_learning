@@ -17,11 +17,14 @@ try:
     from apex import amp
 
     if torch.cuda.is_available():
+        print("Apex available")
         APEX_AVAILABLE = True
     else:
         APEX_AVAILABLE = False
+        print("apex not available")
 except ModuleNotFoundError:
     APEX_AVAILABLE = False
+    print("apex not available")
 
 
 class MCNode(NodeMixin):
@@ -138,16 +141,20 @@ class MCTreeSearch:
 
         self.batch_size = batch_size
 
-        if APEX_AVAILABLE and self.optim:
+        if APEX_AVAILABLE:
             opt_level = "O1"
-            self.evaluator, self.optim = amp.initialize(evaluator, optim, opt_level=opt_level)
+
+            if self.optim:
+                self.evaluator, self.optim = amp.initialize(evaluator, optim, opt_level=opt_level)
+                print("updating optimizer and evaluator")
+            else:
+                self.evaluator = amp.initialize(evaluator, opt_level=opt_level)
+                print(" updated evaluator")
+            self.amp_state_dict = amp.state_dict()
             print(vars(amp._amp_state))
-            print("updating optimizer and evaluator")
         elif APEX_AVAILABLE:
             opt_level = "O1"
-            self.evaluator = amp.initialize(evaluator, opt_level=opt_level)
             print(vars(amp._amp_state))
-            print(" updated evaluator")
 
     def reset(self, player=1):
         base_state = self.env.reset()

@@ -25,11 +25,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
     from apex import amp
 
-    print("Apex available")
     if torch.cuda.is_available():
+        print("Apex available")
         APEX_AVAILABLE = True
     else:
         APEX_AVAILABLE = False
+        print("apex not available")
 except ModuleNotFoundError:
     APEX_AVAILABLE = False
     print("apex not available")
@@ -521,6 +522,8 @@ class UpdateWorker(Worker):
             pickle.dump(self.policy.memory, f)
 
     def update(self):
+        if APEX_AVAILABLE:
+            amp.load_state_dict(self.policy.state_dict)
         # if not self.save_model_queue.is_set():
         # self.save_model_queue.wait()
         # self.policy.pull_from_queue()
