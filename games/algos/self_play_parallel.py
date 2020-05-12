@@ -451,15 +451,14 @@ class UpdateWorker(Worker):
     ):
         self.memory_queue = memory_queue
         # self.policy = policy
-        self.policy_gen = policy_gen,
-        self.policy_args = policy_args,
-        self.policy_kwargs = policy_kwargs,
+        self.policy_gen = policy_gen
+        self.policy_args = policy_args
+        self.policy_kwargs = policy_kwargs
         self.update_flag = update_flag
         self.save_model_queue = save_model_queue
         self.save_dir = save_dir
         self.start_time = start_time
         self.memory_size = 0
-
 
         if resume:
             self.load_memory(prev_run=True)
@@ -470,7 +469,7 @@ class UpdateWorker(Worker):
         super().__init__()
 
     def run(self):
-        self.policy = self.policy_gen(memory_queue=self.memory_queue,*self.policy_args, **self.policy_kwargs, )
+        self.policy = self.policy_gen(memory_queue=self.memory_queue, *self.policy_args, **self.policy_kwargs)
         self.policy.train()
 
         while True:
