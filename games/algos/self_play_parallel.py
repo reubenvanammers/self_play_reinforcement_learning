@@ -185,6 +185,9 @@ class SelfPlayScheduler:
             save_model_queue.join()
             # Do some evaluation?
 
+        update_worker.terminate()
+        [w.terminate() for w in player_workers]
+
     def run_evaluation_games(self):
         for i in range(self.evaluation_games):
             swap_sides = not i % 2 == 0
@@ -457,7 +460,6 @@ class UpdateWorker(Worker):
         self.start_time = start_time
         self.memory_size = 0
 
-        self.policy = policy_gen(*policy_args, **policy_kwargs, memory_queue=memory_queue)
         self.policy.train()
 
         if resume:
@@ -469,6 +471,7 @@ class UpdateWorker(Worker):
         super().__init__()
 
     def run(self):
+        self.policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue)
         while True:
             if not self.save_model_queue.empty():
                 saved_name = self.save_model_queue.get()
@@ -522,8 +525,8 @@ class UpdateWorker(Worker):
             pickle.dump(self.policy.memory, f)
 
     def update(self):
-        if APEX_AVAILABLE:
-            amp.load_state_dict(self.policy.state_dict)
+        # if APEX_AVAILABLE:
+        #     amp.load_state_dict(self.policy.state_dict)
         # if not self.save_model_queue.is_set():
         # self.save_model_queue.wait()
         # self.policy.pull_from_queue()
