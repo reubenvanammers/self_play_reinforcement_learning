@@ -128,7 +128,7 @@ class SelfPlayScheduler:
         for w in player_workers:
             w.start()
 
-        policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue, optim=optim, )
+        # policy = self.policy_gen(*self.policy_args, **self.policy_kwargs, memory_queue=self.memory_queue, optim=optim, )
         self.policy_kwargs["optim"] = optim
 
         save_model_queue = multiprocessing.JoinableQueue()
@@ -148,9 +148,9 @@ class SelfPlayScheduler:
             start_time=self.start_time,
         )
 
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
-            policy.optim, "max", patience=5, factor=0.2, verbose=True, min_lr=0.00001
-        )
+        # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
+        #     policy.optim, "max", patience=5, factor=0.2, verbose=True, min_lr=0.00001
+        # )
 
         update_worker.start()
 
@@ -232,7 +232,7 @@ class SelfPlayScheduler:
             print("Evaluation games are: \n")
             total_rewards = self.parse_results(reward_list)
 
-        self.scheduler.step(total_rewards)
+        # self.scheduler.step(total_rewards)
         print(f"epoch is {epoch}")
         self.writer.add_scalar("total_reward", total_rewards, epoch * self.epoch_length)
 
