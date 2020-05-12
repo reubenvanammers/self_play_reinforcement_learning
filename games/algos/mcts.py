@@ -262,7 +262,7 @@ class MCTreeSearch:
 
 
         if APEX_AVAILABLE:
-            print(vars(amp._amp_state))
+            # print(vars(amp._amp_state))
             with amp.scale_loss(loss, self.optim) as scaled_loss:
                 scaled_loss.backward()
         else:

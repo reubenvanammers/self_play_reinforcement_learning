@@ -80,7 +80,7 @@ def run_training():
     # self_play = SelfPlay(policy, opposing_policy, env=env, swap_sides=True)
     self_play.train_model(1, resume_memory=False, resume_model=False)
     print("Training Done")
-    sys.exit()
+    # sys.exit()
 
 
 if __name__ == "__main__":
