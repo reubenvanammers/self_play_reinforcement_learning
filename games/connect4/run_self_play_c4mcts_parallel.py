@@ -64,7 +64,7 @@ def run_training():
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
-        initial_games=10,
+        initial_games=20,
         epoch_length=10,
         save_dir=save_dir,
         self_play=self_play,

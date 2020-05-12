@@ -12,16 +12,16 @@ from rl_utils.weights import init_weights
 
 Move = namedtuple("Move", ("state", "actual_val", "tree_probs"), )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
     from apex import amp
-    APEX_AVAILABLE = True
+
+    if torch.cuda.is_available():
+        APEX_AVAILABLE = True
+    else:
+        APEX_AVAILABLE = False
 except ModuleNotFoundError:
     APEX_AVAILABLE = False
-
-
-
-
 
 
 class MCNode(NodeMixin):
@@ -138,14 +138,16 @@ class MCTreeSearch:
 
         self.batch_size = batch_size
 
-
         if APEX_AVAILABLE and self.optim:
             opt_level = "O1"
-            self.evaluator, self.optim = amp.initialize(self.evaluator,self.optim,opt_level=opt_level)
+            self.evaluator, self.optim = amp.initialize(evaluator, optim, opt_level=opt_level)
+            print(vars(amp._amp_state))
+            print("updating optimizer and evaluator")
         elif APEX_AVAILABLE:
             opt_level = "O1"
-            self.evaluator = amp.initialize(self.evaluator,opt_level=opt_level)
-
+            self.evaluator = amp.initialize(evaluator, opt_level=opt_level)
+            print(vars(amp._amp_state))
+            print(" updated evaluator")
 
     def reset(self, player=1):
         base_state = self.env.reset()
@@ -252,12 +254,11 @@ class MCTreeSearch:
         self.optim.zero_grad()
 
         if APEX_AVAILABLE:
+            print(vars(amp._amp_state))
             with amp.scale_loss(loss, self.optim) as scaled_loss:
                 scaled_loss.backward()
         else:
             loss.backward()
-
-
 
         # for param in self.evaluator.parameters():  # see if this ends up doing anything - should just be relu
         #     param.grad.data.clamp_(-1, 1)

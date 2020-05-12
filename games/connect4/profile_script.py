@@ -83,7 +83,7 @@ def run_training():
     sys.exit()
 
 
-
-
 if __name__ == "__main__":
+    if torch.cuda.is_available():
+        multiprocessing.set_start_method('spawn', force=True)
     run_training()

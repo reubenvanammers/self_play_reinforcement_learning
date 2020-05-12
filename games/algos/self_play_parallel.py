@@ -26,7 +26,10 @@ try:
     from apex import amp
 
     print("Apex available")
-    APEX_AVAILABLE = True
+    if torch.cuda.is_available():
+        APEX_AVAILABLE = True
+    else:
+        APEX_AVAILABLE = False
 except ModuleNotFoundError:
     APEX_AVAILABLE = False
     print("apex not available")
