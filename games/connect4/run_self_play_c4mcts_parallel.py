@@ -5,8 +5,9 @@ from os.path import isfile, join
 
 import torch
 from torch import multiprocessing
-from games.algos.mcts import MCTreeSearch, ConvNetConnect4
+from games.algos.mcts import MCTreeSearch
 
+from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4
 # from games.algos.q import EpsilonGreedy, QConvConnect4
 from games.connect4.onesteplookahead import OnestepLookahead
 from games.algos.self_play_parallel import SelfPlayScheduler
@@ -33,24 +34,26 @@ def run_training():
 
     self_play = True
     if self_play:
+        # opposing_network = DeepConvNetConnect4()
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
         opposing_policy_kwargs = dict(
             iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,
         )
 
-        # evaluation_policy_gen = OnestepLookahead
-        # evaluation_policy_args = []
-        # evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
-        opposing_state_dict = torch.load(
-            '/Users/reuben/PycharmProjects/reinforcement_learning/games/connect4/saves__c4mtcs_par/2020-05-12T17:28:34.659107/model-2020-05-12T18:39:28.650785:210')
 
-        evaluation_policy_gen = MCTreeSearch
+        evaluation_policy_gen = OnestepLookahead
         evaluation_policy_args = []
-        evaluation_policy_kwargs = dict(
-            iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,
-            starting_state_dict=opposing_state_dict
-        )
+        evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
+        # opposing_state_dict = torch.load(
+        #     '/Users/reuben/PycharmProjects/reinforcement_learning/games/connect4/saves__c4mtcs_par/2020-05-12T17:28:34.659107/model-2020-05-12T18:39:28.650785:210')
+        #
+        # evaluation_policy_gen = MCTreeSearch
+        # evaluation_policy_args = []
+        # evaluation_policy_kwargs = dict(
+        #     iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,
+        #     starting_state_dict=opposing_state_dict
+        # )
 
 
     else:
@@ -85,7 +88,7 @@ def run_training():
     #     QConvTicTacToe(env), 1
     # )  # Make it not act greedily for the moment- exploration Acts greedily
     # self_play = SelfPlay(policy, opposing_policy, env=env, swap_sides=True)
-    self_play.train_model(100, resume_memory=True, resume_model=True)
+    self_play.train_model(100, resume_memory=False, resume_model=False)
     print("Training Done")
 
     saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())

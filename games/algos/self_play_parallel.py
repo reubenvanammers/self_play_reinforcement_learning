@@ -17,7 +17,13 @@ import traceback
 import logging
 import multiprocessing_logging
 
-logging.basicConfig()
+logging.basicConfig(
+     filename='log.log',
+     level=logging.INFO,
+     format= '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
+     datefmt='%H:%M:%S'
+ )
+
 multiprocessing_logging.install_mp_handler()
 
 # save_dir = "saves/temp"
@@ -214,6 +220,7 @@ class SelfPlayScheduler:
             print(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
 
         total_rewards = np.sum([r["reward"] for r in reward_list])
+        logging.info(f'rewards are {total_rewards}')
         print(f"total rewards are {total_rewards}")
         return total_rewards
 
@@ -407,6 +414,7 @@ class SelfPlayWorker(Worker):
                 episode_args = task["play"]
                 self.play_episode(**episode_args)
                 self.task_queue.task_done()
+                logging.info('task done')
             except Exception as e:
                 # traceback.print_exc()
                 print(str(e))
