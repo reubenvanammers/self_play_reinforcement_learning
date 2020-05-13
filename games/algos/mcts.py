@@ -165,7 +165,7 @@ class MCTreeSearch:
 
         if self.starting_state_dict:
             print("laoding state dict")
-            self.load_state_dict(self.starting_state_dict['model'])
+            self.load_state_dict(self.starting_state_dict)
 
     def reset(self, player=1):
         base_state = self.env.reset()
