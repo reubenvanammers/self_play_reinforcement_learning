@@ -278,7 +278,7 @@ class Worker(multiprocessing.Process):
 
         self.policy.load_state_dict(checkpoint["model"], target=True)
 
-        if self.self_play:
+        if getattr(self, 'self_play', None):
             self.opposing_policy_train.load_state_dict(checkpoint["model"], target=True)
 
         if APEX_AVAILABLE:
@@ -386,7 +386,6 @@ class SelfPlayWorker(Worker):
         if self.resume:
             self.load_model(prev_run=True)
 
-
         while True:
             task = self.task_queue.get()
             try:
@@ -488,12 +487,9 @@ class UpdateWorker(Worker):
         self.save_dir = save_dir
         self.start_time = start_time
         self.memory_size = 0
+        self.resume = resume
 
-        if resume:
-            self.load_memory(prev_run=True)
-            self.load_model(prev_run=True)
-
-            ##LOAD MODEL STEP!!!!!!!!!!!!! with amp
+        ##LOAD MODEL STEP!!!!!!!!!!!!! with amp
 
         super().__init__()
 
@@ -501,11 +497,13 @@ class UpdateWorker(Worker):
         self.policy = self.policy_gen(memory_queue=self.memory_queue, *self.policy_args, **self.policy_kwargs)
         self.policy.train()
 
+        if self.resume:
+            self.load_memory(prev_run=True)
+            self.load_model(prev_run=True)
 
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
             self.policy.optim, "max", patience=5, factor=0.2, verbose=True, min_lr=0.00001
         )
-
 
         while True:
             if not self.update_worker_queue.empty():
