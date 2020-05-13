@@ -532,6 +532,7 @@ class UpdateWorker(Worker):
                 self.pull()
 
     def save_model(self, saved_name):
+        logging.info('saving model')
         if APEX_AVAILABLE:
             checkpoint = {
                 "model": self.policy.state_dict(),
