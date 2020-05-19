@@ -1,6 +1,11 @@
 Add loading model for evaluation
+add tool to compare model strengths
+try not copying over model # figure out why ths doesnt work
+move stuff to tensors - at least delay evaluation of them
 use apex - move optimizer out of mcts and pass directly
 load policy in update script from generator
+
+try target, args - might be why copying over model happens
 
 add optional cprofiling?
 

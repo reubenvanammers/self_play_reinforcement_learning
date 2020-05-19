@@ -211,6 +211,7 @@ class SelfPlayScheduler:
 
         print(f"win percent : {win_percent}%")
         print(f"wins: {wins}, draws: {draws}, losses: {losses}")
+        logging.info(f"wins: {wins}, draws: {draws}, losses: {losses}")
 
         starts = ["first", "second"]
         for j, start in enumerate(starts):
@@ -382,6 +383,7 @@ class SelfPlayWorker(Worker):
             else None
         )
         if self.opposing_policy_evaluate:
+            self.opposing_policy_evaluate.evaluate(True)
             self.opposing_policy_evaluate.train(False)
             self.opposing_policy_evaluate.env = self.env_gen()  # TODO: make this a more stabel solution -
 
