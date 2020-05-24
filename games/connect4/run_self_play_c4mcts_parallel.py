@@ -30,7 +30,7 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network, )
+    policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network, )
 
     self_play = True
     if self_play:
@@ -38,7 +38,7 @@ def run_training():
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
         opposing_policy_kwargs = dict(
-            iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,
+            iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network,
         )
 
 
@@ -74,8 +74,8 @@ def run_training():
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
-        initial_games=50,
-        epoch_length=200,
+        initial_games=100,
+        epoch_length=500,
         save_dir=save_dir,
         self_play=self_play,
         evaluation_policy_gen=evaluation_policy_gen,
@@ -96,4 +96,5 @@ def run_training():
 
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn',force=True)
     run_training()

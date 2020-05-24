@@ -486,6 +486,7 @@ class UpdateWorker(Worker):
             start_time,
             save_dir="saves",
             resume=False,
+            stagger=False,
     ):
         self.memory_queue = memory_queue
         # self.policy = policy
@@ -498,6 +499,10 @@ class UpdateWorker(Worker):
         self.start_time = start_time
         self.memory_size = 0
         self.resume = resume
+        self.stagger = stagger
+
+        self.mem_step = 2500
+        self.max_mem = 100000
 
         ##LOAD MODEL STEP!!!!!!!!!!!!! with amp
 
@@ -522,6 +527,8 @@ class UpdateWorker(Worker):
                     saved_name = task['saved_name']
                     self.pull()
                     # self.deduplicate_memory()
+                    if self.stagger:
+                        self.stagger_memory()
                     self.save_memory()
                     self.save_model(saved_name)
                 elif task.get('reward'):
@@ -532,6 +539,10 @@ class UpdateWorker(Worker):
                 self.update()
             else:
                 self.pull()
+
+    def stagger_memory(self):
+        max_size = min(self.policy.memory.max_size+self.mem_step,self.max_mem)
+        self.policy.memory.change_size(max_size)
 
     def save_model(self, saved_name):
         logging.info('saving model')
