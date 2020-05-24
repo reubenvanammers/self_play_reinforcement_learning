@@ -20,7 +20,14 @@ except Exception:
     pass
 
 
-def run_training():
+def set_parameters():
+    [
+        {'policy_kwargs': policy_kwargs = dict(iterations=40, memory_size=100, env_gen=Connect4Env}
+    ]
+
+
+
+def run_training(network, policy_kwargs, self_play=True, initial_games=100, epoch_length=500):
     # multiprocessing.set_start_method('spawn')
 
     env = Connect4Env()
@@ -30,17 +37,15 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=100, env_gen=Connect4Env, evaluator=network, )
+    policy_kwargs = dict(iterations=40, memory_size=100, env_gen=Connect4Env, evaluator=network, )
 
-    self_play = True
     if self_play:
         # opposing_network = DeepConvNetConnect4()
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
         opposing_policy_kwargs = dict(
-            iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network,
+            iterations=400, memory_size=20000, env_gen=Connect4Env, evaluator=network,
         )
-
 
         evaluation_policy_gen = OnestepLookahead
         evaluation_policy_args = []
@@ -97,5 +102,5 @@ def run_training():
 
 
 if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn',force=True)
+    multiprocessing.set_start_method('spawn', force=True)
     run_training()

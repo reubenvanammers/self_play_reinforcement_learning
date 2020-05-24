@@ -18,11 +18,11 @@ import logging
 import multiprocessing_logging
 
 logging.basicConfig(
-     filename='log.log',
-     level=logging.INFO,
-     format= '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
-     datefmt='%H:%M:%S'
- )
+    filename='log.log',
+    level=logging.INFO,
+    format='[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
+    datefmt='%H:%M:%S'
+)
 
 multiprocessing_logging.install_mp_handler()
 
@@ -61,6 +61,8 @@ class SelfPlayScheduler:
             evaluation_policy_args=[],
             evaluation_policy_kwargs={},
             lr=0.001,
+            stagger=False,
+            evaluation_games=100,
     ):
         self.policy_gen = policy_gen
         self.policy_args = policy_args
@@ -75,11 +77,12 @@ class SelfPlayScheduler:
         self.epoch_length = epoch_length
         self.self_play = self_play
         self.lr = lr
+        self.stagger = stagger
 
         self.evaluation_policy_gen = evaluation_policy_gen
         self.evaluation_policy_args = evaluation_policy_args
         self.evaluation_policy_kwargs = evaluation_policy_kwargs
-        self.evaluation_games = 100
+        self.evaluation_games = evaluation_games
 
         self.start_time = datetime.datetime.now().isoformat()
         os.mkdir(os.path.join(save_dir, self.start_time))
@@ -104,7 +107,7 @@ class SelfPlayScheduler:
 
         # if APEX_AVAILABLE:
         #     opt_level = "O1"
-        #     evaluator, optim = amp.initialize(evaluator, optim, opt_level=opt_level)
+        #     evaluator, optimx = amp.initialize(evaluator, optim, opt_level=opt_level)
 
         self.policy_kwargs["evaluator"] = evaluator
 
@@ -152,6 +155,7 @@ class SelfPlayScheduler:
             save_dir=self.save_dir,
             resume=resume_memory,
             start_time=self.start_time,
+            stagger=self.stagger,
         )
 
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
@@ -541,7 +545,7 @@ class UpdateWorker(Worker):
                 self.pull()
 
     def stagger_memory(self):
-        max_size = min(self.policy.memory.max_size+self.mem_step,self.max_mem)
+        max_size = min(self.policy.memory.max_size + self.mem_step, self.max_mem)
         self.policy.memory.change_size(max_size)
 
     def save_model(self, saved_name):
