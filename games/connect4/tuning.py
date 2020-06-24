@@ -8,6 +8,7 @@ from torch import multiprocessing
 from games.algos.mcts import MCTreeSearch
 
 from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4
+
 # from games.algos.q import EpsilonGreedy, QConvConnect4
 from games.connect4.onesteplookahead import OnestepLookahead
 from games.algos.self_play_parallel import SelfPlayScheduler
@@ -21,45 +22,76 @@ except Exception:
 
 
 def set_parameters():
-    [
-        {'policy_kwargs': policy_kwargs = dict(iterations=40, memory_size=100, env_gen=Connect4Env}
+    opposing_state_dict = torch.load(
+        "/Users/reuben/PycharmProjects/reinforcement_learning/games/connect4/saves__c4mtcs_par/2020-05-12T17:28:34.659107/model-2020-05-12T18:39:28.650785:210"
+    )["model"]
+
+    parameters = [
+        {
+            "policy_kwargs": dict(iterations=400, memory_size=50000, env_gen=Connect4Env),
+            "evaluator": ConvNetConnect4,
+            "evaluation_policy_kwargs": dict(
+                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict
+            ),
+            "evaluation_evaluator": ConvNetConnect4,
+        },
+        {
+            "lr": 0.01,
+            "policy_kwargs": dict(iterations=400, memory_size=50000, env_gen=Connect4Env),
+            "evaluator": ConvNetConnect4,
+            "evaluation_policy_kwargs": dict(
+                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict
+            ),
+            "evaluation_evaluator": ConvNetConnect4,
+        },
+        {
+            "policy_kwargs": dict(iterations=100, memory_size=50000, env_gen=Connect4Env),
+            "evaluator": ConvNetConnect4,
+            "evaluation_policy_kwargs": dict(
+                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict
+            ),
+            "evaluation_evaluator": ConvNetConnect4,
+        },
+        {
+            "policy_kwargs": dict(iterations=100, memory_size=20000, env_gen=Connect4Env),
+            "evaluator": ConvNetConnect4,
+            "evaluation_policy_kwargs": dict(
+                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict
+            ),
+            "evaluation_evaluator": ConvNetConnect4,
+            "stagger": True,
+        },
     ]
+    for parameter in parameters:
+        run_training(**parameter)
 
 
-
-def run_training(network, policy_kwargs, self_play=True, initial_games=100, epoch_length=500):
-    # multiprocessing.set_start_method('spawn')
-
-    env = Connect4Env()
-
-    network = ConvNetConnect4()
-    network.share_memory()
-
+def run_training(
+    policy_kwargs,
+    self_play=True,
+    evaluator=None,
+    initial_games=100,
+    epoch_length=500,
+    num_epochs=1,
+    stagger=False,
+    evaluation_policy_kwargs=None,
+    evaluation_evaluator=None,
+    lr=0.001,
+):
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=40, memory_size=100, env_gen=Connect4Env, evaluator=network, )
+    network = evaluator()
 
     if self_play:
-        # opposing_network = DeepConvNetConnect4()
+
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
-        opposing_policy_kwargs = dict(
-            iterations=400, memory_size=20000, env_gen=Connect4Env, evaluator=network,
-        )
+        opposing_policy_kwargs = policy_kwargs
 
-        evaluation_policy_gen = OnestepLookahead
+        evaluation_policy_gen = MCTreeSearch
         evaluation_policy_args = []
-        evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
-        # opposing_state_dict = torch.load(
-        #     '/Users/reuben/PycharmProjects/reinforcement_learning/games/connect4/saves__c4mtcs_par/2020-05-12T17:28:34.659107/model-2020-05-12T18:39:28.650785:210')
-        #
-        # evaluation_policy_gen = MCTreeSearch
-        # evaluation_policy_args = []
-        # evaluation_policy_kwargs = dict(
-        #     iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,
-        #     starting_state_dict=opposing_state_dict
-        # )
-
+        evaluation_policy_kwargs = evaluation_policy_kwargs
+        evaluation_policy_kwargs["evaluator"] = evaluation_evaluator()
 
     else:
         opposing_policy_gen = OnestepLookahead
@@ -69,9 +101,8 @@ def run_training(network, policy_kwargs, self_play=True, initial_games=100, epoc
         evaluation_policy_args = []
         evaluation_policy_kwargs = {}
 
-    # policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
-
     self_play = SelfPlayScheduler(
+        network=network,
         env_gen=Connect4Env,
         policy_gen=policy_gen,
         opposing_policy_gen=opposing_policy_gen,
@@ -79,28 +110,21 @@ def run_training(network, policy_kwargs, self_play=True, initial_games=100, epoc
         policy_kwargs=policy_kwargs,
         opposing_policy_args=opposing_policy_args,
         opposing_policy_kwargs=opposing_policy_kwargs,
-        initial_games=20,
-        epoch_length=2,
+        initial_games=initial_games,
+        epoch_length=epoch_length,
         save_dir=save_dir,
         self_play=self_play,
+        lr=lr,
         evaluation_policy_gen=evaluation_policy_gen,
         evaluation_policy_args=evaluation_policy_args,
         evaluation_policy_kwargs=evaluation_policy_kwargs,
-        stagger=True,
+        stagger=stagger,
     )
 
-    # policy = MCTreeSearch(ConvNetTicTacToe(3, 3, 9), TicTacToeEnv, temperature_cutoff=1, iterations=200, min_memory=64)
-    # opposing_policy = EpsilonGreedy(
-    #     QConvTicTacToe(env), 1
-    # )  # Make it not act greedily for the moment- exploration Acts greedily
-    # self_play = SelfPlay(policy, opposing_policy, env=env, swap_sides=True)
-    self_play.train_model(100, resume_memory=False, resume_model=False)
+    self_play.train_model(num_epochs, resume_memory=False, resume_model=False)
     print("Training Done")
-
-    saved_name = os.path.join(save_dir, datetime.datetime.now().isoformat())
-    torch.save(self_play.policy.q.policy_net.state_dict(), saved_name)
 
 
 if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn', force=True)
-    run_training()
+    multiprocessing.set_start_method("spawn", force=True)
+    set_parameters()

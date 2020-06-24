@@ -159,7 +159,7 @@ class MCTreeSearch(BaseModel):
             print(vars(amp._amp_state))
 
         if self.starting_state_dict:
-            print("laoding state dict")
+            print("laoding [sic] state dict in mcts")
             self.load_state_dict(self.starting_state_dict)
 
     def reset(self, player=1):

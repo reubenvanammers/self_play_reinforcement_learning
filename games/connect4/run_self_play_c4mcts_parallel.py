@@ -7,7 +7,8 @@ import torch
 from torch import multiprocessing
 from games.algos.mcts import MCTreeSearch
 
-from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4
+from games.connect4.modules import ConvNetConnect4
+from games.connect4.modules import ConvNetConnect4
 # from games.algos.q import EpsilonGreedy, QConvConnect4
 from games.connect4.onesteplookahead import OnestepLookahead
 from games.algos.self_play_parallel import SelfPlayScheduler
@@ -21,8 +22,6 @@ except Exception:
 
 
 def run_training():
-    # multiprocessing.set_start_method('spawn')
-
     env = Connect4Env()
 
     network = ConvNetConnect4()
@@ -38,9 +37,7 @@ def run_training():
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
         opposing_policy_kwargs = dict(
-            iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network,
-        )
-
+            iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network)
 
         evaluation_policy_gen = OnestepLookahead
         evaluation_policy_args = []
@@ -69,6 +66,7 @@ def run_training():
     self_play = SelfPlayScheduler(
         env_gen=Connect4Env,
         policy_gen=policy_gen,
+        network=network,
         opposing_policy_gen=opposing_policy_gen,
         policy_args=policy_args,
         policy_kwargs=policy_kwargs,
@@ -97,5 +95,5 @@ def run_training():
 
 
 if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn',force=True)
+    multiprocessing.set_start_method('spawn', force=True)
     run_training()
