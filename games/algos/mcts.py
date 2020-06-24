@@ -10,6 +10,8 @@ from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
+from games.algos.base_model import BaseModel
+
 Move = namedtuple("Move", ("state", "actual_val", "tree_probs"), )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
@@ -103,7 +105,7 @@ class MCNode(NodeMixin):
 
 # TODO deal with opposite player choosing moves
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
-class MCTreeSearch:
+class MCTreeSearch(BaseModel):
     def __init__(
             self,
             evaluator,

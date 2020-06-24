@@ -13,14 +13,15 @@ from rl_utils.sum_tree import WeightedMemory
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
+from games.algos.base_model import BaseModel
+
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# device="cpu"
 
 
-class EpsilonGreedy:
+class EpsilonGreedy(BaseModel):
     def __init__(self, q, epsilon):
         self.q = q
         self.epsilon = epsilon
