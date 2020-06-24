@@ -84,7 +84,6 @@ class Q:
     def __call__(self, s, player=None):  # TODO use player variable
         if not isinstance(s, torch.Tensor):
             s = torch.from_numpy(s).long()
-        # return super().__call__(s)
         s = self.policy_net.preprocess(s)
         return self.policy_net(s)
 
@@ -128,9 +127,6 @@ class Q:
         double_actions = self.policy_net(s_next_batch).max(1)[1].detach()  # used for double q learning
         q_next = self.state_action_value(s_next_batch, double_actions)
 
-        # q_next = (
-        #     self.target_net(s_next_batch).max(1)[0].view(-1, 1).detach()
-        # )  # check how detach works (might be dodgy???) #max results in values and
         q_next_actual = (~done_batch) * q_next  # Removes elements thx`at are done
         q_target = r_batch + self.gamma * q_next_actual
         ###TEST if clamping works or is even good practise
@@ -154,129 +150,11 @@ class Q:
         self.optim.step()
 
 
-class QLinear(Q):
-    def __init__(self, env, lr=0.025, gamma=0.99, momentum=0, weight_decay=0.5, *args, **kwargs):
-        super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
-
-        self.gamma = gamma
-        self.env = env
-        self.state_size = self.env.width * self.env.height
-        self.linear = nn.Linear(self.state_size, self.env.action_space.n)
-        self.linear.weight.data.fill_(0)
-        self.optim = torch.optim.RMSprop(self.parameters(), momentum=momentum, lr=lr, weight_decay=weight_decay)
-
-    def forward(self, s):  # At the moment just use a linear network - dont expect it to be good
-        s = s.view(-1, self.state_size).float()
-
-        return self.linear(s)
-
-
-class ConvNetConnect4(nn.Module):
-    def __init__(self, width, height, action_size):
-        super().__init__()
-        self.conv1 = nn.Conv2d(3, 128, kernel_size=5, stride=1, padding=2)  # Deal with padding?
-        self.bn1 = nn.BatchNorm2d(128)
-
-        self.conv2 = nn.Conv2d(128, 128, kernel_size=5, stride=1, padding=2)
-        self.bn2 = nn.BatchNorm2d(128)
-
-        self.conv3 = nn.Conv2d(128, 128, kernel_size=5, stride=1, padding=2)
-        self.bn3 = nn.BatchNorm2d(128)
-
-        self.conv4 = nn.Conv2d(128, 64, kernel_size=5, stride=1, padding=2)
-        self.bn4 = nn.BatchNorm2d(64)
-
-        def conv2d_size_out(size, kernel_size=5, stride=1, padding=2):
-            return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
-
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(width))))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(height))))
-        linear_input_size = convw * convh * 64
-
-        self.value_fc = nn.Linear(linear_input_size, 512)
-        self.value = nn.Linear(512, 1)
-
-        self.advantage_fc = nn.Linear(linear_input_size, 512)
-        self.advantage = nn.Linear(512, action_size)
-
-    def preprocess(self, s):
-        s = s.to(device)
-        s = s.view(-1, 7, 6)
-        # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
-        empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
-        own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
-        enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
-        x = torch.stack([empty_channel, own_channel, enemy_channel], 1)  # stack along channel dimension
-
-        return x
-
-    def forward(self, s):
-        x = F.leaky_relu(self.bn1(self.conv1(s)))
-        x = F.leaky_relu(self.bn2(self.conv2(x)))
-        x = F.leaky_relu(self.bn3(self.conv3(x)))
-        x = F.leaky_relu(self.bn4(self.conv4(x)))
-
-        value = self.value(self.value_fc(x.view(x.size(0), -1)))
-        advantage = self.advantage(self.advantage_fc(x.view(x.size(0), -1)))
-
-        output = value + (advantage - torch.mean(advantage, dim=1, keepdim=True))
-        return output
-
-
-class ConvNetTicTacToe(nn.Module):
-    def __init__(self, width, height, action_size):
-        super().__init__()
-        self.conv1 = nn.Conv2d(4, 128, kernel_size=3, stride=1, padding=1, bias=True)  # Deal with padding?
-        self.bn1 = nn.BatchNorm2d(128)
-
-        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=True)
-        self.bn2 = nn.BatchNorm2d(128)
-
-        self.conv3 = nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1, bias=True)
-        self.bn3 = nn.BatchNorm2d(64)
-
-        def conv2d_size_out(size, kernel_size=3, stride=1, padding=1):
-            return (size + padding * 2 - (kernel_size - 1) - 1) // stride + 1
-
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(width)))
-        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(height)))
-        linear_input_size = convw * convh * 64
-
-        self.value_fc = nn.Linear(linear_input_size, 512)
-        self.value = nn.Linear(512, 1)
-
-        self.advantage_fc = nn.Linear(linear_input_size, 512)
-        self.advantage = nn.Linear(512, action_size)
-
-    def preprocess(self, s):
-        s = s.to(device)
-        s = s.view(-1, 3, 3)
-        # Split into three channels - empty pieces, own pieces and enemy pieces. Will represent this with a 1
-        empty_channel = (s == torch.tensor(0).to(device)).clone().float().detach()
-        own_channel = (s == torch.tensor(1).to(device)).clone().float().detach()
-        enemy_channel = (s == torch.tensor(-1).to(device)).clone().float().detach()
-        x = torch.stack(
-            [empty_channel, own_channel, enemy_channel, s.float().detach()], 1
-        )  # stack along channel dimension
-
-        return x
-
-    def forward(self, s):
-        x = F.leaky_relu(self.bn1(self.conv1(s)))
-        x = F.leaky_relu(self.bn2(self.conv2(x)))
-        x = F.leaky_relu(self.bn3(self.conv3(x)))
-
-        value = self.value(self.value_fc(x.view(x.size(0), -1)))
-        advantage = self.advantage(self.advantage_fc(x.view(x.size(0), -1)))
-
-        output = value + (advantage - torch.mean(advantage, dim=1, keepdim=True))
-        return output
-
 
 class QConvConnect4(Q):
     def __init__(self, env, lr=0.01, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
-        super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
+        super().__init__(*args, **kwargs)
 
         self.gamma = gamma
         self.env = env
@@ -293,7 +171,7 @@ class QConvConnect4(Q):
 class QConvTicTacToe(Q):
     def __init__(self, env, lr=0.0002, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
-        super().__init__(*args, **kwargs)  # gamma is slightly less than 1 to promote faster games
+        super().__init__(*args, **kwargs)
 
         self.gamma = gamma
         self.env = env
