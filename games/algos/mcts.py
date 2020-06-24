@@ -63,7 +63,6 @@ class MCNode(NodeMixin):
     @property
     def q(self, ):  # Attractiveness of a node from player ones pespective - average of downstream results
         return self.w / self.n if self.n else 0
-        # return self.w / self.n if self.n else self.p
 
     @property  # effective p - p if noise isn't active, otherwise adds noise factor
     def p_eff(self):
@@ -81,7 +80,6 @@ class MCNode(NodeMixin):
         return (
                 -1 * self.player * self.q + self.u
         )  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
-        # return self.player * self.q * self.u
 
     def backup(self, v):
         self.w += v
@@ -101,11 +99,6 @@ class MCNode(NodeMixin):
 
     def _post_detach_children(self, children):
         pass
-        # if not self.active_root:
-        #     for child in children:
-        #         if child.children:
-        #             child.children = []
-        #         del child
 
 
 # TODO deal with opposite player choosing moves
@@ -170,7 +163,7 @@ class MCTreeSearch:
     def reset(self, player=1):
         base_state = self.env.reset()
         probs, v = self.evaluator(base_state)
-        self.set_root(MCNode(state=base_state, v=v, player=player))
+        self._set_root(MCNode(state=base_state, v=v, player=player))
         self.root_node.create_children(probs, self.env.valid_moves())
         self.moves_played = 0
         self.temp_memory = []
@@ -180,40 +173,38 @@ class MCTreeSearch:
     ## Ignores the inputted state for the moment. Produces the correct action, and changes the root node appropriately
     # TODO might want to do a check on the state to make sure it is consistent
     def __call__(self, s):  # not using player
-        move = self.search_and_play()
+        move = self._search_and_play()
         return move
 
-    def search_and_play(self):
+    def _search_and_play(self):
         final_temp = 1
         temperature = 1 if self.moves_played < self.temperature_cutoff else final_temp
         self.search()
-        move = self.play(temperature)
+        move = self._play(temperature)
         return move
 
     def play_action(self, action, player):
-        self.set_node(action)
+        self._set_node(action)
 
-    def set_root(self, node):
+    def _set_root(self, node):
         if self.root_node:
             self.root_node.active_root = False
         self.root_node = node
         self.root_node.active_root = True
 
-    def prune(self, action):
-        self.set_root(self.root_node.children[action])
-        # Choose action - and remove all other elements of tree
+    def _prune(self, action):
+        self._set_root(self.root_node.children[action])
         self.root_node.parent.children = [self.root_node]
-        # self.root_node = self.root_node.children[0]
 
-    def set_node(self, action):
+    def _set_node(self, action):
         node = self.root_node.children[action]
         if self.root_node.children[action].n == 0:
             # TODO check if leaf and n > 0??
             # TODO might not backup??????????
-            node, v = self.expand_node(self.root_node, action, self.root_node.player)
+            node, v = self._expand_node(self.root_node, action, self.root_node.player)
             node.backup(v)
             node.v = v
-        self.set_root(node)
+        self._set_root(node)
 
     def update(self, s, a, r, done, next_s):
         self.push_to_queue(done, r)
@@ -230,7 +221,6 @@ class MCTreeSearch:
         if done:
             for experience in self.temp_memory:
                 experience = experience._replace(actual_val=torch.tensor(r).float().to(device))
-                # experience.actual_val =
                 self.memory_queue.put(experience)
             self.temp_memory = []
 
@@ -238,27 +228,16 @@ class MCTreeSearch:
         batch_t = Move(*zip(*batch))  # transposed batch
         s, actual_val, tree_probs = batch_t
         s_batch = torch.stack(s)
-        # a_batch = torch.stack(a)
-        # predict_val_batch = torch.stack(predict_val)
         net_probs_batch, predict_val_batch = self.evaluator.forward(s_batch)
         predict_val_batch = predict_val_batch.view(-1)
         actual_val_batch = torch.stack(actual_val)
-        # net_probs_batch = torch.stack(net_probs)
         tree_probs_batch = torch.stack(tree_probs)
-        # tree_best_move = torch.argmax(tree_probs_batch, dim=1)  # TODO - fix this?
-
-        # value_loss = F.smooth_l1_loss(predict_val_batch, actual_val_batch)
 
         c = MSELossFlat(floatify=True)
         value_loss = c(predict_val_batch, actual_val_batch)
 
-        # prob_loss = F.cross_entropy(net_probs_batch, tree_best_move)
         prob_loss = -(net_probs_batch.log() * tree_probs_batch).sum() / net_probs_batch.size()[0]
-        # value_loss = torch.autograd.Variable(value_loss,requires_grad=
-        #                                True)
-        # prob_loss = torch.autograd.Variable(prob_loss,requires_grad=
-        #                                True)
-        #
+
         loss = value_loss + prob_loss
         return loss
 
@@ -267,12 +246,9 @@ class MCTreeSearch:
 
         loss = self.loss(batch)
 
-        # loss = torch.autograd.Variable(loss,requires_grad=
-        #                                True)
         self.optim.zero_grad()
 
         if APEX_AVAILABLE:
-            # print(vars(amp._amp_state))
             with amp.scale_loss(loss, self.optim) as scaled_loss:
                 scaled_loss.backward()
         else:
@@ -282,32 +258,27 @@ class MCTreeSearch:
         #     param.grad.data.clamp_(-1, 1)
         self.optim.step()
 
-    def play(self, temp=0.05):
+    def _play(self, temp=0.05):
         if self.evaluating:  # Might want to just make this greedy
             temp = temp / 20  # More likely to choose higher visited nodes
 
         play_probs = [child.play_prob(temp) for child in self.root_node.children]
         play_probs = play_probs / sum(play_probs)
-        # move_probs = [child.p for child in self.root_node.children]
 
         action = np.random.choice(self.actions, p=play_probs)
-        # self.prune(action) #Do this in the self play step
 
         self.moves_played += 1
 
         self.temp_memory.append(
             Move(
                 torch.tensor(self.root_node.state).to(device),
-                # torch.tensor(action).to(devi      ce),
-                # torch.tensor(self.root_node.v).to(device),
                 None,
-                # torch.tensor(move_probs).to(device),
                 torch.tensor(play_probs).float().to(device),
             )
         )
         return action
 
-    def expand_node(self, parent_node, action, player=1):
+    def _expand_node(self, parent_node, action, player=1):
         env = self.env_gen()
         env.set_state(copy.copy(parent_node.state))
         s, r, done, _ = env.step(action, player=player)
@@ -317,9 +288,6 @@ class MCTreeSearch:
             child_node = parent_node.children[action]
         else:
             probs, v = self.evaluator(s, parent_node.player)
-            # TODO fix this?
-            # probs = [prob if is_valid else 0 for prob, is_valid in zip(probs, env.valid_moves())]
-            # TODO check if this works correctly with player - might have to swap
             child_node = parent_node.children[action]
             child_node.create_children(probs, env.valid_moves())
             assert child_node.children
@@ -335,10 +303,8 @@ class MCTreeSearch:
                     child.select_prob if child.valid else -10000000000 for child in node.children
                 ]  # real big negative nuber
                 action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
-                # except ValueError:
-                #     action = np.random.choice(np.arange(self.actions))
                 if node.children[action].is_leaf:
-                    node, v = self.expand_node(node, action, node.player)
+                    node, v = self._expand_node(node, action, node.player)
                     node.backup(v)
                     node.v = v
                     break

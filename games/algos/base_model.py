@@ -48,3 +48,6 @@ class BaseModel:
 
     def deduplicate(self):
         pass
+
+    def play_action(self, a):
+        raise NotImplementedError
