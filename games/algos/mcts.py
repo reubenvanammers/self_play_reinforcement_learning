@@ -209,7 +209,7 @@ class MCTreeSearch(BaseModel):
         self._set_root(node)
 
     def update(self, s, a, r, done, next_s):
-        self.push_to_queue(done, r)
+        self.push_to_queue(s, a, r, done, next_s)
         self.pull_from_queue()
         if self.ready:
             self.update_from_memory()
@@ -219,7 +219,7 @@ class MCTreeSearch(BaseModel):
             experience = self.memory_queue.get()
             self.memory.add(experience)
 
-    def push_to_queue(self, done, r):
+    def push_to_queue(self, s, a, r, done, next_s):
         if done:
             for experience in self.temp_memory:
                 experience = experience._replace(actual_val=torch.tensor(r).float().to(device))

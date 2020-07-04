@@ -1,4 +1,5 @@
-add tool to compare model strengths
+add tool to compare model strengths - persistent elo store
+rejig q-epsilon to properly use base models
 try not copying over model # figure out why ths doesnt work
 move stuff to tensors - at least delay evaluation of them
 use apex - move optimizer out of mcts and pass directly

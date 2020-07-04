@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch.functional import F
+import copy
 
 from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.sum_tree import WeightedMemory
@@ -19,23 +20,33 @@ Transition = namedtuple("Transition", ("state", "action", "reward", "done", "nex
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-
-
 class EpsilonGreedy(BaseModel):
-    def __init__(self, q, epsilon):
+    def __init__(self, q, epsilon, optim=None, memory_queue=None, buffer_size=20000, mem_type=None,evaluator=None):
         self.q = q
         self.epsilon = epsilon
+        self.optim = optim
+        self.memory_queue = memory_queue
+
+        self.policy_net = copy.deepcopy(evaluator)
+        self.target_net = copy.deepcopy(evaluator)
+
+        if mem_type == "sumtree":
+            self.memory = WeightedMemory(buffer_size)
+        else:
+            self.memory = Memory(buffer_size)
 
     def __call__(self, s):
+        return self._epsilon_greedy(s)
+
+    def _epsilon_greedy(self, s):
         if np.random.rand() < self.epsilon:
             possible_moves = [i for i, move in enumerate(self.q.env.valid_moves()) if move]
             a = random.choice(possible_moves)
         else:
-            # a = max(range(self.q.env.action_space.n), key=(lambda a_: self.q(s, a_).item()))
             weights = self.q(s).detach().cpu().numpy()  # TODO maybe do this with tensors
             mask = (
-                -1000000000 * ~np.array(self.q.env.valid_moves())
-            ) + 1  # just a really big negative number? is quite hacky
+                           -1000000000 * ~np.array(self.q.env.valid_moves())
+                   ) + 1  # just a really big negative number? is quite hacky
             a = np.argmax(weights + mask)
         return a
 
@@ -44,8 +55,68 @@ class EpsilonGreedy(BaseModel):
         if target:
             self.q.target_net.load_state_dict(state_dict)
 
-    def update(self, *args, **kwargs):
-        return self.q.update(*args, **kwargs)
+    def update(self, s, a, r, done, next_s):
+        self.push_to_queue(s, a, r, done, next_s)
+        self.pull_from_queue()
+        if self.ready:
+            self.update_from_memory()
+
+    def push_to_queue(self, s, a, r, done, next_s):
+        s = torch.tensor(s, device=device)
+        s = self.policy_net.preprocess(s)
+        a = torch.tensor(a, device=device)
+        r = torch.tensor(r, device=device)
+        done = torch.tensor(done, device=device)
+        next_s = torch.tensor(next_s, device=device)
+        next_s = self.policy_net.preprocess(next_s)
+        self.memory_queue.put(Transition(s, a, r, done, next_s))
+
+    def pull_from_queue(self):
+        while not self.memory_queue.empty():
+            experience = self.memory_queue.get()
+            self.memory.add(experience)
+
+    def update_from_memory(self):
+        if isinstance(self.memory, WeightedMemory):
+            tree_idx, batch, sample_weights = self.memory.sample(self.batch_size)
+            sample_weights = torch.tensor(sample_weights, device=device)
+        else:
+            batch = self.memory.sample(self.batch_size)
+        batch_t = Transition(*zip(*batch))  # transposed batch
+        s_batch, a_batch, r_batch, done_batch, s_next_batch = batch_t
+        s_batch = torch.cat(s_batch)
+        a_batch = torch.stack(a_batch)
+        r_batch = torch.stack(r_batch).view(-1, 1)
+        s_next_batch = torch.cat(s_next_batch)
+        done_batch = torch.stack(done_batch).view(-1, 1)
+        q = self._state_action_value(s_batch, a_batch)
+
+        # Get Actual Q values
+
+        double_actions = self.policy_net(s_next_batch).max(1)[1].detach()  # used for double q learning
+        q_next = self._state_action_value(s_next_batch, double_actions)
+
+        q_next_actual = (~done_batch) * q_next  # Removes elements thx`at are done
+        q_target = r_batch + self.gamma * q_next_actual
+        ###TEST if clamping works or is even good practise
+        q_target = q_target.clamp(-1, 1)
+        ###/TEST
+
+        if isinstance(self.memory, WeightedMemory):
+            absolute_loss = torch.abs(q - q_target).detach().cpu().numpy()
+            loss = weighted_smooth_l1_loss(
+                q, q_target, sample_weights
+            )  # TODO fix potential non-linearities using huber loss
+            self.memory.batch_update(tree_idx, absolute_loss)
+
+        else:
+            loss = F.smooth_l1_loss(q, q_target)
+
+        self.optim.zero_grad()
+        loss.backward()
+        for param in self.policy_net.parameters():  # see if this ends up doing anything - should just be relu
+            param.grad.data.clamp_(-1, 1)
+        self.optim.step()
 
     # determines when a neural net has enough data to train
     @property
@@ -64,6 +135,10 @@ class EpsilonGreedy(BaseModel):
     def reset(self):
         self.q.env.reset()
 
+    def _state_action_value(self, s, a):
+        a = a.view(-1, 1)
+        return self.policy_net(s).gather(1, a)
+
     @property
     def optim(self):
         return self.q.optim
@@ -74,7 +149,35 @@ class EpsilonGreedy(BaseModel):
 
 
 class Q:
-    def __init__(self, mem_type="sumtree", buffer_size=20000, batch_size=16, *args, **kwargs):
+    def __init__(
+            self,
+            env,
+            evaluator,
+            lr=0.01,
+            gamma=0.99,
+            momentum=0.9,
+            weight_decay=0.01,
+            mem_type="sumtree",
+            buffer_size=20000,
+            batch_size=16,
+            *args,
+            **kwargs
+    ):
+
+        self.gamma = gamma
+        self.env = env
+        self.state_size = self.env.width * self.env.height
+        self.policy_net = copy.deepcopy(evaluator)
+        # ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n).to(device)
+        self.target_net = copy.deepcopy(evaluator)
+        # ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n).to(device)
+
+        self.policy_net.apply(init_weights)
+        self.target_net.apply(init_weights)
+
+        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum,
+                                     lr=lr, )
+
         if mem_type == "sumtree":
             self.memory = WeightedMemory(buffer_size)
         else:
@@ -150,38 +253,25 @@ class Q:
         self.optim.step()
 
 
-
 class QConvConnect4(Q):
     def __init__(self, env, lr=0.01, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
         super().__init__(*args, **kwargs)
 
-        self.gamma = gamma
-        self.env = env
-        self.state_size = self.env.width * self.env.height
-        self.policy_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n).to(device)
-        self.target_net = ConvNetConnect4(self.env.width, self.env.height, self.env.action_space.n).to(device)
-
-        self.policy_net.apply(init_weights)
-        self.target_net.apply(init_weights)
-
-        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr,)
-
-
-class QConvTicTacToe(Q):
-    def __init__(self, env, lr=0.0002, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
-        # gamma is slightly less than 1 to promote faster games
-        super().__init__(*args, **kwargs)
-
-        self.gamma = gamma
-        self.env = env
-        self.state_size = self.env.width * self.env.height
-        self.policy_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n).to(device)
-        self.target_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n).to(device)
-
-        self.policy_net.apply(init_weights)
-        self.target_net.apply(init_weights)
-        #         self.optim = torch.optim.Adam(
-        #             self.policy_net.parameters(), weight_decay=weight_decay
-        #         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
-        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr,)
+# class QConvTicTacToe(Q):
+#     def __init__(self, env, lr=0.0002, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
+#         # gamma is slightly less than 1 to promote faster games
+#         super().__init__(*args, **kwargs)
+#
+#         self.gamma = gamma
+#         self.env = env
+#         self.state_size = self.env.width * self.env.height
+#         self.policy_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n).to(device)
+#         self.target_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n).to(device)
+#
+#         self.policy_net.apply(init_weights)
+#         self.target_net.apply(init_weights)
+#         #         self.optim = torch.optim.Adam(
+#         #             self.policy_net.parameters(), weight_decay=weight_decay
+#         #         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
+#         self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr,)

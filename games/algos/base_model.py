@@ -11,9 +11,11 @@ class BaseModel:
         raise NotImplementedError
 
 
-    def update(self, *args, **kwargs):
-        raise NotImplementedError
-
+    def update(self, s, a, r, done, next_s):
+        self.push_to_queue(s, a , r, done, next_s)
+        self.pull_from_queue()
+        if self.ready:
+            self.update_from_memory()
     @property
     def ready(self):
         raise NotImplementedError
@@ -41,9 +43,11 @@ class BaseModel:
         raise NotImplementedError
 
     def pull_from_queue(self):
-        raise NotImplementedError
+        while not self.memory_queue.empty():
+            experience = self.memory_queue.get()
+            self.memory.add(experience)
 
-    def push_to_queue(self, done, r):
+    def push_to_queue(self, s, a, r, done, next_s):
         raise NotImplementedError
 
     def deduplicate(self):
