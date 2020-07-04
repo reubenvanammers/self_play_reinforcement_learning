@@ -9,6 +9,7 @@ from games.algos.mcts import MCTreeSearch
 
 from games.connect4.modules import ConvNetConnect4
 from games.connect4.modules import ConvNetConnect4
+
 # from games.algos.q import EpsilonGreedy, QConvConnect4
 from games.connect4.onesteplookahead import OnestepLookahead
 from games.algos.self_play_parallel import SelfPlayScheduler
@@ -29,7 +30,7 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=100, env_gen=Connect4Env, evaluator=network, )
+    policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network,)
 
     self_play = True
     if self_play:
@@ -37,7 +38,8 @@ def run_training():
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
         opposing_policy_kwargs = dict(
-            iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network)
+            iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network
+        )
 
         evaluation_policy_gen = OnestepLookahead
         evaluation_policy_args = []
@@ -51,7 +53,6 @@ def run_training():
         #     iterations=200, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=network,
         #     starting_state_dict=opposing_state_dict
         # )
-
 
     else:
         opposing_policy_gen = OnestepLookahead
@@ -95,5 +96,5 @@ def run_training():
 
 
 if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn', force=True)
+    multiprocessing.set_start_method("spawn", force=True)
     run_training()

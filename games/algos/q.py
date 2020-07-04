@@ -21,39 +21,59 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class EpsilonGreedy(BaseModel):
-    def __init__(self, q, epsilon, optim=None, memory_queue=None, buffer_size=20000, mem_type=None,evaluator=None):
-        self.q = q
+    def __init__(
+        self,
+        evaluator,
+        epsilon,
+        env_gen,
+        optim=None,
+        memory_queue=None,
+        memory_size=20000,
+        mem_type=None,
+        batch_size=64,
+        gamma=0.99,
+    ):
         self.epsilon = epsilon
+        self._epsilon = epsilon  # Backup for evaluatoin
         self.optim = optim
+        self.env = env_gen()
         self.memory_queue = memory_queue
+        self.batch_size = batch_size
+        self.gamma = gamma
 
         self.policy_net = copy.deepcopy(evaluator)
         self.target_net = copy.deepcopy(evaluator)
 
         if mem_type == "sumtree":
-            self.memory = WeightedMemory(buffer_size)
+            self.memory = WeightedMemory(memory_size)
         else:
-            self.memory = Memory(buffer_size)
+            self.memory = Memory(memory_size)
 
     def __call__(self, s):
         return self._epsilon_greedy(s)
 
+    def q(self, s):
+        if not isinstance(s, torch.Tensor):
+            s = torch.from_numpy(s).long()
+        # s = self.policy_net.preprocess(s)
+        return self.policy_net(s)  # Only get predict policiies
+
     def _epsilon_greedy(self, s):
         if np.random.rand() < self.epsilon:
-            possible_moves = [i for i, move in enumerate(self.q.env.valid_moves()) if move]
+            possible_moves = [i for i, move in enumerate(self.env.valid_moves()) if move]
             a = random.choice(possible_moves)
         else:
             weights = self.q(s).detach().cpu().numpy()  # TODO maybe do this with tensors
             mask = (
-                           -1000000000 * ~np.array(self.q.env.valid_moves())
-                   ) + 1  # just a really big negative number? is quite hacky
+                -1000000000 * ~np.array(self.env.valid_moves())
+            ) + 1  # just a really big negative number? is quite hacky
             a = np.argmax(weights + mask)
         return a
 
     def load_state_dict(self, state_dict, target=False):
-        self.q.policy_net.load_state_dict(state_dict)
+        self.policy_net.load_state_dict(state_dict)
         if target:
-            self.q.target_net.load_state_dict(state_dict)
+            self.target_net.load_state_dict(state_dict)
 
     def update(self, s, a, r, done, next_s):
         self.push_to_queue(s, a, r, done, next_s)
@@ -63,12 +83,12 @@ class EpsilonGreedy(BaseModel):
 
     def push_to_queue(self, s, a, r, done, next_s):
         s = torch.tensor(s, device=device)
-        s = self.policy_net.preprocess(s)
+        # s = self.policy_net.preprocess(s)
         a = torch.tensor(a, device=device)
         r = torch.tensor(r, device=device)
         done = torch.tensor(done, device=device)
         next_s = torch.tensor(next_s, device=device)
-        next_s = self.policy_net.preprocess(next_s)
+        # next_s = self.policy_net.preprocess(next_s)
         self.memory_queue.put(Transition(s, a, r, done, next_s))
 
     def pull_from_queue(self):
@@ -121,47 +141,52 @@ class EpsilonGreedy(BaseModel):
     # determines when a neural net has enough data to train
     @property
     def ready(self):
-        return len(self.q.memory) >= self.q.memory.max_size
+        return len(self.memory) >= self.memory.max_size
 
     def state_dict(self):
-        return self.q.policy_net.state_dict()
+        return self.policy_net.state_dict()
 
     def update_target_net(self):
-        self.q.target_net.load_state_dict(self.state_dict())
+        self.target_net.load_state_dict(self.state_dict())
 
-    def train(self, train_state):
-        return self.q.policy_net.train(train_state)
+    def train(self, train_state=True):
+        return self.policy_net.train(train_state)
 
-    def reset(self):
-        self.q.env.reset()
+    def reset(self, *args, **kwargs):
+        self.env.reset()
 
     def _state_action_value(self, s, a):
         a = a.view(-1, 1)
         return self.policy_net(s).gather(1, a)
 
-    @property
-    def optim(self):
-        return self.q.optim
+    def evaluate(self, evaluate_state=False):
+        # like train - sets evaluate state
+        if evaluate_state:
+            # self._epsilon = self.epsilon
+            self.epsilon = 0
+        else:
+            self.epsilon = self._epsilon
+        # self.evaluating = evaluate_state
 
     def play_action(self, action, player):
-        self.q.env.step(action, player)
+        self.env.step(action, player)
         # pass  # does nothign atm - mostly for the mcts
 
 
 class Q:
     def __init__(
-            self,
-            env,
-            evaluator,
-            lr=0.01,
-            gamma=0.99,
-            momentum=0.9,
-            weight_decay=0.01,
-            mem_type="sumtree",
-            buffer_size=20000,
-            batch_size=16,
-            *args,
-            **kwargs
+        self,
+        env,
+        evaluator,
+        lr=0.01,
+        gamma=0.99,
+        momentum=0.9,
+        weight_decay=0.01,
+        mem_type="sumtree",
+        buffer_size=20000,
+        batch_size=16,
+        *args,
+        **kwargs
     ):
 
         self.gamma = gamma
@@ -175,8 +200,7 @@ class Q:
         self.policy_net.apply(init_weights)
         self.target_net.apply(init_weights)
 
-        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum,
-                                     lr=lr, )
+        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr,)
 
         if mem_type == "sumtree":
             self.memory = WeightedMemory(buffer_size)
@@ -196,12 +220,12 @@ class Q:
 
     def update(self, s, a, r, done, s_next):
         s = torch.tensor(s, device=device)
-        s = self.policy_net.preprocess(s)
+        # s = self.policy_net.preprocess(s)
         a = torch.tensor(a, device=device)
         r = torch.tensor(r, device=device)
         done = torch.tensor(done, device=device)
         s_next = torch.tensor(s_next, device=device)
-        s_next = self.policy_net.preprocess(s_next)
+        # s_next = self.policy_net.preprocess(s_next)
 
         if not self.ready:
             self.memory.add(Transition(s, a, r, done, s_next))
@@ -257,6 +281,7 @@ class QConvConnect4(Q):
     def __init__(self, env, lr=0.01, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
         super().__init__(*args, **kwargs)
+
 
 # class QConvTicTacToe(Q):
 #     def __init__(self, env, lr=0.0002, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):

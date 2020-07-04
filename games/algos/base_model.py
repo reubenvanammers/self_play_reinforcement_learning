@@ -1,7 +1,5 @@
-
-
 class BaseModel:
-    def __init__(self, *args, **kwargs) :
+    def __init__(self, *args, **kwargs):
         pass
 
     def __call__(self, s):
@@ -10,12 +8,12 @@ class BaseModel:
     def load_state_dict(self, state_dict, target=False):
         raise NotImplementedError
 
-
     def update(self, s, a, r, done, next_s):
-        self.push_to_queue(s, a , r, done, next_s)
+        self.push_to_queue(s, a, r, done, next_s)
         self.pull_from_queue()
         if self.ready:
             self.update_from_memory()
+
     @property
     def ready(self):
         raise NotImplementedError
@@ -35,9 +33,9 @@ class BaseModel:
     def reset(self):
         raise NotImplementedError
 
-    @property
-    def optim(self):
-        raise NotImplementedError
+    # @property
+    # def optim(self):
+    #     raise NotImplementedError
 
     def play_action(self, action, player):
         raise NotImplementedError

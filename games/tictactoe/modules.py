@@ -9,7 +9,9 @@ import random
 from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class ConvNetTicTacToe(nn.Module):
     def __init__(self, width=3, height=3, action_size=3):
@@ -79,5 +81,3 @@ class ConvNetTicTacToe(nn.Module):
         value = torch.tanh(self.linear_output(value))
 
         return policy, value
-
-
