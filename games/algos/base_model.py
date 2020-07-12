@@ -53,3 +53,15 @@ class BaseModel:
 
     def play_action(self, a):
         raise NotImplementedError
+
+
+class ModelContainer():
+
+    def __init__(self, policy_gen, policy_args, policy_kwargs):
+        self.policy_gen = policy_gen
+        self.policy_args = policy_args
+        self.policy_kwargs = policy_kwargs
+
+
+    def setup(self, **kwargs):
+        return self.policy_gen(*self.policy_args,**self.policy_kwargs,**kwargs)
