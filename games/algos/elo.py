@@ -4,6 +4,8 @@ import shelve
 import os
 import itertools
 import atexit
+from games.algos.base_model import ModelContainer
+
 
 class Elo():
     MODEL_SAVE_FILE = ".ELO_MODEL"
@@ -21,22 +23,16 @@ class Elo():
         self.model_shelf.close()
         self.result_shelf.close()
 
-    def add_model(self, name, policy_gen, policy_args, policy_kwargs):
+    def add_model(self, name, model_container):
         if self.model_shelf[name]:
             raise ValueError("Model name already in use")
-        self.model_shelf[name] = {
-            "policy_gen": policy_gen,
-            "policy_args": policy_args,
-            "policy_kwargs": policy_kwargs
-        }
-
+        self.model_shelf[name] = model_container
 
     def compare_models(self, *args):
         combinations = itertools.combinations(args, 2)
 
         for model_1, model_2 in combinations:
             self._compare(model_1, model_2)
-
 
     def _compare(self, model_1, model_2, num_games=100):
         assert model_1 != model_2
@@ -55,12 +51,17 @@ class Elo():
         self.result_shelf[key] = total_results
 
     def _get_results(self, model_1, model_2, num_games=100):
-        model_1_dict = self.model_shelf[model_1]
-        model_2_dict = self.model_shelf[model_2]
+        # model_1_dict = self.model_shelf[model_1]
+        # model_2_dict = self.model_shelf[model_2]
 
-
-
-        scheduler = self_play_parallel.SelfPlayScheduler(mod)
+        scheduler = self_play_parallel.SelfPlayScheduler(policy_container=self.model_shelf[model_1],
+                                                         opposing_policy_container=self.model_shelf[model_2],
+                                                         env_gen=self.env, epoch_length=num_games, initial_games=0,
+                                                         self_play=False)
+        _, breakdown = scheduler.compre_models()
+        results = {status: breakdown["first"][status] + breakdown["second"][status] for status in
+                   ("wins", "draws", "losses")}
+        return results
 
     def calculate_elo(self):
         pass

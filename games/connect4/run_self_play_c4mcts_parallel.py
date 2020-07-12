@@ -2,6 +2,7 @@ import datetime
 import os
 from os import listdir
 from os.path import isfile, join
+from games.algos.base_model import ModelContainer
 
 import torch
 from torch import multiprocessing
@@ -11,7 +12,7 @@ from games.connect4.modules import ConvNetConnect4
 from games.connect4.modules import ConvNetConnect4
 
 # from games.algos.q import EpsilonGreedy, QConvConnect4
-from games.connect4.onesteplookahead import OnestepLookahead
+from games.connect4.hardcoded_players import OnestepLookahead
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 
@@ -30,7 +31,10 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network,)
+    policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env,
+                         # evaluator=network,
+                         )
+    policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     self_play = True
     if self_play:
@@ -38,12 +42,18 @@ def run_training():
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
         opposing_policy_kwargs = dict(
-            iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env, evaluator=network
+            iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env,
+            # evaluator=network
         )
+        opposing_policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
 
         evaluation_policy_gen = OnestepLookahead
         evaluation_policy_args = []
         evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
+        evaluation_policy_container = ModelContainer(
+            policy_gen=evaluation_policy_gen, policy_kwargs=evaluation_policy_kwargs
+        )
+
         # opposing_state_dict = torch.load(
         #     '/Users/reuben/PycharmProjects/reinforcement_learning/games/connect4/saves__c4mtcs_par/2020-05-12T17:28:34.659107/model-2020-05-12T18:39:28.650785:210')
         #
@@ -55,31 +65,26 @@ def run_training():
         # )
 
     else:
-        opposing_policy_gen = OnestepLookahead
-        opposing_policy_args = []
-        opposing_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
-        evaluation_policy_gen = None
-        evaluation_policy_args = []
-        evaluation_policy_kwargs = {}
+        pass
+        # opposing_policy_gen = OnestepLookahead
+        # opposing_policy_args = []
+        # opposing_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
+        # evaluation_policy_gen = None
+        # evaluation_policy_args = []
+        # evaluation_policy_kwargs = {}
 
     # policy = EpsilonGreedy(QConvTicTacToe(env, buffer_size=5000, batch_size=64), 0.1)
 
     self_play = SelfPlayScheduler(
         env_gen=Connect4Env,
-        policy_gen=policy_gen,
         network=network,
-        opposing_policy_gen=opposing_policy_gen,
-        policy_args=policy_args,
-        policy_kwargs=policy_kwargs,
-        opposing_policy_args=opposing_policy_args,
-        opposing_policy_kwargs=opposing_policy_kwargs,
+        policy_container=policy_container,
+        opposing_policy_container=opposing_policy_container,
+        evaluation_policy_container=evaluation_policy_container,
         initial_games=20,
         epoch_length=2,
         save_dir=save_dir,
         self_play=self_play,
-        evaluation_policy_gen=evaluation_policy_gen,
-        evaluation_policy_args=evaluation_policy_args,
-        evaluation_policy_kwargs=evaluation_policy_kwargs,
         stagger=True,
     )
 
