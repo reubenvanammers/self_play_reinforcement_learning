@@ -53,7 +53,7 @@ class SelfPlayScheduler:
             policy_container,
             opposing_policy_container,
             env_gen,
-            evaluation_policy_container,
+            evaluation_policy_container=None,
             network=None,
             swap_sides=True,
             save_dir="saves",
@@ -79,7 +79,7 @@ class SelfPlayScheduler:
         self.evaluation_games = evaluation_games
 
         self.start_time = datetime.datetime.now().isoformat()
-        os.mkdir(os.path.join(save_dir, self.start_time))
+
 
         self.task_queue = multiprocessing.JoinableQueue()
         self.memory_queue = multiprocessing.Queue()
@@ -87,12 +87,14 @@ class SelfPlayScheduler:
         self.initial_games = initial_games
         self.writer = SummaryWriter()
 
-        logging.basicConfig(filename=join(save_dir, self.start_time, "log"), level=logging.INFO)
+        if save_dir:
+            os.mkdir(os.path.join(save_dir, self.start_time))
+            logging.basicConfig(filename=join(save_dir, self.start_time, "log"), level=logging.INFO)
         multiprocessing_logging.install_mp_handler()
 
         # self.memory = self.policy.memory.get()
 
-    def compre_models(self, num_workers):
+    def compare_models(self, num_workers=None):
         num_workers = num_workers or multiprocessing.cpu_count()
         player_workers = [
             SelfPlayWorker(

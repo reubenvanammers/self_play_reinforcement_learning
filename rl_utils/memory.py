@@ -4,7 +4,7 @@ import torch
 
 
 class Memory:
-    def __init__(self, max_size):
+    def __init__(self, max_size=None):
         self.max_size = max_size
         self.buffer = deque(maxlen=max_size)
 

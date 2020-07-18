@@ -4,7 +4,7 @@ import random
 
 
 class OnestepLookahead:
-    def __init__(self, env_gen, player=-1):
+    def __init__(self, env_gen, player=-1, **kwargs):
         self.env = env_gen()
         self.env_gen = env_gen
         self.player = player
@@ -63,7 +63,7 @@ class OnestepLookahead:
 
 
 class Random:
-    def __init__(self, env_gen, player=-1):
+    def __init__(self, env_gen, player=-1, **kwargs):
         self.env = env_gen()
         self.env_gen = env_gen
         self.player = player
