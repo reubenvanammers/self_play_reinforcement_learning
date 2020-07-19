@@ -13,7 +13,7 @@ from games.connect4.hardcoded_players import OnestepLookahead, Random
 
 from games.algos.base_model import ModelContainer
 
-result_container = namedtuple("result", ["p1", "p2", "result"])
+result_container = namedtuple("result", ["players", "result"])
 
 
 class Elo():
@@ -55,20 +55,22 @@ class Elo():
         assert "_" not in model_2
         if model_1 > model_2:
             key = f"{model_1}__{model_2}"
-            swap=False
+            swap = False
         else:
             key = f"{model_2}__{model_1}"
-            swap=True
+            swap = True
         if key in self.result_shelf:
             old_results = self.result_shelf[key]
         else:
             old_results = {"wins": 0, "draws": 0, "losses": 0}
         new_results = self._get_results(model_1, model_2)
         if swap:
-            new_results_ordered = {"wins":new_results["losses"], "draws": new_results["draws"], "losses": new_results["wins"]}
+            new_results_ordered = {"wins": new_results["losses"], "draws": new_results["draws"],
+                                   "losses": new_results["wins"]}
         else:
             new_results_ordered = new_results
-        total_results = {status: new_results_ordered[status] + old_results[status] for status in ("wins", "draws", "losses")}
+        total_results = {status: new_results_ordered[status] + old_results[status] for status in
+                         ("wins", "draws", "losses")}
         self.result_shelf[key] = total_results
 
     def _get_results(self, model_1, model_2, num_games=100):
@@ -86,26 +88,45 @@ class Elo():
         return results
 
     def calculate_elo(self, anchor_model="random", anchor_elo=0):
-        self._convert_memory()
         models = list(self.model_shelf.keys())
+        model_indices = {model: i for i, model in enumerate(model for model in models if model != anchor_model)}
+
+        self._convert_memory(model_indices)
 
         # elos = torch.zeros(len(models) - 1, requires_grad=True)
         model_qs = {model: torch.ones(1, requires_grad=True) for model in models}  # q = 10^(rating/400)
         model_qs[anchor_model] = torch.tensor(10 ** (anchor_elo / 400), requires_grad=False)
-        optim = torch.optim.SGD(model_qs.values(), lr=10)
-        epoch_length = 500000
-        num_epochs = 5
+        epoch_length = 1000
+        num_epochs = 200
+        batch_size = 32
+        elo_net = EloNetwork(len(models))
+        optim = torch.optim.SGD([elo_net.q_vals.weight], lr=800)
+
         for i in range(num_epochs):
-            for i in range(epoch_length):
+            for j in range(epoch_length):
                 optim.zero_grad()
-                result = self.memory.sample(1)[0]
-                loss = self._calculate_loss(model_qs[result.p1], model_qs[result.p2], result.result)
+
+                # result = self.memory.sample(1)[0]
+                batch = self.memory.sample(batch_size)
+                batch_t = result_container(*zip(*batch))
+                players, results = batch_t
+                players = torch.stack(players)
+                results = torch.stack(results)
+                expected_results = elo_net(players)
+                loss = elo_net.loss(expected_results, results)
+
+                # loss = self._calculate_loss(model_qs[result.p1], model_qs[result.p2], result.result)
                 loss.backward()
                 optim.step()
             for param_group in optim.param_groups:
-                param_group['lr'] = param_group['lr'] / 10
+                param_group['lr'] = param_group['lr'] * 0.99
 
-        model_elos = {model: torch.log10(q.data) * 400 for model, q in model_qs.items()}
+        print(elo_net.q_vals.weight)
+        # model_elos = {model: torch.log10(q.data) * 400 for model, q in model_qs.items()}
+        model_elos = {model: elo_net.q_vals.weight.tolist()[0][model_indices[model]] for model in models if
+                      model != anchor_model}
+        model_elos[anchor_model] = anchor_elo
+        print(model_elos)
         return model_elos
 
     def _calculate_loss(self, q1, q2, result):
@@ -114,17 +135,63 @@ class Elo():
         loss = torch.nn.functional.l1_loss(expected, result_tensor)
         return loss
 
-    def _convert_memory(self):
+    def _convert_memory(self, model_indices):
 
         keys = list(self.result_shelf.keys())
         for key in keys:
             model1, model2 = key.split("__")
 
+            val_1 = self._onehot(model1, model_indices)
+            val_2 = self._onehot(model2, model_indices)
+            players = torch.stack((val_1, val_2), 1).t()
+
+            # model_1_idx = model_indices[model1]
+            # model_2_idx = model_indices[model2]
+            # torch.nn.functional.one_hot(torch.tensor(model_1_idx, model_2_idx), len(model_indices) - 1)
+
             results = self.result_shelf[key]
             result_map = {"wins": 1, "losses": 0, "draws": 0.5}
             for result, value in result_map.items():
                 for _ in range(results[result]):
-                    self.memory.add(result_container(model1, model2, value))
+                    self.memory.add(result_container(players, torch.tensor(value, dtype=torch.float)))
+
+    def _onehot(self, model, model_indices):
+        model_idx = model_indices[model] if model in model_indices else None
+        if model_idx is not None:
+            val = torch.nn.functional.one_hot(torch.tensor(model_idx), len(model_indices))
+        else:
+            val = torch.zeros(len(model_indices), dtype=torch.long)
+        return val
+
+
+class EloNetwork(torch.nn.Module):
+
+    def __init__(self, num_models, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.q_vals = torch.nn.Linear(num_models - 1, 1)  # q = 10^(rating/400)
+        with torch.no_grad():
+            self.q_vals.bias.fill_(0.)
+
+    def forward(self, batch):
+        batch = batch.float()
+        batch1, batch2 = torch.split(batch, 1, 1)
+        r1 = self.q_vals.forward(batch1)
+        r2 = self.q_vals.forward(batch2)
+
+        # r = self.q_vals.forward(batch)
+        # q1 = q[0]
+        # q2 = q[1]
+        # r1, r2 = torch.split(r, 1, 1)
+        q1 = torch.pow(10, r1 / 400)
+        q2 = torch.pow(10, r2 / 400)
+
+        expected = q1 / (q1 + q2)
+        return expected
+
+    def loss(self, expected, result):
+        result_tensor = torch.tensor(result, requires_grad=False, dtype=torch.float)
+        loss = torch.nn.functional.mse_loss(expected.view(-1), result_tensor)
+        return loss
 
 
 # random, mcts1, onsteplook
