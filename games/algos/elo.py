@@ -44,7 +44,7 @@ class Elo():
                 raise ValueError("Model name already in use")
         except KeyError:
             self.model_shelf[name] = model_container
-            print("added model {name}")
+            print(f"added model {name}")
 
     def compare_models(self, *args):
         combinations = itertools.combinations(args, 2)
@@ -94,7 +94,7 @@ class Elo():
         model_indices = {model: i for i, model in enumerate(model for model in models if model != anchor_model)}
         if "elo" in self.elo_value_shelf:
             elo_values = self.elo_value_shelf["elo"]
-            initial_weights = [elo_values[model] for model in models if model != anchor_model]
+            initial_weights = [elo_values.get(model,0) for model in models if model != anchor_model]
         else:
             initial_weights = None
 
@@ -161,7 +161,7 @@ class EloNetwork(torch.nn.Module):
 
     def __init__(self, num_models, initial_weights=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.elo_vals = torch.nn.Linear(num_models - 1, 1)  # q = 10^(rating/400)
+        self.elo_vals = torch.nn.Linear(num_models - 1, 1)
         with torch.no_grad():
             self.elo_vals.bias.fill_(0.)
             if initial_weights:
@@ -186,15 +186,15 @@ class EloNetwork(torch.nn.Module):
         return loss
 
 
-# random, mcts1, onsteplook
+# random, mcts1, onsteplook cloudmcts (model-2020-05-13T22_26_13.689443_4000), cloudmcts2 (model-2020-05-01T00_01_10.394613_2500)
 if __name__ == "__main__":
     # network = ConvNetConnect4()
     # network.share_memory()
-
+    #
     # policy_gen = MCTreeSearch
     # policy_args = []
-    # model_path = "/Users/reuben/PycharmProjects/reinforcement_learning/games/connect4/saves__c4mtcs_par/2020-07-12T15:56:28.076491/model-2020-07-13T05:12:44.321919:2000"
-    # model_dict = torch.load(model_path)["model"]
+    # model_path = "/Users/reuben/Downloads/model-2020-05-01T00_01_10.394613_2500"
+    # model_dict = torch.load(model_path,map_location=torch.device('cpu'))#["model"]
     # policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env,
     #                      evaluator=network, starting_state_dict=model_dict
     #                      )
@@ -205,8 +205,12 @@ if __name__ == "__main__":
     # policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
 
     elo = Elo()
+    # elo.add_model("cloudmcts2", policy_container)
+
     # elo.compare_models("mcts1", "onesteplook")
+    elo.compare_models("cloudmcts", "cloudmcts2")
 
     print(elo.calculate_elo("random", 0))
-    # elo.compare_models("random", "mcts1")
-    # elo.add_model("mcts1", policy_container)
+    # elo.add_model("cloudmcts", policy_container)
+    # elo.compare_models("onesteplook", "cloudmcts")
+
