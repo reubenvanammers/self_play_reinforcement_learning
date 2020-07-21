@@ -17,14 +17,20 @@ import traceback
 import logging
 import multiprocessing_logging
 
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+
+
 logging.basicConfig(
     filename="log.log",
     level=logging.INFO,
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
+logging.info("initializing logging")
 
 multiprocessing_logging.install_mp_handler()
+logging.info("initializing logging2")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
@@ -129,89 +135,91 @@ class SelfPlayScheduler:
         return total_rewards, breakdown
 
     def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None):
+        try:
+            evaluator = self.network
+            optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
+            evaluator.share_memory()
 
-        evaluator = self.network
-        optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
-        evaluator.share_memory()
-
-        num_workers = num_workers or multiprocessing.cpu_count()
-        player_workers = [
-            SelfPlayWorker(
-                self.task_queue,
-                self.memory_queue,
-                self.result_queue,
-                self.env_gen,
-                evaluator=evaluator,
-                start_time=self.start_time,
-                policy_container=self.policy_container,
-                opposing_policy_container=self.opposing_policy_container,
-                evaluation_policy_container=self.evaluation_policy_container,
-                save_dir=self.save_dir,
-                resume=resume_model,
-                self_play=self.self_play,
-            )
-            for _ in range(num_workers - 1)
-        ]
-        for w in player_workers:
-            w.start()
-
-        update_worker_queue = multiprocessing.JoinableQueue()
-
-        update_flag = multiprocessing.Event()
-        update_flag.clear()
-
-        update_worker = UpdateWorker(
-            memory_queue=self.memory_queue,
-            policy_container=self.policy_container,
-            evaluator=evaluator,
-            optim=optim,
-            update_flag=update_flag,
-            update_worker_queue=update_worker_queue,
-            save_dir=self.save_dir,
-            resume=resume_memory,
-            start_time=self.start_time,
-            stagger=self.stagger,
-        )
-
-        update_worker.start()
-
-        for i in range(self.initial_games):
-            swap_sides = not i % 2 == 0
-            self.task_queue.put({"play": {"swap_sides": swap_sides, "update": True}})
-        self.task_queue.join()
-        while not self.result_queue.empty():
-            self.result_queue.get()
-
-        saved_model_name = None
-        for epoch in range(num_epochs):
-            update_flag.set()
-            for i in range(self.epoch_length):
-                swap_sides = not i % 2 == 0
-                self.task_queue.put(
-                    {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name, }
+            num_workers = num_workers or multiprocessing.cpu_count()
+            player_workers = [
+                SelfPlayWorker(
+                    self.task_queue,
+                    self.memory_queue,
+                    self.result_queue,
+                    self.env_gen,
+                    evaluator=evaluator,
+                    start_time=self.start_time,
+                    policy_container=self.policy_container,
+                    opposing_policy_container=self.opposing_policy_container,
+                    evaluation_policy_container=self.evaluation_policy_container,
+                    save_dir=self.save_dir,
+                    resume=resume_model,
+                    self_play=self.self_play,
                 )
-            self.task_queue.join()
+                for _ in range(num_workers - 1)
+            ]
+            for w in player_workers:
+                w.start()
 
-            saved_model_name = os.path.join(
-                self.save_dir,
-                self.start_time,
-                "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch),
-            )
+            update_worker_queue = multiprocessing.JoinableQueue()
+
+            update_flag = multiprocessing.Event()
             update_flag.clear()
-            update_worker_queue.put({"saved_name": saved_model_name})
-            reward = self.evaluate_policy(epoch)
 
-            update_worker_queue.join()
-            update_worker_queue.put({"reward": reward})
+            update_worker = UpdateWorker(
+                memory_queue=self.memory_queue,
+                policy_container=self.policy_container,
+                evaluator=evaluator,
+                optim=optim,
+                update_flag=update_flag,
+                update_worker_queue=update_worker_queue,
+                save_dir=self.save_dir,
+                resume=resume_memory,
+                start_time=self.start_time,
+                stagger=self.stagger,
+            )
 
-            # Do some evaluation?
+            update_worker.start()
 
-        # Clean up
-        update_worker.terminate()
-        [w.terminate() for w in player_workers]
-        del self.memory_queue
-        del self.task_queue
-        del self.result_queue
+            for i in range(self.initial_games):
+                swap_sides = not i % 2 == 0
+                self.task_queue.put({"play": {"swap_sides": swap_sides, "update": True}})
+            self.task_queue.join()
+            while not self.result_queue.empty():
+                self.result_queue.get()
+
+            saved_model_name = None
+            for epoch in range(num_epochs):
+                update_flag.set()
+                for i in range(self.epoch_length):
+                    swap_sides = not i % 2 == 0
+                    self.task_queue.put(
+                        {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name, }
+                    )
+                self.task_queue.join()
+
+                saved_model_name = os.path.join(
+                    self.save_dir,
+                    self.start_time,
+                    "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch),
+                )
+                update_flag.clear()
+                update_worker_queue.put({"saved_name": saved_model_name})
+                reward = self.evaluate_policy(epoch)
+
+                update_worker_queue.join()
+                update_worker_queue.put({"reward": reward})
+
+                # Do some evaluation?
+
+            # Clean up
+            update_worker.terminate()
+            [w.terminate() for w in player_workers]
+            del self.memory_queue
+            del self.task_queue
+            del self.result_queue
+        except Exception as e:
+            logging.exception("error in main loop" + str(e))
 
     def run_evaluation_games(self):
         for i in range(self.evaluation_games):
@@ -354,6 +362,7 @@ class SelfPlayWorker(Worker):
             evaluation_policy_container=None,
 
     ):
+        logging.info("initializing worker")
         self.env_gen = env_gen
         self.env = env_gen()
         self.evaluator = evaluator
@@ -379,43 +388,48 @@ class SelfPlayWorker(Worker):
         super().__init__()
 
     def set_up_policies(self):
-        # self.policy = self.policy_gen(
-        #     memory_queue=self.memory_queue, evaluator=self.evaluator, *self.policy_args, **self.policy_kwargs
-        # )
-
-        if self.self_play:
-            self.policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator)
-            self.opposing_policy_train = self.opposing_policy_container.setup(evaluator=self.evaluator)
-            # self.opposing_policy_train = self.opposing_policy_gen(
-            #     evaluator=self.evaluator, *self.opposing_policy_args, **self.opposing_policy_kwargs
-            # )
-        else:
-            self.policy = self.policy_container.setup(memory_queue=self.memory_queue)
-            self.opposing_policy_train = self.opposing_policy_container.setup()
-            # self.opposing_policy_train = self.opposing_policy_gen(
-            #     *self.opposing_policy_args, **self.opposing_policy_kwargs
+        try:
+            # self.policy = self.policy_gen(
+            #     memory_queue=self.memory_queue, evaluator=self.evaluator, *self.policy_args, **self.policy_kwargs
             # )
 
-        self.opposing_policy_train.train(False)
-        self.policy.train(False)
+            if self.self_play:
+                self.policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator)
+                self.opposing_policy_train = self.opposing_policy_container.setup(evaluator=self.evaluator)
+                # self.opposing_policy_train = self.opposing_policy_gen(
+                #     evaluator=self.evaluator, *self.opposing_policy_args, **self.opposing_policy_kwargs
+                # )
+            else:
+                self.policy = self.policy_container.setup(memory_queue=self.memory_queue)
+                self.opposing_policy_train = self.opposing_policy_container.setup()
+                # self.opposing_policy_train = self.opposing_policy_gen(
+                #     *self.opposing_policy_args, **self.opposing_policy_kwargs
+                # )
 
-        # self.opposing_policy.env = self.env
-        self.opposing_policy_train.env = self.env_gen()  # TODO: make this a more stabel solution -
+            self.opposing_policy_train.train(False)
+            self.policy.train(False)
 
-        if self.evaluation_policy_container:
-            self.opposing_policy_evaluate = self.evaluation_policy_container.setup()
-            # self.opposing_policy_evaluate = self.evaluation_policy_gen(
-            #     *self.evaluation_policy_args, **self.evaluation_policy_kwargs
-            # )
+            # self.opposing_policy.env = self.env
+            self.opposing_policy_train.env = self.env_gen()  # TODO: make this a more stabel solution -
 
-        if self.opposing_policy_evaluate:
-            self.opposing_policy_evaluate.evaluate(True)
-            self.opposing_policy_evaluate.train(False)
-            self.opposing_policy_evaluate.env = self.env_gen()  # TODO: make this a more stabel solution -
+            if self.evaluation_policy_container:
+                self.opposing_policy_evaluate = self.evaluation_policy_container.setup()
+                # self.opposing_policy_evaluate = self.evaluation_policy_gen(
+                #     *self.evaluation_policy_args, **self.evaluation_policy_kwargs
+                # )
 
-        self.opposing_policy = self.opposing_policy_train
+            if self.opposing_policy_evaluate:
+                self.opposing_policy_evaluate.evaluate(True)
+                self.opposing_policy_evaluate.train(False)
+                self.opposing_policy_evaluate.env = self.env_gen()  # TODO: make this a more stabel solution -
+
+            self.opposing_policy = self.opposing_policy_train
+            logging.info("finished setting up policies")
+        except Exception as e:
+            logging.exception("setting up policies failed"+str(e))
 
     def run(self):
+        logging.info("running self play worker")
 
         self.set_up_policies()  # dont do in init because of global apex
         if self.resume:
@@ -515,6 +529,7 @@ class UpdateWorker(Worker):
             resume=False,
             stagger=False,
     ):
+        logging.info("initializing update worker")
         self.memory_queue = memory_queue
         self.evaluator = evaluator
         self.optim = optim
@@ -535,37 +550,41 @@ class UpdateWorker(Worker):
         super().__init__()
 
     def run(self):
-        self.policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator,
-                                                  optim=self.optim)
-        self.policy.train()
+        logging.info("running update worker")
+        try:
+            self.policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator,
+                                                    optim=self.optim)
+            self.policy.train()
 
-        if self.resume:
-            self.load_memory(prev_run=True)
-            self.load_model(prev_run=True)
+            if self.resume:
+                self.load_memory(prev_run=True)
+                self.load_model(prev_run=True)
 
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
-            self.policy.optim, "max", patience=5, factor=0.2, verbose=True, min_lr=0.00001
-        )
+            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
+                self.policy.optim, "max", patience=10, factor=0.2, verbose=True, min_lr=0.00001
+            )
 
-        while True:
-            if not self.update_worker_queue.empty():
-                task = self.update_worker_queue.get()
-                if task.get("saved_name"):
-                    saved_name = task["saved_name"]
+            while True:
+                if not self.update_worker_queue.empty():
+                    task = self.update_worker_queue.get()
+                    if task.get("saved_name"):
+                        saved_name = task["saved_name"]
+                        self.pull()
+                        # self.deduplicate_memory()
+                        if self.stagger:
+                            self.stagger_memory()
+                        self.save_memory()
+                        self.save_model(saved_name)
+                    elif task.get("reward"):
+                        reward = task.get("reward")
+                        self.scheduler.step(reward)
+                    self.update_worker_queue.task_done()
+                elif self.update_flag.is_set():
+                    self.update()
+                else:
                     self.pull()
-                    # self.deduplicate_memory()
-                    if self.stagger:
-                        self.stagger_memory()
-                    self.save_memory()
-                    self.save_model(saved_name)
-                elif task.get("reward"):
-                    reward = task.get("reward")
-                    self.scheduler.step(reward)
-                self.update_worker_queue.task_done()
-            elif self.update_flag.is_set():
-                self.update()
-            else:
-                self.pull()
+        except Exception as e:
+            logging.exception("error in update worker" +str(e))
 
     def stagger_memory(self):
         max_size = min(self.policy.memory.max_size + self.mem_step, self.max_mem)
@@ -594,7 +613,7 @@ class UpdateWorker(Worker):
             self.memory_size = new_memory_size
             self.save_memory()
         self.memory_size = new_memory_size
-        time.sleep(1)
+        #time.sleep(1)
 
     def deduplicate_memory(self):
         print("deduplicating memory")
@@ -613,4 +632,7 @@ class UpdateWorker(Worker):
 
     def update(self):
         self.pull()
-        self.policy.update_from_memory()
+        logging.info("updating from memory")
+        for _ in range(100):
+            time.sleep(0.10)
+            self.policy.update_from_memory()
