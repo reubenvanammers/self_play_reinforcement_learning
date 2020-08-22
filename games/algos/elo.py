@@ -6,7 +6,7 @@ import itertools
 import atexit
 from rl_utils.memory import Memory
 from collections import namedtuple
-from games.connect4.modules import ConvNetConnect4
+from games.connect4.modules import ConvNetConnect4,DeepConvNetConnect4
 from games.algos.mcts import MCTreeSearch
 import torch
 from games.connect4.hardcoded_players import OnestepLookahead, Random
@@ -80,6 +80,7 @@ class Elo():
 
         scheduler = self_play_parallel.SelfPlayScheduler(policy_container=self.model_shelf[model_1],
                                                          opposing_policy_container=self.model_shelf[model_2],
+                                                         evaluation_policy_container=self.model_shelf[model_2],
                                                          env_gen=self.env, epoch_length=num_games, initial_games=0,
                                                          self_play=False, save_dir=None)
         _, breakdown = scheduler.compare_models()
@@ -186,31 +187,31 @@ class EloNetwork(torch.nn.Module):
         return loss
 
 
-# random, mcts1, onsteplook cloudmcts (model-2020-05-13T22_26_13.689443_4000), cloudmcts2 (model-2020-05-01T00_01_10.394613_2500)
-if __name__ == "__main__":
-    # network = ConvNetConnect4()
-    # network.share_memory()
-    #
-    # policy_gen = MCTreeSearch
-    # policy_args = []
-    # model_path = "/Users/reuben/Downloads/model-2020-05-01T00_01_10.394613_2500"
-    # model_dict = torch.load(model_path,map_location=torch.device('cpu'))#["model"]
-    # policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env,
-    #                      evaluator=network, starting_state_dict=model_dict
-    #                      )
-    # policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
-    # opposing_policy_gen = Random
-    # opposing_policy_args = []
-    # opposing_policy_kwargs = dict(env_gen=Connect4Env)
-    # policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
+# random, mcts1, onsteplook cloudmcts (model-2020-05-13T22_26_13.689443_4000), cloudmcts2 (model-2020-05-01T00_01_10.394613_2500), 15layer-num1
+# if __name__ == "__main__":
+#     network = DeepConvNetConnect4()
+#     network.share_memory()
+#     #
+#     policy_gen = MCTreeSearch
+#     policy_args = []
+#     model_path = "/Users/reuben/PycharmProjects/reinforcement_learning/15layermodel_0"
+#     model_dict = torch.load(model_path,map_location=torch.device('cpu'))["model"]
+#     policy_kwargs = dict(iterations=400, min_memory=20000, memory_size=20000, env_gen=Connect4Env,
+#                          evaluator=network, starting_state_dict=model_dict
+#                          )
+#     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
+#     opposing_policy_gen = Random
+#     opposing_policy_args = []
+#     opposing_policy_kwargs = dict(env_gen=Connect4Env)
+#     policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
 
     elo = Elo()
-    # elo.add_model("cloudmcts2", policy_container)
+    # elo.add_model("15layer-num1", policy_container)
 
-    # elo.compare_models("mcts1", "onesteplook")
-    elo.compare_models("cloudmcts", "cloudmcts2")
+    elo.compare_models("15layer-num1", "mcts1")
+    # elo.compare_models("cloudmcts", "cloudmcts2")
 
-    print(elo.calculate_elo("random", 0))
+    # print(elo.calculate_elo("random", 0))
     # elo.add_model("cloudmcts", policy_container)
     # elo.compare_models("onesteplook", "cloudmcts")
 

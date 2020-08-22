@@ -1,3 +1,5 @@
+#readd dropout layers
+check/purge queues? Shouldnt be getting shared memory errors
 add tool to compare model strengths - persistent elo store
 rejig q-epsilon to properly use base models
 try not copying over model # figure out why ths doesnt work

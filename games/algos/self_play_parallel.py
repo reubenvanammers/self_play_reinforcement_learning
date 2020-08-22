@@ -123,7 +123,7 @@ class SelfPlayScheduler:
         for i in range(self.epoch_length):
             swap_sides = not i % 2 == 0
             self.task_queue.put(
-                {"play": {"swap_sides": swap_sides, "update": False}}
+                {"play": {"swap_sides": swap_sides, "update": False}, "evaluate": True}
             )
         self.task_queue.join()
 
@@ -183,12 +183,13 @@ class SelfPlayScheduler:
 
             for i in range(self.initial_games):
                 swap_sides = not i % 2 == 0
-                self.task_queue.put({"play": {"swap_sides": swap_sides, "update": True}})
+                self.task_queue.put({"play": {"swap_sides": swap_sides, "update": False}})
             self.task_queue.join()
             while not self.result_queue.empty():
                 self.result_queue.get()
 
             saved_model_name = None
+            reward = self.evaluate_policy(-1)
             for epoch in range(num_epochs):
                 update_flag.set()
                 for i in range(self.epoch_length):
@@ -254,11 +255,10 @@ class SelfPlayScheduler:
     def evaluate_policy(self, epoch):
         logging.info("evaluation policy")
         reward_list = []
-
         while not self.result_queue.empty():
             reward_list.append(self.result_queue.get())
-
-        total_rewards, _ = self.parse_results(reward_list)
+        if epoch >= 0:
+            total_rewards, _ = self.parse_results(reward_list)
 
         if self.self_play:
             reward_list = []
@@ -402,21 +402,14 @@ class SelfPlayWorker(Worker):
             else:
                 self.policy = self.policy_container.setup(memory_queue=self.memory_queue)
                 self.opposing_policy_train = self.opposing_policy_container.setup()
-                # self.opposing_policy_train = self.opposing_policy_gen(
-                #     *self.opposing_policy_args, **self.opposing_policy_kwargs
-                # )
 
             self.opposing_policy_train.train(False)
             self.policy.train(False)
 
-            # self.opposing_policy.env = self.env
             self.opposing_policy_train.env = self.env_gen()  # TODO: make this a more stabel solution -
 
             if self.evaluation_policy_container:
                 self.opposing_policy_evaluate = self.evaluation_policy_container.setup()
-                # self.opposing_policy_evaluate = self.evaluation_policy_gen(
-                #     *self.evaluation_policy_args, **self.evaluation_policy_kwargs
-                # )
 
             if self.opposing_policy_evaluate:
                 self.opposing_policy_evaluate.evaluate(True)

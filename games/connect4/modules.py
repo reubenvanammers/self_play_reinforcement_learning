@@ -92,12 +92,12 @@ class ConvNetConnect4(nn.Module):
 
         policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
         policy = self.policy_dropout(policy)
-        # policy = F.dropout(policy, p=0.3, training=True)  # change training method
+        policy = F.dropout(policy, p=0.3, training=True)  # change training method
         policy = self.softmax(self.linear_policy(policy))
 
         value = F.leaky_relu(self.value_bn(self.conv_value(x))).view(x.size(0), -1)
         value = self.value_dropout(value)
-        # value = F.dropout(value, p=0.3, training=True)  # change training method
+        value = F.dropout(value, p=0.3, training=True)  # change training method
         value = F.leaky_relu(self.fc_value(value))
         value = torch.tanh(self.linear_output(value))
 
@@ -219,12 +219,12 @@ class DeepConvNetConnect4(nn.Module):
 
         policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
         policy = self.policy_dropout(policy)
-        # policy = F.dropout(policy, p=0.3, training=True)  # change training method
+        policy = F.dropout(policy, p=0.3, training=True)  # change training method
         policy = self.softmax(self.linear_policy(policy))
 
         value = F.leaky_relu(self.value_bn(self.conv_value(x))).view(x.size(0), -1)
         value = self.value_dropout(value)
-        # value = F.dropout(value, p=0.3, training=True)  # change training method
+        value = F.dropout(value, p=0.3, training=True)  # change training method
         value = F.leaky_relu(self.fc_value(value))
         value = torch.tanh(self.linear_output(value))
 

@@ -291,7 +291,8 @@ class MCTreeSearch(BaseModel):
         return child_node, v
 
     def search(self):
-        self.root_node.add_noise()  # Might want to remove this in evaluation?
+        if self.evaluating:
+            self.root_node.add_noise()  # Might want to remove this in evaluation?
         for i in range(self.iterations):
             node = self.root_node
             while True:
@@ -306,7 +307,8 @@ class MCTreeSearch(BaseModel):
                     break
                 else:
                     node = node.children[action]
-        self.root_node.remove_noise()  # Don't think this is necessary?
+        if self.evaluating:
+            self.root_node.remove_noise()  # Don't think this is necessary?
 
     def load_state_dict(self, state_dict, target=False):
         self.evaluator.load_state_dict(state_dict)
