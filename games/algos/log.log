@@ -1898,3 +1898,394 @@
 [17:14:30] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
 [17:14:30] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
 [17:19:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:07:42] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:07:42] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:11:42] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:11:42] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:15:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:15:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:15:29] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:15:29] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:22:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:22:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:30:30] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:30:30] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[11:41:33] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[11:41:33] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[11:45:02] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[11:45:02] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[20:20:50] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[20:20:50] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[20:34:38] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[20:34:38] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[20:35:31] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[20:35:31] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[20:35:46] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[20:35:46] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[20:36:12] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[20:36:12] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[20:52:18] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[20:52:18] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:03:28] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:03:28] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:10:36] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:10:36] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:12:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:12:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:12:15] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:12:15] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:13:17] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:13:17] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:13:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:13:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:16:58] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:16:58] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:20:31] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:20:31] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:23:38] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:23:38] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[16:24:22] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[16:24:22] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[17:04:19] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[17:04:19] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[17:32:41] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[17:32:41] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[17:35:07] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[17:35:07] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[17:37:57] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[17:37:57] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[17:40:35] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[17:40:35] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[17:47:52] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[17:47:52] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[17:53:27] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[17:53:27] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[17:57:15] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[17:57:15] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:28:33] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:28:33] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:28:51] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:28:51] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:33:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:33:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:37:21] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:37:21] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:48:13] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:48:13] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:48:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[18:49:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[18:49:52] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:15] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:25] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:25] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:34] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:40] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:46] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:49] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:50:54] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:51:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:51:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:51:15] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:51:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:51:38] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:51:38] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:51:40] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:51:48] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:52:01] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:52:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:52:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:52:14] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:52:22] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:52:31] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:52:39] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:52:47] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:02] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:28] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:29] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:31] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:34] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:35] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:39] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:41] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:53:52] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:54:07] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:54:11] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:54:13] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:54:26] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:54:26] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:54:58] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:01] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:11] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:13] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:15] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:19] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:20] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:21] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:34] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:55:35] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:18] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:46] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:47] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:48] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:49] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:51] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:56:55] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:57:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:57:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:57:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:57:40] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:06] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:12] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:16] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:26] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:29] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:30] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:36] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:58:39] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:21] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:26] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:29] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:36] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:37] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:38] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:42] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[18:59:57] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:12] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:20] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:30] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:31] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:36] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:40] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:46] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:49] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:55] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:57] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:00:57] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:239} INFO - wins: 99, draws: 1, losses: 0
+[19:00:57] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:251} INFO - rewards are 99
+[19:03:30] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:03:30] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:04:27] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:04:28] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:05:58] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:05:58] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:04] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:06:38] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:06:51] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:06:53] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:07:06] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:07:06] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:365} INFO - initializing worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:425} INFO - running self play worker
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:07:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:420} INFO - finished setting up policies
+[19:08:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:09] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:17] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:20] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:22] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:452} INFO - task done
+[19:08:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:239} INFO - wins: 10, draws: 0, losses: 0
+[19:08:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:251} INFO - rewards are 10
+[19:10:11] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:10:11] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:11:28] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:11:28] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:15:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:15:03] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:18:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:18:24] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:21:45] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:21:45] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:22:58] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:22:58] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:27:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:27:10] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:51:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:51:00] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:51:54] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:51:54] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:55:48] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:55:48] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[19:56:05] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[19:56:05] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[20:12:45] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[20:12:45] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:07:29] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:07:29] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:09:21] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:09:21] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:10:39] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:10:39] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:12:41] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:12:41] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:12:50] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:12:50] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:19:19] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:19:19] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:28:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:28:23] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:34:27] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:34:27] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:37:14] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:37:14] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:38:43] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:38:43] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2
+[21:39:40] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:30} INFO - initializing logging
+[21:39:40] {/Users/reuben/PycharmProjects/reinforcement_learning/games/algos/self_play_parallel.py:33} INFO - initializing logging2

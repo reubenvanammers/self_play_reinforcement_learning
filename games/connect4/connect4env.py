@@ -60,9 +60,9 @@ class Connect4Env:
         board = board or self.board
         map = {0: " ", 1: "X", -1: "O"}
         for row_number in range(self.height):
-            l.append("|".join([map[piece] for piece in board[:, row_number]]))
+            l.append("|" + "|".join([map[piece] for piece in board[:, row_number]]) + "|")
         l.reverse()
-        l.append(" ".join((str(i) for i in range(7))))
+        l.append(" " + " ".join((str(i) for i in range(7))))
         print("\n".join(l))
 
     def get_reward(self, action, player=1):
