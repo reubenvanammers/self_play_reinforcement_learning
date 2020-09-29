@@ -384,7 +384,7 @@ class SelfPlayWorker(Worker):
             self.opposing_policy_train.train(False)
             self.policy.train(False)
 
-            self.opposing_policy_train.env = self.env_gen()  # TODO: make this a more stabel solution -
+            self.opposing_policy_train.env = self.env_gen()
 
             if self.evaluation_policy_container:
                 self.opposing_policy_evaluate = self.evaluation_policy_container.setup()
@@ -392,7 +392,7 @@ class SelfPlayWorker(Worker):
             if self.opposing_policy_evaluate:
                 self.opposing_policy_evaluate.evaluate(True)
                 self.opposing_policy_evaluate.train(False)
-                self.opposing_policy_evaluate.env = self.env_gen()  # TODO: make this a more stabel solution -
+                self.opposing_policy_evaluate.env = self.env_gen()
 
             self.opposing_policy = self.opposing_policy_train
             logging.info("finished setting up policies")

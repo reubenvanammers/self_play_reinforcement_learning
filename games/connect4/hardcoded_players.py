@@ -1,4 +1,3 @@
-# from games.connect4.connect4env import Connect4Env
 from copy import copy
 import random
 
@@ -51,6 +50,7 @@ class OnestepLookahead:
         pass
 
     def reset(self, player=None):
+        self.player = player
         self.env.reset()
 
     @property
@@ -107,4 +107,3 @@ class Random:
 
     def play_action(self, action, player):
         self.env.step(action, player)
-        # pass  # does nothign atm - mostly for the mcts
