@@ -13,6 +13,10 @@ via the addition of appropriate environments and torch code to convert these to 
 The code runs the training in parallel over multiple workers, as self play game generation is very computationally intensive.
 For this reason, running this code on a system that has CUDA support is recommended.  
 
+
+Most of the Monte Carlo Tree Search related code can be found in games/algos/mcts.py, and the (slightly messy) training 
+code can be found in games/algos/self_play_parallel.py. 
+
 ## Training
 
 Training can be run by running the games/connect4/run_self_play_connect4.py script, which will run self play training
