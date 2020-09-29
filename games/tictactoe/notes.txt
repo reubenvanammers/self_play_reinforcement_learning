@@ -1,5 +1,0 @@
-try with a tabular learning method to start off with
-td method with self play - after a certain amount of iterations (10? 100?) update the model
-Create an interface with legal moves given a game state
-lose draw win rewards (-1 0 1)
-numpy to start off with - think about tensorflow or pytorch afterwards?

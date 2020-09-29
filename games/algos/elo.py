@@ -15,6 +15,25 @@ result_container = namedtuple("result", ["players", "result"])
 
 
 class Elo:
+    """
+    This class is used to store the results of different models against each other. Models can be registered and
+    persisted, and then given the command to play against eachother. The Elo results can then be calculated,
+    assuming that an anchor model (assumed to be random, and set to 0 elo)
+
+    from games.connect4.hardcoded_players import Random
+    elo = Elo()
+    policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
+    # This persists the model and its arguments to disk
+    elo.add_model("model_1", policy_container)
+
+    random_policy = ModelContainer(policy_gen=Random, policy_kwargs={})
+    elo.add_model("random", random_policy)
+
+    elo.compare_model("random","model_1") # Plays games between these models
+    elo.calculate_elo()
+
+    """
+
     MODEL_SAVE_FILE = ".ELO_MODEL"
     RESULT_SAVE_FILE = ".ELO_RESULT"
     ELO_VALUE_SAVE_FILE = ".ELO_VALUE"

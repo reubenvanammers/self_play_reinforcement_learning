@@ -1,15 +1,11 @@
-import datetime
 import os
 from os import listdir
 from os.path import isfile, join
 
 import torch
-from torch import multiprocessing
-from games.algos.mcts import MCTreeSearch, ConvNetConnect4
+from games.algos.mcts import MCTreeSearch
+from games.connect4.modules import ConvNetConnect4
 
-# from games.algos.q import EpsilonGreedy, QConvConnect4
-from games.connect4.onesteplookahead import OnestepLookahead
-from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 from games.general.manual import ManualPlay
 
@@ -17,6 +13,7 @@ save_dir = "saves__c4mtcs_par"
 
 
 def manual_play():
+    # Gets the most recent version of of the model against the player. Easy enough to modify this if necessary.
     env = Connect4Env()
 
     network = ConvNetConnect4()

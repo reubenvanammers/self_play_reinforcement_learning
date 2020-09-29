@@ -283,20 +283,3 @@ class QConvConnect4(Q):
         super().__init__(*args, **kwargs)
 
 
-# class QConvTicTacToe(Q):
-#     def __init__(self, env, lr=0.0002, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
-#         # gamma is slightly less than 1 to promote faster games
-#         super().__init__(*args, **kwargs)
-#
-#         self.gamma = gamma
-#         self.env = env
-#         self.state_size = self.env.width * self.env.height
-#         self.policy_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n).to(device)
-#         self.target_net = ConvNetTicTacToe(self.env.width, self.env.height, self.env.action_space.n).to(device)
-#
-#         self.policy_net.apply(init_weights)
-#         self.target_net.apply(init_weights)
-#         #         self.optim = torch.optim.Adam(
-#         #             self.policy_net.parameters(), weight_decay=weight_decay
-#         #         )  # , momentum=momentum, lr=lr, weight_decay=weight_decay)
-#         self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr,)

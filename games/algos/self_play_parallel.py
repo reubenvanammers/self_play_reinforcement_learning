@@ -1,19 +1,15 @@
 import copy
 import datetime
-import math
 import os
 from os import listdir
 from os.path import isfile, join
 
-# import pickle
-from copy import deepcopy
 import numpy as np
 import torch
 import time
 from torch.utils.tensorboard import SummaryWriter
 from torch import multiprocessing
 import pickle
-import traceback
 import logging
 import multiprocessing_logging
 
@@ -97,7 +93,6 @@ class SelfPlayScheduler:
             logging.basicConfig(filename=join(save_dir, self.start_time, "log"), level=logging.INFO)
         multiprocessing_logging.install_mp_handler()
 
-        # self.memory = self.policy.memory.get()
 
     def compare_models(self, num_workers=None):
         num_workers = num_workers or multiprocessing.cpu_count()
@@ -113,7 +108,6 @@ class SelfPlayScheduler:
                 opposing_policy_container=self.opposing_policy_container,
                 evaluation_policy_container=self.evaluation_policy_container,
                 save_dir=self.save_dir,
-                # resume=resume_model,
                 self_play=self.self_play,
             )
             for _ in range(num_workers)
@@ -210,8 +204,6 @@ class SelfPlayScheduler:
                 update_worker_queue.join()
                 update_worker_queue.put({"reward": reward})
 
-                # Do some evaluation?
-
             # Clean up
             update_worker.terminate()
             [w.terminate() for w in player_workers]
@@ -301,10 +293,7 @@ class Worker(multiprocessing.Process):
 
         recent_file = max(saves)
         self.current_model_file = recent_file
-        # self.policy.load_state_dict()
         self.load_checkpoint(recent_file)
-        # self.policy.q.target_net.load_state_dict(torch.load(join(self.save_dir, recent_file)))
-        # self.opposing_policy.load_state_dict(torch.load(join(self.save_dir, recent_file)))
 
     def load_checkpoint(self, recent_file):
         checkpoint = torch.load(recent_file)
@@ -364,8 +353,6 @@ class SelfPlayWorker(Worker):
         self.env_gen = env_gen
         self.env = env_gen()
         self.evaluator = evaluator
-        # opposing_policy_kwargs =copy.deepcopy(opposing_policy_kwargs) #TODO make a longer term solutions
-        # policy_kwargs["memory_queue"] = memory_queue
 
         self.policy_container = policy_container
         self.opposing_policy_container = opposing_policy_container
@@ -387,16 +374,9 @@ class SelfPlayWorker(Worker):
 
     def set_up_policies(self):
         try:
-            # self.policy = self.policy_gen(
-            #     memory_queue=self.memory_queue, evaluator=self.evaluator, *self.policy_args, **self.policy_kwargs
-            # )
-
             if self.self_play:
                 self.policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator)
                 self.opposing_policy_train = self.opposing_policy_container.setup(evaluator=self.evaluator)
-                # self.opposing_policy_train = self.opposing_policy_gen(
-                #     evaluator=self.evaluator, *self.opposing_policy_args, **self.opposing_policy_kwargs
-                # )
             else:
                 self.policy = self.policy_container.setup(memory_queue=self.memory_queue)
                 self.opposing_policy_train = self.opposing_policy_container.setup()
@@ -450,8 +430,6 @@ class SelfPlayWorker(Worker):
                 logging.info("task done")
             except Exception as e:
                 raise e
-                # traceback.print_exc()
-                # print(str(e))
                 self.task_queue.task_done()
 
     def play_episode(self, swap_sides=False, update=True):
@@ -536,8 +514,6 @@ class UpdateWorker(Worker):
         self.mem_step = 2500
         self.max_mem = 100000
 
-        ##LOAD MODEL STEP!!!!!!!!!!!!! with amp
-
         super().__init__()
 
     def run(self):
@@ -562,7 +538,6 @@ class UpdateWorker(Worker):
                     if task.get("saved_name"):
                         saved_name = task["saved_name"]
                         self.pull()
-                        # self.deduplicate_memory()
                         if self.stagger:
                             self.stagger_memory()
                         self.save_memory()
@@ -587,14 +562,11 @@ class UpdateWorker(Worker):
         if APEX_AVAILABLE:
             checkpoint = {
                 "model": self.policy.state_dict(),
-                # 'optimizer': optimizer.state_dict(),
                 "amp": amp.state_dict(),
             }
         else:
             checkpoint = {
                 "model": self.policy.state_dict(),
-                # 'optimizer': optimizer.state_dict(),
-                # 'amp': amp.state_dict()
             }
         torch.save(checkpoint, saved_name)
 
@@ -605,12 +577,6 @@ class UpdateWorker(Worker):
             self.memory_size = new_memory_size
             self.save_memory()
         self.memory_size = new_memory_size
-        # time.sleep(1)
-
-    def deduplicate_memory(self):
-        print("deduplicating memory")
-        self.policy.deduplicate()
-        print("deduplication finished")
 
     def save_memory(self):
         logging.info("saving memory")
