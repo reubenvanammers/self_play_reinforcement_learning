@@ -55,20 +55,20 @@ except ModuleNotFoundError:
 
 class SelfPlayScheduler:
     def __init__(
-            self,
-            policy_container,
-            opposing_policy_container,
-            env_gen,
-            evaluation_policy_container=None,
-            network=None,
-            swap_sides=True,
-            save_dir="saves",
-            epoch_length=500,
-            initial_games=64,
-            self_play=False,
-            lr=0.001,
-            stagger=False,
-            evaluation_games=100,
+        self,
+        policy_container,
+        opposing_policy_container,
+        env_gen,
+        evaluation_policy_container=None,
+        network=None,
+        swap_sides=True,
+        save_dir="saves",
+        epoch_length=500,
+        initial_games=64,
+        self_play=False,
+        lr=0.001,
+        stagger=False,
+        evaluation_games=100,
     ):
         self.policy_container = policy_container
         self.opposing_policy_container = opposing_policy_container
@@ -85,7 +85,6 @@ class SelfPlayScheduler:
         self.evaluation_games = evaluation_games
 
         self.start_time = datetime.datetime.now().isoformat()
-
 
         self.task_queue = multiprocessing.JoinableQueue()
         self.memory_queue = multiprocessing.Queue()
@@ -116,15 +115,15 @@ class SelfPlayScheduler:
                 save_dir=self.save_dir,
                 # resume=resume_model,
                 self_play=self.self_play,
-            ) for _ in range(num_workers)]
+            )
+            for _ in range(num_workers)
+        ]
         for w in player_workers:
             w.start()
 
         for i in range(self.epoch_length):
             swap_sides = not i % 2 == 0
-            self.task_queue.put(
-                {"play": {"swap_sides": swap_sides, "update": False}, "evaluate": True}
-            )
+            self.task_queue.put({"play": {"swap_sides": swap_sides, "update": False}, "evaluate": True})
         self.task_queue.join()
 
         reward_list = []
@@ -195,7 +194,7 @@ class SelfPlayScheduler:
                 for i in range(self.epoch_length):
                     swap_sides = not i % 2 == 0
                     self.task_queue.put(
-                        {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name, }
+                        {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name,}
                     )
                 self.task_queue.join()
 
@@ -347,20 +346,19 @@ class Worker(multiprocessing.Process):
 
 class SelfPlayWorker(Worker):
     def __init__(
-            self,
-            task_queue,
-            memory_queue,
-            result_queue,
-            env_gen,
-            policy_container,
-            opposing_policy_container,
-            start_time,
-            evaluator=None,
-            save_dir="save_dir",
-            resume=False,
-            self_play=False,
-            evaluation_policy_container=None,
-
+        self,
+        task_queue,
+        memory_queue,
+        result_queue,
+        env_gen,
+        policy_container,
+        opposing_policy_container,
+        start_time,
+        evaluator=None,
+        save_dir="save_dir",
+        resume=False,
+        self_play=False,
+        evaluation_policy_container=None,
     ):
         logging.info("initializing worker")
         self.env_gen = env_gen
@@ -419,7 +417,7 @@ class SelfPlayWorker(Worker):
             self.opposing_policy = self.opposing_policy_train
             logging.info("finished setting up policies")
         except Exception as e:
-            logging.exception("setting up policies failed"+str(e))
+            logging.exception("setting up policies failed" + str(e))
 
     def run(self):
         logging.info("running self play worker")
@@ -510,17 +508,17 @@ class SelfPlayWorker(Worker):
 
 class UpdateWorker(Worker):
     def __init__(
-            self,
-            memory_queue,
-            evaluator,
-            optim,
-            policy_container,
-            update_flag,
-            update_worker_queue,
-            start_time,
-            save_dir="saves",
-            resume=False,
-            stagger=False,
+        self,
+        memory_queue,
+        evaluator,
+        optim,
+        policy_container,
+        update_flag,
+        update_worker_queue,
+        start_time,
+        save_dir="saves",
+        resume=False,
+        stagger=False,
     ):
         logging.info("initializing update worker")
         self.memory_queue = memory_queue
@@ -545,8 +543,9 @@ class UpdateWorker(Worker):
     def run(self):
         logging.info("running update worker")
         try:
-            self.policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator,
-                                                    optim=self.optim)
+            self.policy = self.policy_container.setup(
+                memory_queue=self.memory_queue, evaluator=self.evaluator, optim=self.optim,
+            )
             self.policy.train()
 
             if self.resume:
@@ -554,7 +553,7 @@ class UpdateWorker(Worker):
                 self.load_model(prev_run=True)
 
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
-                self.policy.optim, "max", patience=10, factor=0.2, verbose=True, min_lr=0.00001
+                self.policy.optim, "max", patience=10, factor=0.2, verbose=True, min_lr=0.00001,
             )
 
             while True:
@@ -577,7 +576,7 @@ class UpdateWorker(Worker):
                 else:
                     self.pull()
         except Exception as e:
-            logging.exception("error in update worker" +str(e))
+            logging.exception("error in update worker" + str(e))
 
     def stagger_memory(self):
         max_size = min(self.policy.memory.max_size + self.mem_step, self.max_mem)
@@ -606,7 +605,7 @@ class UpdateWorker(Worker):
             self.memory_size = new_memory_size
             self.save_memory()
         self.memory_size = new_memory_size
-        #time.sleep(1)
+        # time.sleep(1)
 
     def deduplicate_memory(self):
         print("deduplicating memory")

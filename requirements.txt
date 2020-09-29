@@ -1,5 +1,5 @@
 numpy==1.17.4
-gym
-torch
+gym==0.15.4
+torch==1.4.0
 anytree==2.8.0
-multiprocessing-logging
+multiprocessing-logging=0.3.1

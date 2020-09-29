@@ -31,7 +31,7 @@ def set_parameters():
             "policy_kwargs": dict(iterations=400, memory_size=50000, env_gen=Connect4Env),
             "evaluator": ConvNetConnect4,
             "evaluation_policy_kwargs": dict(
-                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict
+                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict,
             ),
             "evaluation_evaluator": ConvNetConnect4,
         },
@@ -40,7 +40,7 @@ def set_parameters():
             "policy_kwargs": dict(iterations=400, memory_size=50000, env_gen=Connect4Env),
             "evaluator": ConvNetConnect4,
             "evaluation_policy_kwargs": dict(
-                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict
+                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict,
             ),
             "evaluation_evaluator": ConvNetConnect4,
         },
@@ -48,7 +48,7 @@ def set_parameters():
             "policy_kwargs": dict(iterations=100, memory_size=50000, env_gen=Connect4Env),
             "evaluator": ConvNetConnect4,
             "evaluation_policy_kwargs": dict(
-                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict
+                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict,
             ),
             "evaluation_evaluator": ConvNetConnect4,
         },
@@ -56,7 +56,7 @@ def set_parameters():
             "policy_kwargs": dict(iterations=100, memory_size=20000, env_gen=Connect4Env),
             "evaluator": ConvNetConnect4,
             "evaluation_policy_kwargs": dict(
-                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict
+                iterations=400, memory_size=50000, env_gen=Connect4Env, starting_state_dict=opposing_state_dict,
             ),
             "evaluation_evaluator": ConvNetConnect4,
             "stagger": True,

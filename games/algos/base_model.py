@@ -55,8 +55,7 @@ class BaseModel:
         raise NotImplementedError
 
 
-class ModelContainer():
-
+class ModelContainer:
     def __init__(self, policy_gen, policy_args=[], policy_kwargs={}):
         self.policy_gen = policy_gen
         self.policy_args = policy_args

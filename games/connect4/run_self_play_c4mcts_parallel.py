@@ -30,9 +30,13 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=400, min_memory=100000, memory_size=20000, env_gen=Connect4Env,
-                         # evaluator=network,
-                         )
+    policy_kwargs = dict(
+        iterations=400,
+        min_memory=100000,
+        memory_size=20000,
+        env_gen=Connect4Env,
+        # evaluator=network,
+    )
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     self_play = True
@@ -41,7 +45,10 @@ def run_training():
         opposing_policy_gen = MCTreeSearch
         opposing_policy_args = []
         opposing_policy_kwargs = dict(
-            iterations=400, min_memory=100000, memory_size=20000, env_gen=Connect4Env,
+            iterations=400,
+            min_memory=100000,
+            memory_size=20000,
+            env_gen=Connect4Env,
             # evaluator=network
         )
         opposing_policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
@@ -53,17 +60,22 @@ def run_training():
         #     policy_gen=evaluation_policy_gen, policy_kwargs=evaluation_policy_kwargs
         # )
 
-
         evaluation_network = ConvNetConnect4()
 
         evaluation_state_dict = torch.load(
-            '/Users/reuben/PycharmProjects/reinforcement_learning/saves/model-2020-05-13T22_26_13.689443_4000',map_location=torch.device('cpu'))["model"]
+            "/Users/reuben/PycharmProjects/reinforcement_learning/saves/model-2020-05-13T22_26_13.689443_4000",
+            map_location=torch.device("cpu"),
+        )["model"]
 
         evaluation_policy_gen = MCTreeSearch
         evaluation_policy_args = []
         evaluation_policy_kwargs = dict(
-            iterations=400, min_memory=20000, memory_size=50000, env_gen=Connect4Env, evaluator=evaluation_network,
-            starting_state_dict=evaluation_state_dict
+            iterations=400,
+            min_memory=20000,
+            memory_size=50000,
+            env_gen=Connect4Env,
+            evaluator=evaluation_network,
+            starting_state_dict=evaluation_state_dict,
         )
         evaluation_policy_container = ModelContainer(
             policy_gen=evaluation_policy_gen, policy_kwargs=evaluation_policy_kwargs
@@ -93,7 +105,7 @@ def run_training():
         save_dir=save_dir,
         self_play=self_play,
         stagger=False,
-        lr=0.0003
+        lr=0.0003,
     )
 
     # policy = MCTreeSearch(ConvNetTicTacToe(3, 3, 9), TicTacToeEnv, temperature_cutoff=1, iterations=200, min_memory=64)

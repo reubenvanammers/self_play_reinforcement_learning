@@ -1,5 +1,6 @@
 import time
 
+
 class ManualPlay:
     def __init__(self, env, opponent):
         self.env = env
@@ -56,7 +57,7 @@ class ManualPlay:
 
 
 class View:
-    def __init__(self, env,player1, player2):
+    def __init__(self, env, player1, player2):
         self.env = env
         self.player1 = player1
         self.player2 = player2
