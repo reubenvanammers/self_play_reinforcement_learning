@@ -7,8 +7,10 @@ from torch import nn
 from torch.functional import F
 import random
 from rl_utils.flat import MSELossFlat
+import time
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
+import logging
 
 from games.algos.base_model import BaseModel
 
@@ -242,6 +244,11 @@ class MCTreeSearch(BaseModel):
         return loss
 
     def update_from_memory(self):
+        if len(self.memory) < self.batch_size:
+            logging.info("skipping due to not enough memory")
+            print("skipping due to not enogugh memory")
+            time.sleep(60)
+            return
         batch = self.memory.sample(self.batch_size)
 
         loss = self.loss(batch)
