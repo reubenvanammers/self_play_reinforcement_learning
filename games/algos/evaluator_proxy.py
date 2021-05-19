@@ -2,7 +2,8 @@ from multiprocessing import Queue, Process
 from torch import nn
 
 from games.algos.base_worker import BaseWorker
-from rl_utils.queues import BidirectionalQueue
+from rl_utils.queues import BidirectionalQueue, QueueContainer
+
 
 # class EvaluatorProxy:
 #     """
@@ -23,6 +24,7 @@ from rl_utils.queues import BidirectionalQueue
 #         policy, value = self.forward(state)
 #         return policy, value * player
 
+
 class EvaluatorProxy:
     """
     Used for evalutation via queues. Should only be used for evaluation, not for training.
@@ -36,7 +38,7 @@ class EvaluatorProxy:
         return policy, value
 
     def __call__(self, s, player=1):
-        state = s* player
+        state = s * player
         policy, value = self.forward(state)
         return policy, value * player
 
@@ -46,18 +48,29 @@ class EvaluatorWorker(BaseWorker):
     Worker for batching evaluation results and hopefully being more efficient.
     """
 
+    def __init__(
+        self,
+        queues: list(QueueContainer),
+        policy_evaluator: nn.Module,
+        opposing_policy_evaluator: nn.Module,
+        evaluation_policy_evaluator: nn.Module,
+    ):
+        self.policy_evaluator = policy_evaluator
+        self.opposing_policy_evaluator = opposing_policy_evaluator
+        self.evaluation_policy_evaluator = evaluation_policy_evaluator
 
-    def __init__(self, request_queues: list(Queue), answer_queues: list(Queue), evaluator: nn.Module):
-        self.request_queues = request_queues
-        self.answer_queues = answer_queues
-        self.evaluator = evaluator
+        self.policy_queues = [queue.policy_queues for queue in queues]
+        self.opposing_policy_queues = [queue.opposing_policy_queues for queue in queues]
+        self.evaluation_policy_queues = [queue.evaluation_policy_queues for queue in queues]
 
-        self.attatched_workers = len(request_queues)
-        assert len(answer_queues) == self.attatched_workers
-
-
+    def run(self):
+        while True:
+            pass
 
 
-
-
-
+# self.request_queues = request_queues
+# self.answer_queues = answer_queues
+# self.evaluator = evaluator
+#
+# self.attatched_workers = len(request_queues)
+# assert len(answer_queues) == self.attatched_workers
