@@ -11,6 +11,7 @@ import time
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 import logging
+from multiprocessing import Queue
 
 from games.algos.base_model import BaseModel
 
@@ -28,6 +29,8 @@ try:
 except ModuleNotFoundError:
     APEX_AVAILABLE = False
     print("apex not available")
+
+
 
 
 class MCNode(NodeMixin):
