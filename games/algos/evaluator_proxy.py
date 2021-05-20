@@ -46,6 +46,8 @@ class EvaluatorProxy:
 class EvaluatorWorker(BaseWorker):
     """
     Worker for batching evaluation results and hopefully being more efficient.
+
+    TODO: Add loading, opposing,evaluation policies
     """
 
     def __init__(
