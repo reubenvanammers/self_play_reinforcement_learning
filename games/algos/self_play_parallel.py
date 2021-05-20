@@ -12,10 +12,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 from games.algos.selfplayworker import SelfPlayWorker
 from games.algos.updateworker import UpdateWorker
+from games.algos.evaluator_proxy import EvaluatorWorker, EvaluatorProxy
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
-
+from rl_utils.queues import QueueContainer
 
 logging.basicConfig(
     filename="log.log",
@@ -51,20 +52,20 @@ except ModuleNotFoundError:
 
 class SelfPlayScheduler:
     def __init__(
-        self,
-        policy_container,
-        opposing_policy_container,
-        env_gen,
-        evaluation_policy_container=None,
-        network=None,
-        swap_sides=True,
-        save_dir="saves",
-        epoch_length=500,
-        initial_games=64,
-        self_play=False,
-        lr=0.001,
-        stagger=False,
-        evaluation_games=100,
+            self,
+            policy_container,
+            opposing_policy_container,
+            env_gen,
+            evaluation_policy_container=None,
+            network=None,
+            swap_sides=True,
+            save_dir="saves",
+            epoch_length=500,
+            initial_games=64,
+            self_play=False,
+            lr=0.001,
+            stagger=False,
+            evaluation_games=100,
     ):
         self.policy_container = policy_container
         self.opposing_policy_container = opposing_policy_container
@@ -92,7 +93,6 @@ class SelfPlayScheduler:
             os.mkdir(os.path.join(save_dir, self.start_time))
             logging.basicConfig(filename=join(save_dir, self.start_time, "log"), level=logging.INFO)
         multiprocessing_logging.install_mp_handler()
-
 
     def compare_models(self, num_workers=None):
         num_workers = num_workers or multiprocessing.cpu_count()
@@ -129,28 +129,61 @@ class SelfPlayScheduler:
 
     def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None):
         try:
-            evaluator = self.network
-            optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
-            evaluator.share_memory()
-
             num_workers = num_workers or multiprocessing.cpu_count()
-            player_workers = [
-                SelfPlayWorker(
-                    self.task_queue,
-                    self.memory_queue,
-                    self.result_queue,
-                    self.env_gen,
-                    evaluator=evaluator,
-                    start_time=self.start_time,
-                    policy_container=self.policy_container,
-                    opposing_policy_container=self.opposing_policy_container,
-                    evaluation_policy_container=self.evaluation_policy_container,
-                    save_dir=self.save_dir,
-                    resume=resume_model,
-                    self_play=self.self_play,
-                )
-                for _ in range(num_workers - 1)
-            ]
+
+            evaluator_proxy = False
+            if evaluator_proxy:
+                num_play_workers = num_workers - 2
+                assert num_play_workers >= 1
+                queues = [QueueContainer() for _ in range(num_play_workers)]
+                evaluators = [EvaluatorProxy(queue.policy_queues) for queue in queues]
+                player_workers = [
+                    SelfPlayWorker(
+                        self.task_queue,
+                        self.memory_queue,
+                        self.result_queue,
+                        self.env_gen,
+                        evaluator=evaluators[i],
+                        start_time=self.start_time,
+                        policy_container=self.policy_container,
+                        opposing_policy_container=self.opposing_policy_container,
+                        evaluation_policy_container=self.evaluation_policy_container,
+                        save_dir=self.save_dir,
+                        resume=resume_model,
+                        self_play=self.self_play,
+                    )
+                    for i in range(num_play_workers)
+                ]
+                evaluator_worker = EvaluatorWorker(queues, self.network)
+                evaluator_worker.start()
+            else:
+                num_play_workers = num_workers - 1
+                assert num_play_workers >= 1
+
+                evaluator = self.network
+                optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
+                evaluator.share_memory()
+
+                player_workers = [
+                    SelfPlayWorker(
+                        self.task_queue,
+                        self.memory_queue,
+                        self.result_queue,
+                        self.env_gen,
+                        evaluator=evaluator,
+                        start_time=self.start_time,
+                        policy_container=self.policy_container,
+                        opposing_policy_container=self.opposing_policy_container,
+                        evaluation_policy_container=self.evaluation_policy_container,
+                        save_dir=self.save_dir,
+                        resume=resume_model,
+                        self_play=self.self_play,
+                    )
+                    for _ in range(num_play_workers)
+                ]
+
+
+
             for w in player_workers:
                 w.start()
 
@@ -188,7 +221,7 @@ class SelfPlayScheduler:
                 for i in range(self.epoch_length):
                     swap_sides = not i % 2 == 0
                     self.task_queue.put(
-                        {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name,}
+                        {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name, }
                     )
                 self.task_queue.join()
 

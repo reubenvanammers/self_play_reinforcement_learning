@@ -51,9 +51,9 @@ class SelfPlayWorker(BaseWorker):
             if self.self_play:
                 self.policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator)
                 self.opposing_policy_train = self.opposing_policy_container.setup(evaluator=self.evaluator)
-            else:
-                self.policy = self.policy_container.setup(memory_queue=self.memory_queue)
-                self.opposing_policy_train = self.opposing_policy_container.setup()
+            # else:
+            #     self.policy = self.policy_container.setup(memory_queue=self.memory_queue)
+            #     self.opposing_policy_train = self.opposing_policy_container.setup()
 
             self.opposing_policy_train.train(False)
             self.policy.train(False)
@@ -61,6 +61,7 @@ class SelfPlayWorker(BaseWorker):
             self.opposing_policy_train.env = self.env_gen()
 
             if self.evaluation_policy_container:
+                #TODO add evaluation policy
                 self.opposing_policy_evaluate = self.evaluation_policy_container.setup()
 
             if self.opposing_policy_evaluate:

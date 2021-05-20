@@ -54,8 +54,8 @@ class EvaluatorWorker(BaseWorker):
             self,
             queues: list(QueueContainer),
             policy_evaluator: nn.Module,
-            opposing_policy_evaluator: nn.Module,
-            evaluation_policy_evaluator: nn.Module,
+            opposing_policy_evaluator: nn.Module = None,
+            evaluation_policy_evaluator: nn.Module = None,
     ):
         self.policy_evaluator = policy_evaluator
         self.opposing_policy_evaluator = opposing_policy_evaluator
