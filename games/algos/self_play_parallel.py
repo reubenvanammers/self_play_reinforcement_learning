@@ -13,6 +13,7 @@ import multiprocessing_logging
 
 from games.algos.base_worker import BaseWorker
 from games.algos.selfplayworker import SelfPlayWorker
+import traceback
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -212,6 +213,7 @@ class SelfPlayScheduler:
             del self.task_queue
             del self.result_queue
         except Exception as e:
+            logging.exception(traceback.format_exc())
             logging.exception("error in main loop" + str(e))
 
     def run_evaluation_games(self):
@@ -335,6 +337,7 @@ class UpdateWorker(BaseWorker):
                 else:
                     self.pull()
         except Exception as e:
+            logging.exception(traceback.format_exc())
             logging.exception("error in update worker" + str(e))
 
     def stagger_memory(self):

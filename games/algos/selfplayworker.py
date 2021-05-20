@@ -2,7 +2,7 @@ import copy
 import logging
 
 from games.algos.base_worker import BaseWorker
-
+import traceback
 
 class SelfPlayWorker(BaseWorker):
     def __init__(
@@ -104,6 +104,7 @@ class SelfPlayWorker(BaseWorker):
                 logging.info("task done")
             except Exception as e:
                 raise e
+                logging.exception(traceback.format_exc())
                 self.task_queue.task_done()
 
     def play_episode(self, swap_sides=False, update=True):
