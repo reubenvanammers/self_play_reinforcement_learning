@@ -1,6 +1,6 @@
 from multiprocessing import Queue, Process
-from torch import nn
-
+from torch import nn, tensor
+import torch
 from games.algos.base_worker import BaseWorker
 from rl_utils.queues import BidirectionalQueue, QueueContainer
 
@@ -49,11 +49,11 @@ class EvaluatorWorker(BaseWorker):
     """
 
     def __init__(
-        self,
-        queues: list(QueueContainer),
-        policy_evaluator: nn.Module,
-        opposing_policy_evaluator: nn.Module,
-        evaluation_policy_evaluator: nn.Module,
+            self,
+            queues: list(QueueContainer),
+            policy_evaluator: nn.Module,
+            opposing_policy_evaluator: nn.Module,
+            evaluation_policy_evaluator: nn.Module,
     ):
         self.policy_evaluator = policy_evaluator
         self.opposing_policy_evaluator = opposing_policy_evaluator
@@ -65,8 +65,40 @@ class EvaluatorWorker(BaseWorker):
 
     def run(self):
         while True:
-            pass
+            self.distribute(self.policy_queues, self.policy_evaluator)
 
+    def get_queue_pos(self, queues):
+        queue_active = []
+        requests = []
+        for queue in queues:
+            if queue.request_queue.empty():
+                queue_active.append(0)
+            else:
+                requests.append(queue.request_queue.get())
+                queue_active.append(1)
+        return requests, queue_active
+
+    def distribute(self, queues, evaluator):
+        requests, queue_active = self.get_queue_pos(queues)
+        policy, value = self.calculate(requests, evaluator)
+        j = 0
+        for i in len(queues):
+            if queue_active[i]:
+                queues[i].answer_queue.put((policy[j], value[j]))
+                j += 1
+            queue_active.pop()
+
+    def calculate(self, requests, evaluator):
+        tensor_requests = [tensor(s) for s in requests]
+        batch = torch.stack(tensor_requests)
+        policy, value = evaluator.forward(batch)
+        return policy.tolist(), value
+
+    # def get_queue(self, queue):
+    #     result_list = [[]]
+    #     while not queue.empty():
+    #         result_list.append(queue.get())
+    #     return result_list
 
 # self.request_queues = request_queues
 # self.answer_queues = answer_queues

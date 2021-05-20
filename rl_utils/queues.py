@@ -4,6 +4,7 @@ from multiprocessing import Queue
 class BidirectionalQueue:
     """
     Helper class to facilitate informational transfer between threads
+    TODO: Consider using pipes or fifo fast queues
     """
 
     def __init__(self):
@@ -17,6 +18,8 @@ class BidirectionalQueue:
         """
         self.request_queue.put(obj)
         return self.answer_queue.get(block=True)
+
+
 
 
 class QueueContainer:
