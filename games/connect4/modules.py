@@ -217,6 +217,8 @@ class DeepConvNetConnect4(nn.Module):
 
         # x = x.view(x.size(0), -1)
 
+        #TODO Check double dropouts?
+
         policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
         policy = self.policy_dropout(policy)
         policy = F.dropout(policy, p=0.3, training=True)  # change training method

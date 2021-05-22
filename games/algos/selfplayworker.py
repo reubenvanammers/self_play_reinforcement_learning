@@ -20,7 +20,7 @@ class SelfPlayWorker(BaseWorker):
         self_play=False,
         evaluation_policy_container=None,
     ):
-        logging.info("initializing worker")
+        logging.info("initializing self play worker worker")
         self.env_gen = env_gen
         self.env = env_gen()
         self.evaluator = evaluator
@@ -73,6 +73,7 @@ class SelfPlayWorker(BaseWorker):
             logging.info("finished setting up policies")
         except Exception as e:
             logging.exception("setting up policies failed" + str(e))
+            logging.exception(traceback.format_exc())
 
     def run(self):
         logging.info("running self play worker")

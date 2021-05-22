@@ -32,6 +32,7 @@ def run_training():
         memory_size=20000,
         env_gen=Connect4Env,
         # evaluator=network,
+        batch_size=8
     )
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
@@ -42,6 +43,7 @@ def run_training():
         min_memory=100000,
         memory_size=20000,
         env_gen=Connect4Env,
+        batch_size=8
     )
     opposing_policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
 

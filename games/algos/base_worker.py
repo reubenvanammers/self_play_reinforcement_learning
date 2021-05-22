@@ -5,10 +5,10 @@ from os import listdir
 from os.path import join, isfile
 
 import torch
-from apex import amp
+# from apex import amp
 from torch import multiprocessing
 
-from games.algos.self_play_parallel import APEX_AVAILABLE
+# from games.algos.self_play_parallel import APEX_AVAILABLE
 
 
 class BaseWorker(multiprocessing.Process):
@@ -47,8 +47,8 @@ class BaseWorker(multiprocessing.Process):
         if getattr(self, "self_play", None):
             self.opposing_policy_train.load_state_dict(checkpoint["model"], target=True)
 
-        if APEX_AVAILABLE:
-            amp.load_state_dict(checkpoint["amp"])
+        # if APEX_AVAILABLE:
+        #     amp.load_state_dict(checkpoint["amp"])
 
     def load_memory(self, prev_run=False):
         logging.info("loading memory")

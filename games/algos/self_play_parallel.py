@@ -131,7 +131,7 @@ class SelfPlayScheduler:
         try:
             num_workers = num_workers or multiprocessing.cpu_count()
 
-            evaluator_proxy = False
+            evaluator_proxy = True
             if evaluator_proxy:
                 num_play_workers = num_workers - 2
                 assert num_play_workers >= 1
@@ -161,7 +161,6 @@ class SelfPlayScheduler:
                 assert num_play_workers >= 1
 
                 evaluator = self.network
-                optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
                 evaluator.share_memory()
 
                 player_workers = [
@@ -191,6 +190,8 @@ class SelfPlayScheduler:
 
             update_flag = multiprocessing.Event()
             update_flag.clear()
+            evaluator = self.network
+            optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
 
             update_worker = UpdateWorker(
                 memory_queue=self.memory_queue,
@@ -240,6 +241,8 @@ class SelfPlayScheduler:
             # Clean up
             update_worker.terminate()
             [w.terminate() for w in player_workers]
+            if evaluator_proxy:
+                evaluator_worker.terminate()
             del self.memory_queue
             del self.task_queue
             del self.result_queue

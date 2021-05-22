@@ -1,9 +1,11 @@
-from multiprocessing import Queue, Process
 from torch import nn, tensor
 import torch
 from games.algos.base_worker import BaseWorker
 from rl_utils.queues import BidirectionalQueue, QueueContainer
+import traceback
+import logging
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # class EvaluatorProxy:
 #     """
@@ -42,6 +44,14 @@ class EvaluatorProxy:
         policy, value = self.forward(state)
         return policy, value * player
 
+    # No Op
+    def to(self, *args, **kwargs):
+        return self
+
+    # train is always false for evaluator proxy
+    def train(self, *args, **kwargs):
+        return self
+
 
 class EvaluatorWorker(BaseWorker):
     """
@@ -52,22 +62,29 @@ class EvaluatorWorker(BaseWorker):
 
     def __init__(
             self,
-            queues: list(QueueContainer),
-            policy_evaluator: nn.Module,
-            opposing_policy_evaluator: nn.Module = None,
-            evaluation_policy_evaluator: nn.Module = None,
+            queues,
+            policy_evaluator,
+            opposing_policy_evaluator=None,
+            evaluation_policy_evaluator=None,
     ):
-        self.policy_evaluator = policy_evaluator
-        self.opposing_policy_evaluator = opposing_policy_evaluator
-        self.evaluation_policy_evaluator = evaluation_policy_evaluator
+        logging.info("setting up Evaluator worker")
+        self.policy_evaluator = policy_evaluator.to(device).train(False)
+        # self.opposing_policy_evaluator = opposing_policy_evaluator.to(device).train(False)
+        # self.evaluation_policy_evaluator = evaluation_policy_evaluator.to(device).train(False)
 
         self.policy_queues = [queue.policy_queues for queue in queues]
         self.opposing_policy_queues = [queue.opposing_policy_queues for queue in queues]
         self.evaluation_policy_queues = [queue.evaluation_policy_queues for queue in queues]
 
+        super().__init__()
+
     def run(self):
         while True:
-            self.distribute(self.policy_queues, self.policy_evaluator)
+            try:
+                self.distribute(self.policy_queues, self.policy_evaluator)
+            except Exception as e:
+                traceback.print_exc()
+                logging.exception(traceback.format_exc())
 
     def get_queue_pos(self, queues):
         queue_active = []
@@ -82,19 +99,25 @@ class EvaluatorWorker(BaseWorker):
 
     def distribute(self, queues, evaluator):
         requests, queue_active = self.get_queue_pos(queues)
-        policy, value = self.calculate(requests, evaluator)
-        j = 0
-        for i in len(queues):
-            if queue_active[i]:
-                queues[i].answer_queue.put((policy[j], value[j]))
-                j += 1
-            queue_active.pop()
+        if requests:
+            policy, value = self.calculate(requests, evaluator)
+            j = 0
+            i = 0
+            while j < len(requests):
+                if queue_active[i]==1:
+                    active_queue = queues[i]
+                    if j >= len(policy):
+                        print("asdf")
+                    active_queue.answer_queue.put((policy[j], value[j][0]))
+                    j += 1
+                i+=1
+                # queue_active.pop()
 
     def calculate(self, requests, evaluator):
         tensor_requests = [tensor(s) for s in requests]
         batch = torch.stack(tensor_requests)
         policy, value = evaluator.forward(batch)
-        return policy.tolist(), value
+        return policy.tolist(), value.tolist()
 
     # def get_queue(self, queue):
     #     result_list = [[]]
