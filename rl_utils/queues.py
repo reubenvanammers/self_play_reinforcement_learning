@@ -1,6 +1,9 @@
 from multiprocessing import Queue
 import threading
 import re
+import logging
+import traceback
+
 
 class BidirectionalQueue:
     """
@@ -9,7 +12,6 @@ class BidirectionalQueue:
     """
 
     def __init__(self):
-
         self.request_queue = Queue()
         self.answer_queue = Queue()
 
@@ -17,26 +19,33 @@ class BidirectionalQueue:
         """
         Assumes that something is on the other end of the queue, obviously.
         """
-        self.request_queue.put(obj)
-        return self.answer_queue.get(block=True)
+        try:
+            assert self.request_queue.empty()
+            self.request_queue.put(obj)
+            return self.answer_queue.get(block=True)
+        except AssertionError:
+            print('asdf')
 
 
 class ThreadedBidirectionalQueue:
 
-    def __init__(self, threads = 5):
-
+    def __init__(self, threads=5):
+        self.threads = threads
         self.bidirectional_queues = [BidirectionalQueue() for _ in range(threads)]
 
-
     def request(self, obj):
-        # Finds queue from threaded evaluator worker - bit dodgy, may want to rework
-        name = threading.current_thread().name
-        thread = int(re.match(r"ThreadPoolExecutor-([1-9]*)\w+", name).group(0))
-        self.bidirectional_queues[thread].forward(obj)
-
-
-
-
+        try:
+            # Finds queue from threaded evaluator worker - bit dodgy, may want to rework
+            # Eg subclass threadedpoolexecutor
+            name = threading.current_thread().name
+            capture = re.findall(r"(\d+)", name)
+            if not capture:
+                thread = 0
+            else:
+                thread = int(capture[1])
+            return self.bidirectional_queues[thread].request(obj)
+        except Exception:
+            logging.info(traceback.format_exc())
 
 
 class QueueContainer:
@@ -44,8 +53,14 @@ class QueueContainer:
     Container class for queues
     """
 
-    def __init__(self):
-
-        self.policy_queues = BidirectionalQueue()
-        self.opposing_policy_queues = BidirectionalQueue()
-        self.evaluation_policy_queues = BidirectionalQueue()
+    def __init__(self, threading=1):
+        if threading == 1:
+            self.policy_queues = BidirectionalQueue()
+            self.opposing_policy_queues = BidirectionalQueue()
+            self.evaluation_policy_queues = BidirectionalQueue()
+            self.threaded = False
+        else:
+            self.policy_queues = ThreadedBidirectionalQueue(threading)
+            self.opposing_policy_queues = ThreadedBidirectionalQueue(threading)
+            self.evaluation_policy_queues = ThreadedBidirectionalQueue(threading)
+            self.threaded = True

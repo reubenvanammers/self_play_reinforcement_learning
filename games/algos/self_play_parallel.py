@@ -135,7 +135,7 @@ class SelfPlayScheduler:
             if evaluator_proxy:
                 num_play_workers = num_workers - 2
                 assert num_play_workers >= 1
-                queues = [QueueContainer() for _ in range(num_play_workers)]
+                queues = [QueueContainer(threading=5) for _ in range(num_play_workers)]
                 evaluators = [EvaluatorProxy(queue.policy_queues) for queue in queues]
                 player_workers = [
                     SelfPlayWorker(

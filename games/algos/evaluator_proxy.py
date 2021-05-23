@@ -74,9 +74,10 @@ class EvaluatorWorker(BaseWorker):
         # self.opposing_policy_evaluator = opposing_policy_evaluator.to(device).train(False)
         # self.evaluation_policy_evaluator = evaluation_policy_evaluator.to(device).train(False)
 
-        self.policy_queues = [queue.policy_queues for queue in queues]
-        self.opposing_policy_queues = [queue.opposing_policy_queues for queue in queues]
-        self.evaluation_policy_queues = [queue.evaluation_policy_queues for queue in queues]
+        # self.policy_queues = [queue.policy_queues for queue in queues]
+        # self.opposing_policy_queues = [queue.opposing_policy_queues for queue in queues]
+        # self.evaluation_policy_queues = [queue.evaluation_policy_queues for queue in queues]
+        self.policy_queues, self.opposing_policy_queues, self.evaluation_policy_queues = self._expand_queues(queues)
 
         self.counter = 0
         self.counter_last = 0
@@ -84,6 +85,20 @@ class EvaluatorWorker(BaseWorker):
         self.counter_time = datetime.datetime.now()
 
         super().__init__()
+
+    def _expand_queues(self, queues):
+        if not queues[0].threaded:
+            policy_queues = [queue.policy_queues for queue in queues]
+            opposing_policy_queues = [queue.opposing_policy_queues for queue in queues]
+            evaluation_policy_queues = [queue.evaluation_policy_queues for queue in queues]
+        else:
+            policy_queues = [queue.policy_queues.bidirectional_queues for queue in queues]
+            policy_queues = [item for sublist in policy_queues for item in sublist]
+            opposing_policy_queues = [queue.opposing_policy_queues.bidirectional_queues for queue in queues]
+            opposing_policy_queues = [item for sublist in opposing_policy_queues for item in sublist]
+            evaluation_policy_queues = [queue.evaluation_policy_queues.bidirectional_queues for queue in queues]
+            evaluation_policy_queues = [item for sublist in evaluation_policy_queues for item in sublist]
+        return policy_queues, opposing_policy_queues, evaluation_policy_queues
 
     def run(self):
         while True:
