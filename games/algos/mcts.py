@@ -312,24 +312,27 @@ class MCTreeSearch(BaseModel):
         if self.evaluating:
             self.root_node.add_noise()  # Might want to remove this in evaluation?
         for i in range(self.iterations):
-            node = self.root_node
-            while True:
-                select_probs = [
-                    child.select_prob if child.valid else -10000000000 for child in node.children
-                ]  # real big negative nuber
-                action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
-                child_node = node.children[action]
-                if child_node.is_leaf:
-                    child_node.in_use = True
-                    node, v = self._expand_node(node, action, node.player)
-                    node.backup(v)
-                    node.v = v
-                    node.in_use = False
-                    break
-                else:
-                    node = child_node
+            self.search_node()
         if self.evaluating:
             self.root_node.remove_noise()  # Don't think this is necessary?
+
+    def search_node(self):
+        node = self.root_node
+        while True:
+            select_probs = [
+                child.select_prob if child.valid else -10000000000 for child in node.children
+            ]  # real big negative nuber
+            action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
+            child_node = node.children[action]
+            if child_node.is_leaf:
+                child_node.in_use = True
+                node, v = self._expand_node(node, action, node.player)
+                node.backup(v)
+                node.v = v
+                node.in_use = False
+                break
+            else:
+                node = child_node
 
     def load_state_dict(self, state_dict, target=False):
         self.evaluator.load_state_dict(state_dict)
