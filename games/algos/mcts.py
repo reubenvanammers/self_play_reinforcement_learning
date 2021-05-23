@@ -6,6 +6,8 @@ from anytree import NodeMixin
 from torch import nn
 from torch.functional import F
 import random
+
+from games.algos.evaluator_proxy import EvaluatorProxy
 from rl_utils.flat import MSELossFlat
 import time
 from rl_utils.memory import Memory
@@ -131,7 +133,7 @@ class MCTreeSearch(BaseModel):
             min_memory=20000,
             update_nn=True,
             starting_state_dict=None,
-            threading=True,
+            # threading=True,
     ):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
@@ -152,7 +154,7 @@ class MCTreeSearch(BaseModel):
         self.actions = self.env.action_space.n
 
         self.evaluating = False
-        self.threading = threading
+        self.threading = isinstance(self.evaluator, EvaluatorProxy)
 
         self.batch_size = batch_size
 
@@ -233,6 +235,7 @@ class MCTreeSearch(BaseModel):
             self.memory.add(experience)
 
     def push_to_queue(self, s, a, r, done, next_s):
+        # Push memory of the game to the memory queue with the actual result of the game
         if done:
             for experience in self.temp_memory:
                 experience = experience._replace(actual_val=torch.tensor(r).float().to(device))

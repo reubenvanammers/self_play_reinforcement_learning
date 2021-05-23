@@ -131,7 +131,7 @@ class SelfPlayScheduler:
         try:
             num_workers = num_workers or multiprocessing.cpu_count()
 
-            evaluator_proxy = True
+            evaluator_proxy = False
             if evaluator_proxy:
                 num_play_workers = num_workers - 2
                 assert num_play_workers >= 1
