@@ -51,8 +51,11 @@ class MCNode(NodeMixin):
         self.alpha = 1  # Dirichlet parameter
         self.parent = parent
         self.player = -1 * self.parent.player if self.parent else player
-        self.valid = valid  # Whether an action is valid - don't play moves that you cannot
+        self._valid = valid  # Whether an action is valid - don't play moves that you cannot
         self.cpuct = cpuct  # exploration factor
+
+        #Flag for threading
+        self.in_use = False
 
         self.active_root = False
         self.v = v
@@ -87,6 +90,10 @@ class MCNode(NodeMixin):
         return (
             -1 * self.player * self.q + self.u
         )  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
+
+    @property
+    def valid(self):
+        return self._valid and not self.in_use
 
     def backup(self, v):
         self.w += v
@@ -311,13 +318,16 @@ class MCTreeSearch(BaseModel):
                     child.select_prob if child.valid else -10000000000 for child in node.children
                 ]  # real big negative nuber
                 action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
-                if node.children[action].is_leaf:
+                child_node = node.children[action]
+                if child_node.is_leaf:
+                    child_node.in_use = True
                     node, v = self._expand_node(node, action, node.player)
                     node.backup(v)
                     node.v = v
+                    node.in_use = False
                     break
                 else:
-                    node = node.children[action]
+                    node = child_node
         if self.evaluating:
             self.root_node.remove_noise()  # Don't think this is necessary?
 

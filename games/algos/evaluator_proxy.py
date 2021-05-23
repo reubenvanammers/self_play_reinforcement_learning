@@ -4,8 +4,10 @@ from games.algos.base_worker import BaseWorker
 from rl_utils.queues import BidirectionalQueue, QueueContainer
 import traceback
 import logging
+import datetime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 # class EvaluatorProxy:
 #     """
@@ -76,10 +78,21 @@ class EvaluatorWorker(BaseWorker):
         self.opposing_policy_queues = [queue.opposing_policy_queues for queue in queues]
         self.evaluation_policy_queues = [queue.evaluation_policy_queues for queue in queues]
 
+        self.counter = 0
+        self.counter_last = 0
+        self.counter_diff = 10000
+        self.counter_time = datetime.datetime.now()
+
         super().__init__()
 
     def run(self):
         while True:
+            if self.counter > self.counter_last + self.counter_diff:
+                now = datetime.datetime.now()
+                logging.info(
+                    f"Number of requests handled is {self.counter}, {self.counter - self.counter_last} requests took {(now - self.counter_time).total_seconds()} seconds")
+                self.counter_last = self.counter
+                self.counter_time = now
             try:
                 self.distribute(self.policy_queues, self.policy_evaluator)
             except Exception as e:
@@ -104,14 +117,15 @@ class EvaluatorWorker(BaseWorker):
             j = 0
             i = 0
             while j < len(requests):
-                if queue_active[i]==1:
+                if queue_active[i] == 1:
                     active_queue = queues[i]
                     if j >= len(policy):
                         print("asdf")
                     active_queue.answer_queue.put((policy[j], value[j][0]))
                     j += 1
-                i+=1
+                i += 1
                 # queue_active.pop()
+            self.counter += j
 
     def calculate(self, requests, evaluator):
         tensor_requests = [tensor(s) for s in requests]
