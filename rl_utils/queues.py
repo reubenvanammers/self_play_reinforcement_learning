@@ -1,5 +1,6 @@
 from multiprocessing import Queue
-
+import threading
+import re
 
 class BidirectionalQueue:
     """
@@ -18,6 +19,22 @@ class BidirectionalQueue:
         """
         self.request_queue.put(obj)
         return self.answer_queue.get(block=True)
+
+
+class ThreadedBidirectionalQueue:
+
+    def __init__(self, threads = 5):
+
+        self.bidirectional_queues = [BidirectionalQueue() for _ in range(threads)]
+
+
+    def request(self, obj):
+        # Finds queue from threaded evaluator worker - bit dodgy, may want to rework
+        name = threading.current_thread().name
+        thread = int(re.match(r"ThreadPoolExecutor-([1-9]*)\w+", name).group(0))
+        self.bidirectional_queues[thread].forward(obj)
+
+
 
 
 

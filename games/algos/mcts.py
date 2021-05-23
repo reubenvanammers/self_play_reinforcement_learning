@@ -12,10 +12,12 @@ from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 import logging
 from multiprocessing import Queue
+import concurrent.futures
+import threading
 
 from games.algos.base_model import BaseModel
 
-Move = namedtuple("Move", ("state", "actual_val", "tree_probs"),)
+Move = namedtuple("Move", ("state", "actual_val", "tree_probs"), )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
     from apex import amp
@@ -31,13 +33,11 @@ except ModuleNotFoundError:
     print("apex not available")
 
 
-
-
 class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
     def __init__(
-        self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True,
+            self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True,
     ):
         self.state = state
         self.n = n
@@ -54,7 +54,7 @@ class MCNode(NodeMixin):
         self._valid = valid  # Whether an action is valid - don't play moves that you cannot
         self.cpuct = cpuct  # exploration factor
 
-        #Flag for threading
+        # Flag for threading
         self.in_use = False
 
         self.active_root = False
@@ -71,7 +71,7 @@ class MCNode(NodeMixin):
             c.noise_active = False
 
     @property
-    def q(self,):  # Attractiveness of a node from player ones pespective - average of downstream results
+    def q(self, ):  # Attractiveness of a node from player ones pespective - average of downstream results
         return self.w / self.n if self.n else 0
 
     @property  # effective p - p if noise isn't active, otherwise adds noise factor
@@ -82,13 +82,13 @@ class MCNode(NodeMixin):
             return self.p
 
     @property
-    def u(self,):  # Factor to encourage exploration - higher values of cpuct increase exploration
+    def u(self, ):  # Factor to encourage exploration - higher values of cpuct increase exploration
         return self.cpuct * self.p_eff * np.sqrt(self.parent.n) / (1 + self.n)
 
     @property
-    def select_prob(self,):  # TODO check if this works? might need to be ther other way round
+    def select_prob(self, ):  # TODO check if this works? might need to be ther other way round
         return (
-            -1 * self.player * self.q + self.u
+                -1 * self.player * self.q + self.u
         )  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
 
     @property
@@ -119,18 +119,19 @@ class MCNode(NodeMixin):
 # TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch(BaseModel):
     def __init__(
-        self,
-        evaluator,
-        env_gen,
-        optim=None,
-        memory_queue=None,
-        iterations=100,
-        temperature_cutoff=5,
-        batch_size=64,
-        memory_size=200000,
-        min_memory=20000,
-        update_nn=True,
-        starting_state_dict=None,
+            self,
+            evaluator,
+            env_gen,
+            optim=None,
+            memory_queue=None,
+            iterations=100,
+            temperature_cutoff=5,
+            batch_size=64,
+            memory_size=200000,
+            min_memory=20000,
+            update_nn=True,
+            starting_state_dict=None,
+            threading=True,
     ):
         self.iterations = iterations
         self.evaluator = evaluator.to(device)
@@ -151,6 +152,7 @@ class MCTreeSearch(BaseModel):
         self.actions = self.env.action_space.n
 
         self.evaluating = False
+        self.threading = threading
 
         self.batch_size = batch_size
 
@@ -288,7 +290,7 @@ class MCTreeSearch(BaseModel):
         self.moves_played += 1
 
         self.temp_memory.append(
-            Move(torch.tensor(self.root_node.state).to(device), None, torch.tensor(play_probs).float().to(device),)
+            Move(torch.tensor(self.root_node.state).to(device), None, torch.tensor(play_probs).float().to(device), )
         )
         return action
 
@@ -311,12 +313,18 @@ class MCTreeSearch(BaseModel):
     def search(self):
         if self.evaluating:
             self.root_node.add_noise()  # Might want to remove this in evaluation?
-        for i in range(self.iterations):
-            self.search_node()
+        if self.threading:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                [executor.submit(self.search_node) for _ in range(self.iterations)]
+                executor.shutdown()
+        else:
+            for i in range(self.iterations):
+                self.search_node()
         if self.evaluating:
             self.root_node.remove_noise()  # Don't think this is necessary?
 
     def search_node(self):
+        # name = threading.Thread.name()
         node = self.root_node
         while True:
             select_probs = [
