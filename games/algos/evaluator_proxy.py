@@ -67,7 +67,7 @@ class EvaluatorWorker(BaseWorker):
             policy,
             opposing_policy_evaluator=None,
             evaluation_policy_evaluator=None,
-            model_save_location=None,
+            epoch_value=None,
             save_dir=None,
 
     ):
@@ -85,9 +85,11 @@ class EvaluatorWorker(BaseWorker):
         self.counter_last = 0
         self.counter_diff = 10000
         self.counter_time = datetime.datetime.now()
-        self.model_save_location = model_save_location
+        self.epoch_value = epoch_value
         self.current_model_file = None
         self.save_dir = save_dir
+
+        self.epoch_count = 0
 
         super().__init__()
 
@@ -108,10 +110,12 @@ class EvaluatorWorker(BaseWorker):
     def run(self):
         while True:
             try:
-                if self.model_save_location:
-                    if self.model_save_location.value:
-                        if self.model_save_location.value != self.current_model_file:
+                if self.epoch_value:
+                    if self.epoch_value.value:
+                        if self.epoch_value.value != self.epoch_count:
+                            logging.info("loading model")
                             self.load_model()
+                            self.epoch_count = self.epoch_value.value
                 if self.counter > self.counter_last + self.counter_diff:
                     now = datetime.datetime.now()
                     logging.info(

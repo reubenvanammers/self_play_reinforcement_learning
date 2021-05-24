@@ -127,7 +127,7 @@ class SelfPlayScheduler:
         return total_rewards, breakdown
 
     def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None):
-        saved_name = multiprocessing.Value('i', 0)
+        epoch_value = multiprocessing.Value('i', 0)
         try:
             num_workers = num_workers or multiprocessing.cpu_count()
 
@@ -155,7 +155,7 @@ class SelfPlayScheduler:
                     )
                     for i in range(num_play_workers)
                 ]
-                evaluator_worker = EvaluatorWorker(queues, self.network, model_save_location=saved_name, save_dir=self.save_dir)
+                evaluator_worker = EvaluatorWorker(queues, self.network, epoch_value=epoch_value, save_dir=self.save_dir)
                 evaluator_worker.start()
             else:
                 num_play_workers = num_workers - 1
@@ -178,7 +178,7 @@ class SelfPlayScheduler:
                         save_dir=self.save_dir,
                         resume=resume_model,
                         self_play=self.self_play,
-                        model_save_location=saved_name
+                        epoch_value=epoch_value
                     )
                     for _ in range(num_play_workers)
                 ]
@@ -242,7 +242,7 @@ class SelfPlayScheduler:
 
                 update_worker_queue.join()
                 # Update saved name after worker has loaded it
-                saved_name.value += 1
+                epoch_value.value += 1
                 update_worker_queue.put({"reward": reward})
 
             # Clean up

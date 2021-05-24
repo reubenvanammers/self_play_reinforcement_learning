@@ -44,7 +44,7 @@ class SelfPlayWorker(BaseWorker):
 
         self.current_model_file = None
         self.resume = resume
-        self.model_save_location=model_save_location
+        self.epoch_value=model_save_location
 
         self.epoch_count=0
 
@@ -90,14 +90,14 @@ class SelfPlayWorker(BaseWorker):
             task = self.task_queue.get()
             logging.info(f"task {task}")
             try:
-                if self.model_save_location:
-                    if  self.model_save_location.value:
-                        if self.model_save_location.value != self.epoch_count:
+                if self.epoch_value:
+                    if  self.epoch_value.value:
+                        if self.epoch_value.value != self.epoch_count:
                 # if task.get("saved_name") and task.get("saved_name") != self.current_model_file:
                     # time.sleep(5)
                             logging.info("loading model")
                             self.load_model()
-                            self.epoch_count = self.model_save_location.value
+                            self.epoch_count = self.epoch_value.value
 
                 evaluate = task.get("evaluate")
                 if evaluate:
