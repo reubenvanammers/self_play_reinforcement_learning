@@ -340,7 +340,7 @@ class MCTreeSearch(BaseModel):
                 #TODO check if this causes any problems - most of the time if this is happening its getting close to the
                 # end of the game. Caused because all threads are currently active
                 # May want to move up valid checking one level? or just a wait
-                logging.info("all states currently in use")
+                # logging.info("all states currently in use")
                 return
             action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
             child_node = node.children[action]
