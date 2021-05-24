@@ -19,6 +19,7 @@ class SelfPlayWorker(BaseWorker):
         resume=False,
         self_play=False,
         evaluation_policy_container=None,
+        model_save_location=None,
     ):
         logging.info("initializing self play worker worker")
         self.env_gen = env_gen
@@ -43,6 +44,7 @@ class SelfPlayWorker(BaseWorker):
 
         self.current_model_file = None
         self.resume = resume
+        self.model_save_location=model_save_location
 
         super().__init__()
 
@@ -84,11 +86,15 @@ class SelfPlayWorker(BaseWorker):
 
         while True:
             task = self.task_queue.get()
+            logging.info(f"task {task}")
             try:
-                if task.get("saved_name") and task.get("saved_name") != self.current_model_file:
+                if self.model_save_location:
+                    if  self.model_save_location.value:
+                        if self.model_save_location.value != self.current_model_file:
+                # if task.get("saved_name") and task.get("saved_name") != self.current_model_file:
                     # time.sleep(5)
-                    print("loading model")
-                    self.load_model()
+                            logging.info("loading model")
+                            self.load_model()
 
                 evaluate = task.get("evaluate")
                 if evaluate:
@@ -105,7 +111,6 @@ class SelfPlayWorker(BaseWorker):
                 self.task_queue.task_done()
                 logging.info("task done")
             except Exception as e:
-                raise e
                 logging.exception(traceback.format_exc())
                 self.task_queue.task_done()
 

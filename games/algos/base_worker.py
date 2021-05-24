@@ -8,44 +8,49 @@ import torch
 # from apex import amp
 from torch import multiprocessing
 
+
 # from games.algos.self_play_parallel import APEX_AVAILABLE
 
 
 class BaseWorker(multiprocessing.Process):
-    def load_model(self, prev_run=False):
+    def load_model(self, prev_run=False, model_file=None):
         logging.info("loading model")
-
-        if prev_run:
-            folders = [
-                join(self.save_dir, f)
-                for f in listdir(os.path.join(self.save_dir))
-                if not isfile(join(self.save_dir, f)) and f != self.start_time
-            ]
+        if model_file:
+            recent_file = model_file
         else:
-            folders = [
-                join(self.save_dir, f)
-                for f in listdir(os.path.join(self.save_dir))
-                if not isfile(join(self.save_dir, f))
+            if prev_run:
+                folders = [
+                    join(self.save_dir, f)
+                    for f in listdir(os.path.join(self.save_dir))
+                    if not isfile(join(self.save_dir, f)) and f != self.start_time
+                ]
+            else:
+                folders = [
+                    join(self.save_dir, f)
+                    for f in listdir(os.path.join(self.save_dir))
+                    if not isfile(join(self.save_dir, f))
+                ]
+            recent_folder = max(folders)
+
+            saves = [
+                join(recent_folder, f)
+                for f in listdir(os.path.join(recent_folder))
+                if isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith("model")
             ]
-        recent_folder = max(folders)
 
-        saves = [
-            join(recent_folder, f)
-            for f in listdir(os.path.join(recent_folder))
-            if isfile(join(recent_folder, f)) and os.path.split(f)[1].startswith("model")
-        ]
-
-        recent_file = max(saves)
+            recent_file = max(saves)
         self.current_model_file = recent_file
         self.load_checkpoint(recent_file)
 
     def load_checkpoint(self, recent_file):
         checkpoint = torch.load(recent_file)
 
-        self.policy.load_state_dict(checkpoint["model"], target=True)
+        logging.info(f"loading model from {recent_file}")
+        # TODO - deal with target better? Get rid of Q completely?
+        self.policy.load_state_dict(checkpoint["model"])
 
         if getattr(self, "self_play", None):
-            self.opposing_policy_train.load_state_dict(checkpoint["model"], target=True)
+            self.opposing_policy_train.load_state_dict(checkpoint["model"])
 
         # if APEX_AVAILABLE:
         #     amp.load_state_dict(checkpoint["amp"])

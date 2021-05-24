@@ -65,12 +65,14 @@ class EvaluatorWorker(BaseWorker):
     def __init__(
             self,
             queues,
-            policy_evaluator,
+            policy,
             opposing_policy_evaluator=None,
             evaluation_policy_evaluator=None,
+            model_save_location=None
+
     ):
         logging.info("setting up Evaluator worker")
-        self.policy_evaluator = policy_evaluator.to(device).train(False)
+        self.policy = policy.to(device).train(False)
         # self.opposing_policy_evaluator = opposing_policy_evaluator.to(device).train(False)
         # self.evaluation_policy_evaluator = evaluation_policy_evaluator.to(device).train(False)
 
@@ -83,6 +85,8 @@ class EvaluatorWorker(BaseWorker):
         self.counter_last = 0
         self.counter_diff = 10000
         self.counter_time = datetime.datetime.now()
+        self.model_save_location = model_save_location
+        self.current_model_file = None
 
         super().__init__()
 
@@ -102,14 +106,18 @@ class EvaluatorWorker(BaseWorker):
 
     def run(self):
         while True:
-            if self.counter > self.counter_last + self.counter_diff:
-                now = datetime.datetime.now()
-                logging.info(
-                    f"Number of requests handled is {self.counter}, {self.counter - self.counter_last} requests took {(now - self.counter_time).total_seconds()} seconds")
-                self.counter_last = self.counter
-                self.counter_time = now
             try:
-                self.distribute(self.policy_queues, self.policy_evaluator)
+                if self.model_save_location:
+                    if self.model_save_location.value:
+                        if self.model_save_location.value != self.current_model_file:
+                            self.load_model(model_file=self.model_save_location.value)
+                if self.counter > self.counter_last + self.counter_diff:
+                    now = datetime.datetime.now()
+                    logging.info(
+                        f"Number of requests handled is {self.counter}, {self.counter - self.counter_last} requests took {(now - self.counter_time).total_seconds()} seconds")
+                    self.counter_last = self.counter
+                    self.counter_time = now
+                self.distribute(self.policy_queues, self.policy)
             except Exception as e:
                 traceback.print_exc()
                 logging.exception(traceback.format_exc())

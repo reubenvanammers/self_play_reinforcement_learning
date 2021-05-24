@@ -261,9 +261,9 @@ class MCTreeSearch(BaseModel):
 
     def update_from_memory(self):
         if len(self.memory) < self.batch_size:
-            logging.info("skipping due to not enough memory")
+            logging.info(f"skipping due to not enough memory have {len(self.memory)} objects with batch size {self.batch_size}")
             print("skipping due to not enogugh memory")
-            time.sleep(60)
+            time.sleep(1)
             return
         batch = self.memory.sample(self.batch_size)
 
@@ -288,7 +288,10 @@ class MCTreeSearch(BaseModel):
         play_probs = [child.play_prob(temp) for child in self.root_node.children]
         play_probs = play_probs / sum(play_probs)
 
-        action = np.random.choice(self.actions, p=play_probs)
+        try:
+            action = np.random.choice(self.actions, p=play_probs)
+        except Exception:
+            logging.info(f"action exception, actions{self.actions} p = {play_probs}")
 
         self.moves_played += 1
 
@@ -333,6 +336,12 @@ class MCTreeSearch(BaseModel):
             select_probs = [
                 child.select_prob if child.valid else -10000000000 for child in node.children
             ]  # real big negative nuber
+            if all(i <-100000 for i in select_probs):
+                #TODO check if this causes any problems - most of the time if this is happening its getting close to the
+                # end of the game. Caused because all threads are currently active
+                # May want to move up valid checking one level? or just a wait
+                logging.info("all states currently in use")
+                return
             action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
             child_node = node.children[action]
             if child_node.is_leaf:

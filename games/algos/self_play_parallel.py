@@ -1,3 +1,4 @@
+import ctypes
 import datetime
 import logging
 import os
@@ -27,7 +28,6 @@ logging.basicConfig(
 logging.info("initializing logging")
 
 multiprocessing_logging.install_mp_handler()
-logging.info("initializing logging2")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
@@ -128,10 +128,11 @@ class SelfPlayScheduler:
         return total_rewards, breakdown
 
     def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None):
+        saved_name = multiprocessing.Manager().Value(ctypes.c_wchar_p, '')
         try:
             num_workers = num_workers or multiprocessing.cpu_count()
 
-            evaluator_proxy = False
+            evaluator_proxy = True
             if evaluator_proxy:
                 num_play_workers = num_workers - 2
                 assert num_play_workers >= 1
@@ -151,10 +152,11 @@ class SelfPlayScheduler:
                         save_dir=self.save_dir,
                         resume=resume_model,
                         self_play=self.self_play,
+                        # model_save_location=saved_name
                     )
                     for i in range(num_play_workers)
                 ]
-                evaluator_worker = EvaluatorWorker(queues, self.network)
+                evaluator_worker = EvaluatorWorker(queues, self.network, model_save_location=saved_name)
                 evaluator_worker.start()
             else:
                 num_play_workers = num_workers - 1
@@ -177,11 +179,10 @@ class SelfPlayScheduler:
                         save_dir=self.save_dir,
                         resume=resume_model,
                         self_play=self.self_play,
+                        model_save_location=saved_name
                     )
                     for _ in range(num_play_workers)
                 ]
-
-
 
             for w in player_workers:
                 w.start()
@@ -208,23 +209,28 @@ class SelfPlayScheduler:
 
             update_worker.start()
 
+            logging.info(f"generating {self.initial_games} initial games")
             for i in range(self.initial_games):
                 swap_sides = not i % 2 == 0
-                self.task_queue.put({"play": {"swap_sides": swap_sides, "update": False}})
+                self.task_queue.put({"play": {"swap_sides": swap_sides, "update": True}})
             self.task_queue.join()
+            logging.info("finished initial evaluation games (if any)")
             while not self.result_queue.empty():
                 self.result_queue.get()
 
-            saved_model_name = None
+            # saved_model_name = None
             reward = self.evaluate_policy(-1)
             for epoch in range(num_epochs):
+                logging.info(f"generating {self.epoch_length} self play games: epoch {epoch}")
+
                 update_flag.set()
                 for i in range(self.epoch_length):
                     swap_sides = not i % 2 == 0
                     self.task_queue.put(
-                        {"play": {"swap_sides": swap_sides, "update": True}, "saved_name": saved_model_name, }
+                        {"play": {"swap_sides": swap_sides, "update": True}}
                     )
                 self.task_queue.join()
+                logging.info(f"finished generating {self.epoch_length} self play games: epoch {epoch}")
 
                 saved_model_name = os.path.join(
                     self.save_dir,
@@ -236,6 +242,8 @@ class SelfPlayScheduler:
                 reward = self.evaluate_policy(epoch)
 
                 update_worker_queue.join()
+                # Update saved name after worker has loaded it
+                saved_name.value = saved_model_name
                 update_worker_queue.put({"reward": reward})
 
             # Clean up
@@ -290,11 +298,14 @@ class SelfPlayScheduler:
 
         if self.self_play:
             reward_list = []
+            logging.info("running evaluation games")
             print("Running evaluation games")
             self.run_evaluation_games()
             while not self.result_queue.empty():
                 reward_list.append(self.result_queue.get())
             print("Evaluation games are: \n")
+            logging.info("Evaluation games are ")
+
             total_rewards, _ = self.parse_results(reward_list)
 
         # self.scheduler.step(total_rewards)

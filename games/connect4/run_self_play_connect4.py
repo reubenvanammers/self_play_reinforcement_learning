@@ -61,15 +61,16 @@ def run_training():
         policy_container=policy_container,
         opposing_policy_container=opposing_policy_container,
         evaluation_policy_container=evaluation_policy_container,
-        initial_games=0,
-        epoch_length=500,
+        initial_games=5,
+        epoch_length=2,
+        evaluation_games=2,
         save_dir=save_dir,
         self_play=True,
         stagger=False,
         lr=0.0003,
     )
 
-    self_play.train_model(100, resume_memory=False, resume_model=False)
+    self_play.train_model(100, resume_memory=False, resume_model=False, num_workers=3)
     print("Training Done")
 
 
