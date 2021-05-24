@@ -8,7 +8,6 @@ import datetime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
 # class EvaluatorProxy:
 #     """
 #     Used for evalutation via queues. Should only be used for evaluation, not for training.
@@ -68,7 +67,8 @@ class EvaluatorWorker(BaseWorker):
             policy,
             opposing_policy_evaluator=None,
             evaluation_policy_evaluator=None,
-            model_save_location=None
+            model_save_location=None,
+            save_dir=None,
 
     ):
         logging.info("setting up Evaluator worker")
@@ -87,6 +87,7 @@ class EvaluatorWorker(BaseWorker):
         self.counter_time = datetime.datetime.now()
         self.model_save_location = model_save_location
         self.current_model_file = None
+        self.save_dir = save_dir
 
         super().__init__()
 
@@ -110,7 +111,7 @@ class EvaluatorWorker(BaseWorker):
                 if self.model_save_location:
                     if self.model_save_location.value:
                         if self.model_save_location.value != self.current_model_file:
-                            self.load_model(model_file=self.model_save_location.value)
+                            self.load_model()
                 if self.counter > self.counter_last + self.counter_diff:
                     now = datetime.datetime.now()
                     logging.info(

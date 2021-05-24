@@ -231,14 +231,17 @@ class MCTreeSearch(BaseModel):
 
     def pull_from_queue(self):
         while not self.memory_queue.empty():
+            # experience = self.memory_queue.get()
             experience = self.memory_queue.get()
+            [experience[i].to(device) for i in range(3)]
             self.memory.add(experience)
 
     def push_to_queue(self, s, a, r, done, next_s):
         # Push memory of the game to the memory queue with the actual result of the game
         if done:
             for experience in self.temp_memory:
-                experience = experience._replace(actual_val=torch.tensor(r).float().to(device))
+                #experience = experience._replace(actual_val=torch.tensor(r).float().to(device))
+                experience = experience._replace(actual_val=torch.tensor(r).float())
                 self.memory_queue.put(experience)
             self.temp_memory = []
 
@@ -296,7 +299,9 @@ class MCTreeSearch(BaseModel):
         self.moves_played += 1
 
         self.temp_memory.append(
-            Move(torch.tensor(self.root_node.state).to(device), None, torch.tensor(play_probs).float().to(device), )
+            Move(torch.tensor(self.root_node.state), None, torch.tensor(play_probs).float(), )
+            # Move(torch.tensor(self.root_node.state).to(device), None, torch.tensor(play_probs).float().to(device), )
+
         )
         return action
 

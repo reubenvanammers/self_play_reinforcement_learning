@@ -28,7 +28,6 @@ logging.basicConfig(
 logging.info("initializing logging")
 
 multiprocessing_logging.install_mp_handler()
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 try:
     from apex import amp
@@ -128,7 +127,7 @@ class SelfPlayScheduler:
         return total_rewards, breakdown
 
     def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None):
-        saved_name = multiprocessing.Manager().Value(ctypes.c_wchar_p, '')
+        saved_name = multiprocessing.Value('i', 0)
         try:
             num_workers = num_workers or multiprocessing.cpu_count()
 
@@ -156,7 +155,7 @@ class SelfPlayScheduler:
                     )
                     for i in range(num_play_workers)
                 ]
-                evaluator_worker = EvaluatorWorker(queues, self.network, model_save_location=saved_name)
+                evaluator_worker = EvaluatorWorker(queues, self.network, model_save_location=saved_name, save_dir=self.save_dir)
                 evaluator_worker.start()
             else:
                 num_play_workers = num_workers - 1
@@ -243,7 +242,7 @@ class SelfPlayScheduler:
 
                 update_worker_queue.join()
                 # Update saved name after worker has loaded it
-                saved_name.value = saved_model_name
+                saved_name.value += 1
                 update_worker_queue.put({"reward": reward})
 
             # Clean up
