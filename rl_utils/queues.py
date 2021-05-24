@@ -1,9 +1,10 @@
 from multiprocessing import Queue
-import threading
-import re
 import logging
 import traceback
+from collections import deque
 
+import threading
+import re
 
 class BidirectionalQueue:
     """
@@ -32,20 +33,32 @@ class ThreadedBidirectionalQueue:
     def __init__(self, threads=5):
         self.threads = threads
         self.bidirectional_queues = [BidirectionalQueue() for _ in range(threads)]
+        self.available_queues = deque(range(threads), threads)
+
+
+    # def request(self, obj):
+    #     try:
+    #         # Finds queue from threaded evaluator worker - bit dodgy, may want to rework
+    #         # Eg subclass threadedpoolexecutor
+    #         name = threading.current_thread().name
+    #         capture = re.findall(r"(\d+)", name)
+    #         if not capture:
+    #             thread = 0
+    #         else:
+    #             thread = int(capture[1])
+    #         return self.bidirectional_queues[thread].request(obj)
+    #     except Exception:
+    #         logging.info(traceback.format_exc())
 
     def request(self, obj):
         try:
-            # Finds queue from threaded evaluator worker - bit dodgy, may want to rework
-            # Eg subclass threadedpoolexecutor
-            name = threading.current_thread().name
-            capture = re.findall(r"(\d+)", name)
-            if not capture:
-                thread = 0
-            else:
-                thread = int(capture[1])
-            return self.bidirectional_queues[thread].request(obj)
+            thread = self.available_queues.pop()
+            result = self.bidirectional_queues[thread].request(obj)
+            self.available_queues.appendleft(thread)
+            return result
         except Exception:
             logging.info(traceback.format_exc())
+
 
 
 class QueueContainer:
