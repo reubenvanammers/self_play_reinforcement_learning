@@ -4,6 +4,7 @@ import logging
 from games.algos.base_worker import BaseWorker
 import traceback
 
+from concurrent import futures
 class SelfPlayWorker(BaseWorker):
     def __init__(
         self,
@@ -20,6 +21,7 @@ class SelfPlayWorker(BaseWorker):
         self_play=False,
         evaluation_policy_container=None,
         model_save_location=None,
+        threading = 2,
     ):
         logging.info("initializing self play worker worker")
         self.env_gen = env_gen
@@ -48,6 +50,8 @@ class SelfPlayWorker(BaseWorker):
 
         self.epoch_count=0
 
+        self.threading = threading
+
         super().__init__()
 
     def set_up_policies(self):
@@ -75,6 +79,8 @@ class SelfPlayWorker(BaseWorker):
 
             self.opposing_policy = self.opposing_policy_train
             logging.info("finished setting up policies")
+
+            return SelfPlayer(self.policy, self.opposing_policy, self.env)
         except Exception as e:
             logging.exception("setting up policies failed" + str(e))
             logging.exception(traceback.format_exc())
@@ -85,6 +91,10 @@ class SelfPlayWorker(BaseWorker):
         self.set_up_policies()  # dont do in init because of global apex
         if self.resume:
             self.load_model(prev_run=True)
+
+        if self.threading:
+            executor = futures.ThreadPoolExecutor(self.threading)
+
 
         while True:
             task = self.task_queue.get()
@@ -110,12 +120,30 @@ class SelfPlayWorker(BaseWorker):
                     self.policy.evaluate(False)
 
                 episode_args = task["play"]
-                self.play_episode(**episode_args)
-                self.task_queue.task_done()
-                logging.info("task done")
+                if not self.threading:
+                    self.play_episode(**episode_args)
+                    self.task_queue.task_done()
+                    logging.info("task done")
+                else:
+                    future = executor.submit(self.play_episode, **episode_args)
+                    future.add_done_callback(self._task_finished)
+
             except Exception as e:
                 logging.exception(traceback.format_exc())
                 self.task_queue.task_done()
+
+    def _task_finished(self, future):
+        if future.done():
+            self.task_queue.task_done()
+            logging.info("task done")
+
+
+class SelfPlayer:
+
+    def __init(self, policy, opposing_policy, env):
+        self.policy=policy
+        self.opposing_policy=opposing_policy
+        self.env=env
 
     def play_episode(self, swap_sides=False, update=True):
 
