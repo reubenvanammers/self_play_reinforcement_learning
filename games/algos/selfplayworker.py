@@ -46,6 +46,8 @@ class SelfPlayWorker(BaseWorker):
         self.resume = resume
         self.model_save_location=model_save_location
 
+        self.epoch_count=0
+
         super().__init__()
 
     def set_up_policies(self):
@@ -90,11 +92,12 @@ class SelfPlayWorker(BaseWorker):
             try:
                 if self.model_save_location:
                     if  self.model_save_location.value:
-                        if self.model_save_location.value != self.current_model_file:
+                        if self.model_save_location.value != self.epoch_count:
                 # if task.get("saved_name") and task.get("saved_name") != self.current_model_file:
                     # time.sleep(5)
                             logging.info("loading model")
                             self.load_model()
+                            self.epoch_count = self.model_save_location.value
 
                 evaluate = task.get("evaluate")
                 if evaluate:
