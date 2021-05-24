@@ -231,9 +231,8 @@ class MCTreeSearch(BaseModel):
 
     def pull_from_queue(self):
         while not self.memory_queue.empty():
-            # experience = self.memory_queue.get()
             experience = self.memory_queue.get()
-            [experience[i].to(device) for i in range(3)]
+            experience = Move(*[experience[i].to(device,) for i in range(3)])
             self.memory.add(experience)
 
     def push_to_queue(self, s, a, r, done, next_s):
