@@ -125,6 +125,6 @@ class UpdateWorker(BaseWorker):
     def update(self):
         self.pull()
         logging.info("updating from memory")
-        for _ in range(10):
+        for _ in range(100):
             time.sleep(0.10)
             self.policy.update_from_memory()

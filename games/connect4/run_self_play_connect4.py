@@ -32,7 +32,7 @@ def run_training():
         memory_size=20000,
         env_gen=Connect4Env,
         # evaluator=network,
-        batch_size=8
+        batch_size=64
     )
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
@@ -43,7 +43,7 @@ def run_training():
         min_memory=100000,
         memory_size=20000,
         env_gen=Connect4Env,
-        batch_size=8
+        batch_size=64
     )
     opposing_policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
 
@@ -61,9 +61,9 @@ def run_training():
         policy_container=policy_container,
         opposing_policy_container=opposing_policy_container,
         evaluation_policy_container=evaluation_policy_container,
-        initial_games=5,
-        epoch_length=2,
-        evaluation_games=2,
+        initial_games=40,
+        epoch_length=500,
+        evaluation_games=100,
         save_dir=save_dir,
         self_play=True,
         stagger=False,
