@@ -231,14 +231,20 @@ class MCTreeSearch(BaseModel):
 
     def pull_from_queue(self):
         while not self.memory_queue.empty():
+            # logging.info(f"queue size in policy is {self.memory_queue.qsize()}")
             experience = self.memory_queue.get()
             experience = Move(*[experience[i].to(device,) for i in range(3)])
             self.memory.add(experience)
+            # logging.info(f"memory size is  is {len(self.memory)}")
+
 
     def push_to_queue(self, s, a, r, done, next_s):
         # Push memory of the game to the memory queue with the actual result of the game
         if done:
+            # logging.info('pushing to queue')
             for experience in self.temp_memory:
+                # logging.info(self.memory_queue.qsize())
+                # logging.info('pushing experience to queue')
                 #experience = experience._replace(actual_val=torch.tensor(r).float().to(device))
                 experience = experience._replace(actual_val=torch.tensor(r).float())
                 self.memory_queue.put(experience)
@@ -324,7 +330,7 @@ class MCTreeSearch(BaseModel):
         if self.evaluating:
             self.root_node.add_noise()  # Might want to remove this in evaluation?
         if self.threading:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 [executor.submit(self.search_node) for _ in range(self.iterations)]
                 executor.shutdown()
         else:

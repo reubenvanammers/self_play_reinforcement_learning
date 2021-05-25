@@ -126,7 +126,7 @@ class SelfPlayScheduler:
         total_rewards, breakdown = self.parse_results(reward_list)
         return total_rewards, breakdown
 
-    def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None):
+    def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None, threads_per_worker=8):
         epoch_value = multiprocessing.Value('i', 0)
         try:
             num_workers = num_workers or multiprocessing.cpu_count()
@@ -135,7 +135,8 @@ class SelfPlayScheduler:
             if evaluator_proxy:
                 num_play_workers = num_workers - 2
                 assert num_play_workers >= 1
-                queues = [QueueContainer(threading=10) for _ in range(num_play_workers)]
+                # Use two worker threads per MCTS game
+                queues = [QueueContainer(threading=threads_per_worker*2) for _ in range(num_play_workers)]
                 evaluators = [EvaluatorProxy(queue.policy_queues) for queue in queues]
                 player_workers = [
                     SelfPlayWorker(
@@ -151,6 +152,7 @@ class SelfPlayScheduler:
                         save_dir=self.save_dir,
                         resume=resume_model,
                         self_play=self.self_play,
+                        threading=threads_per_worker
                         # model_save_location=saved_name
                     )
                     for i in range(num_play_workers)

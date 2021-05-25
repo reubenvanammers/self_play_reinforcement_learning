@@ -86,7 +86,7 @@ class SelfPlayWorker(BaseWorker):
                     opposing_policy = opposing_policy_train
             logging.info("Created SelfPlayWorker")
 
-            return SelfPlayer(policy, opposing_policy, self.env, self.result_queue)
+            return SelfPlayer(policy, opposing_policy, self.env_gen(), self.result_queue)
         except Exception as e:
             logging.exception("setting up policies failed" + str(e))
             logging.exception(traceback.format_exc())
@@ -100,6 +100,7 @@ class SelfPlayWorker(BaseWorker):
 
         if self.threading:
             executor = futures.ThreadPoolExecutor(self.threading)
+            future_set = set()
 
 
         while True:
@@ -109,8 +110,6 @@ class SelfPlayWorker(BaseWorker):
                 if self.epoch_value:
                     if  self.epoch_value.value:
                         if self.epoch_value.value != self.epoch_count:
-                # if task.get("saved_name") and task.get("saved_name") != self.current_model_file:
-                    # time.sleep(5)
                             logging.info("loading model")
                             self.load_model()
                             self.epoch_count = self.epoch_value.value
@@ -126,6 +125,11 @@ class SelfPlayWorker(BaseWorker):
                 else:
                     future = executor.submit(self_player.play_episode, **episode_args)
                     future.add_done_callback(self._task_finished)
+                    future_set.add(future)
+                    if len(future_set) < self.threading:
+                        continue
+                    else:
+                        done,future_set = futures.wait(future_set,return_when=futures.FIRST_COMPLETED)
 
             except Exception as e:
                 logging.exception(traceback.format_exc())
@@ -145,20 +149,23 @@ class SelfPlayer:
         self.env=env
         self.result_queue = result_queue
     def play_episode(self, swap_sides=False, update=True):
+        try:
 
-        s = self.env.reset()
-        self.policy.reset(player=(-1 if swap_sides else 1))
-        self.opposing_policy.reset(player=(1 if swap_sides else -1))  # opposite from opposing policy perspective
-        state_list = []
-        if swap_sides:
-            s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
-        for i in range(100):  # Should be less than this
-            s, done, r = self.play_round(s, update=update)
-            state_list.append(copy.deepcopy(s))
-            if done:
-                break
-        self.result_queue.put({"reward": r, "swap_sides": swap_sides})
-        return state_list, r
+            s = self.env.reset()
+            self.policy.reset(player=(-1 if swap_sides else 1))
+            self.opposing_policy.reset(player=(1 if swap_sides else -1))  # opposite from opposing policy perspective
+            state_list = []
+            if swap_sides:
+                s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
+            for i in range(100):  # Should be less than this
+                s, done, r = self.play_round(s, update=update)
+                state_list.append(copy.deepcopy(s))
+                if done:
+                    break
+            self.result_queue.put({"reward": r, "swap_sides": swap_sides})
+            return state_list, r
+        except Exception as e:
+            logging.info(traceback.format_exc())
 
     def play_round(self, s, update=True):
         s = s.copy()
