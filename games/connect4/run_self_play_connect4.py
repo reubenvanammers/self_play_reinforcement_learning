@@ -70,7 +70,7 @@ def run_training():
         lr=0.0003,
     )
 
-    self_play.train_model(100, resume_memory=False, resume_model=False)
+    self_play.train_model(100, resume_memory=False, resume_model=False,num_workers=3)
     print("Training Done")
 
 

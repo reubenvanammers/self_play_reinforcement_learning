@@ -21,7 +21,7 @@ class SelfPlayWorker(BaseWorker):
         self_play=False,
         evaluation_policy_container=None,
         model_save_location=None,
-        threading = 2,
+        threading = 0,
     ):
         logging.info("initializing self play worker worker")
         self.env_gen = env_gen
@@ -54,33 +54,44 @@ class SelfPlayWorker(BaseWorker):
 
         super().__init__()
 
-    def set_up_policies(self):
+    def set_up_policies(self, evaluate=False):
         try:
             if self.self_play:
-                self.policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator)
-                self.opposing_policy_train = self.opposing_policy_container.setup(evaluator=self.evaluator)
-            # else:
-            #     self.policy = self.policy_container.setup(memory_queue=self.memory_queue)
+                policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator)
+                policy.train(False)
+
+                if evaluate:
+                    opposing_policy_evaluate = self.evaluation_policy_container.setup()
+                    opposing_policy_evaluate.evaluate(True)
+                    opposing_policy_evaluate.train(False)
+                    opposing_policy = opposing_policy_evaluate
+                    # opposing_policy_evaluate.env = self.env_gen()
+                else:
+                    opposing_policy_train = self.opposing_policy_container.setup(evaluator=self.evaluator)
+                    opposing_policy_train.env = self.env_gen()
+                    opposing_policy = opposing_policy_train
+                    # opposing_policy_train.train(False)
+            # else:            #     self.policy = self.policy_container.setup(memory_queue=self.memory_queue)
             #     self.opposing_policy_train = self.opposing_policy_container.setup()
 
-            self.opposing_policy_train.train(False)
-            self.policy.train(False)
+            # opposing_policy_train.train(False)
+            # policy.train(False)
+            #
+            # opposing_policy_train.env = self.env_gen()
 
-            self.opposing_policy_train.env = self.env_gen()
+            # if self.evaluation_policy_container:
+            #     #TODO add evaluation policy
+            #     self.opposing_policy_evaluate = self.evaluation_policy_container.setup()
+            #
+            # if self.opposing_policy_evaluate:
+            #     self.opposing_policy_evaluate.evaluate(True)
+            #     self.opposing_policy_evaluate.train(False)
+            #     self.opposing_policy_evaluate.env = self.env_gen()
+            #
+            # self.opposing_policy = self.opposing_policy_train
+            logging.info("Created SelfPlayWorker")
 
-            if self.evaluation_policy_container:
-                #TODO add evaluation policy
-                self.opposing_policy_evaluate = self.evaluation_policy_container.setup()
-
-            if self.opposing_policy_evaluate:
-                self.opposing_policy_evaluate.evaluate(True)
-                self.opposing_policy_evaluate.train(False)
-                self.opposing_policy_evaluate.env = self.env_gen()
-
-            self.opposing_policy = self.opposing_policy_train
-            logging.info("finished setting up policies")
-
-            return SelfPlayer(self.policy, self.opposing_policy, self.env)
+            return SelfPlayer(policy, opposing_policy, self.env, self.result_queue)
         except Exception as e:
             logging.exception("setting up policies failed" + str(e))
             logging.exception(traceback.format_exc())
@@ -88,7 +99,7 @@ class SelfPlayWorker(BaseWorker):
     def run(self):
         logging.info("running self play worker")
 
-        self.set_up_policies()  # dont do in init because of global apex
+        # self.set_up_policies()  # dont do in init because of global apex
         if self.resume:
             self.load_model(prev_run=True)
 
@@ -110,22 +121,23 @@ class SelfPlayWorker(BaseWorker):
                             self.epoch_count = self.epoch_value.value
 
                 evaluate = task.get("evaluate")
-                if evaluate:
-                    self.opposing_policy = self.opposing_policy_evaluate
-                    self.policy.train(False)
-                    self.policy.evaluate(True)
-                else:
-                    self.opposing_policy = self.opposing_policy_train
-                    self.policy.train(False)
-                    self.policy.evaluate(False)
+                # if evaluate:
+                #     self.opposing_policy = self.opposing_policy_evaluate
+                #     self.policy.train(False)
+                #     self.policy.evaluate(True)
+                # else:
+                #     self.opposing_policy = self.opposing_policy_train
+                #     self.policy.train(False)
+                #     self.policy.evaluate(False)
+                self_player = self.set_up_policies(evaluate=evaluate)
 
                 episode_args = task["play"]
                 if not self.threading:
-                    self.play_episode(**episode_args)
+                    self_player.play_episode(**episode_args)
                     self.task_queue.task_done()
                     logging.info("task done")
                 else:
-                    future = executor.submit(self.play_episode, **episode_args)
+                    future = executor.submit(self_player.play_episode, **episode_args)
                     future.add_done_callback(self._task_finished)
 
             except Exception as e:
@@ -140,11 +152,11 @@ class SelfPlayWorker(BaseWorker):
 
 class SelfPlayer:
 
-    def __init(self, policy, opposing_policy, env):
+    def __init__(self, policy, opposing_policy, env, result_queue):
         self.policy=policy
         self.opposing_policy=opposing_policy
         self.env=env
-
+        self.result_queue = result_queue
     def play_episode(self, swap_sides=False, update=True):
 
         s = self.env.reset()
