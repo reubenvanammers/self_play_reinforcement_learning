@@ -62,10 +62,18 @@ class SelfPlayWorker(BaseWorker):
 
                 if evaluate:
                     opposing_policy_evaluate = self.evaluation_policy_container.setup()
-                    opposing_policy_evaluate.evaluate(True)
                     opposing_policy_evaluate.train(False)
+                    opposing_policy_evaluate.env = self.env_gen()
+
+
+                    # Both environments will (basically) try their hardest
+                    policy.evaluate(True)
+                    opposing_policy_evaluate.evaluate(True)
+
+
+
                     opposing_policy = opposing_policy_evaluate
-                    # opposing_policy_evaluate.env = self.env_gen()
+
                 else:
                     opposing_policy_train = self.opposing_policy_container.setup(evaluator=self.evaluator)
                     opposing_policy_train.env = self.env_gen()
