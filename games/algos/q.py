@@ -1,3 +1,4 @@
+import copy
 import random
 import time
 from collections import namedtuple
@@ -7,14 +8,12 @@ import numpy as np
 import torch
 from torch import nn
 from torch.functional import F
-import copy
-
-from rl_utils.losses import weighted_smooth_l1_loss
-from rl_utils.sum_tree import WeightedMemory
-from rl_utils.memory import Memory
-from rl_utils.weights import init_weights
 
 from games.algos.base_model import BaseModel
+from rl_utils.losses import weighted_smooth_l1_loss
+from rl_utils.memory import Memory
+from rl_utils.sum_tree import WeightedMemory
+from rl_utils.weights import init_weights
 
 Transition = namedtuple("Transition", ("state", "action", "reward", "done", "next_state"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -281,5 +280,3 @@ class QConvConnect4(Q):
     def __init__(self, env, lr=0.01, gamma=0.99, momentum=0.9, weight_decay=0.01, *args, **kwargs):
         # gamma is slightly less than 1 to promote faster games
         super().__init__(*args, **kwargs)
-
-

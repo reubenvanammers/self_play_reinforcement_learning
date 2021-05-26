@@ -118,7 +118,6 @@ class Elo:
         print(f"{model_1} wins: {results['wins']} {model_2} wins: {results['losses']} draws: {results['draws']}")
         return results
 
-
     def calculate_elo(self, anchor_model="random", anchor_elo=0):
         models = list(self.model_shelf.keys())
 
@@ -180,7 +179,6 @@ class Elo:
             for result, value in result_map.items():
                 for _ in range(results[result]):
                     self.memory.add(result_container(players, torch.tensor(value, dtype=torch.float)))
-
 
     def _onehot(self, model, model_indices):
         model_idx = model_indices[model] if model in model_indices else None

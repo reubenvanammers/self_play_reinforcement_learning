@@ -1,5 +1,5 @@
-from copy import copy
 import random
+from copy import copy
 
 
 class OnestepLookahead:

@@ -1,10 +1,11 @@
 import copy
 import logging
+import traceback
+from concurrent import futures
 
 from games.algos.base_worker import BaseWorker
-import traceback
 
-from concurrent import futures
+
 class SelfPlayWorker(BaseWorker):
     def __init__(
         self,
@@ -21,7 +22,7 @@ class SelfPlayWorker(BaseWorker):
         self_play=False,
         evaluation_policy_container=None,
         model_save_location=None,
-        threading = 0,
+        threading=0,
     ):
         logging.info("initializing self play worker worker")
         self.env_gen = env_gen
@@ -33,7 +34,7 @@ class SelfPlayWorker(BaseWorker):
         self.evaluation_policy_container = evaluation_policy_container
 
         self.policy = None
-        self. opposing_policy_train = None
+        self.opposing_policy_train = None
         self.opposing_policy = None
         self.opposing_policy_evaluate = None
 
@@ -46,9 +47,9 @@ class SelfPlayWorker(BaseWorker):
 
         self.current_model_file = None
         self.resume = resume
-        self.epoch_value=model_save_location
+        self.epoch_value = model_save_location
 
-        self.epoch_count=0
+        self.epoch_count = 0
 
         self.threading = threading
 
@@ -90,13 +91,12 @@ class SelfPlayWorker(BaseWorker):
             executor = futures.ThreadPoolExecutor(self.threading)
             future_set = set()
 
-
         while True:
             task = self.task_queue.get()
             logging.info(f"task {task}")
             try:
                 if self.epoch_value:
-                    if  self.epoch_value.value:
+                    if self.epoch_value.value:
                         if self.epoch_value.value != self.epoch_count:
                             logging.info("loading model")
                             self.load_model()
@@ -117,7 +117,7 @@ class SelfPlayWorker(BaseWorker):
                     if len(future_set) < self.threading:
                         continue
                     else:
-                        done,future_set = futures.wait(future_set,return_when=futures.FIRST_COMPLETED)
+                        done, future_set = futures.wait(future_set, return_when=futures.FIRST_COMPLETED)
 
             except Exception as e:
                 logging.exception(traceback.format_exc())
@@ -130,12 +130,12 @@ class SelfPlayWorker(BaseWorker):
 
 
 class SelfPlayer:
-
     def __init__(self, policy, opposing_policy, env, result_queue):
-        self.policy=policy
-        self.opposing_policy=opposing_policy
-        self.env=env
+        self.policy = policy
+        self.opposing_policy = opposing_policy
+        self.env = env
         self.result_queue = result_queue
+
     def play_episode(self, swap_sides=False, update=True):
         try:
 

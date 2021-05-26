@@ -1,10 +1,10 @@
-from multiprocessing import Queue
 import logging
+import re
+import threading
 import traceback
 from collections import deque
+from multiprocessing import Queue
 
-import threading
-import re
 
 class BidirectionalQueue:
     """
@@ -25,16 +25,14 @@ class BidirectionalQueue:
             self.request_queue.put(obj)
             return self.answer_queue.get(block=True)
         except AssertionError:
-            print('asdf')
+            print("asdf")
 
 
 class ThreadedBidirectionalQueue:
-
     def __init__(self, threads=5):
         self.threads = threads
         self.bidirectional_queues = [BidirectionalQueue() for _ in range(threads)]
         self.available_queues = deque(range(threads), threads)
-
 
     # def request(self, obj):
     #     try:
@@ -58,7 +56,6 @@ class ThreadedBidirectionalQueue:
             return result
         except Exception:
             logging.info(traceback.format_exc())
-
 
 
 class QueueContainer:

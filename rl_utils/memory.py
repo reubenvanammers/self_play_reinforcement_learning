@@ -1,4 +1,5 @@
-from collections import deque, defaultdict
+from collections import defaultdict, deque
+
 import numpy as np
 import torch
 

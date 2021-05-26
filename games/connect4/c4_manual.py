@@ -3,10 +3,10 @@ from os import listdir
 from os.path import isfile, join
 
 import torch
-from games.algos.mcts import MCTreeSearch
-from games.connect4.modules import ConvNetConnect4
 
+from games.algos.mcts import MCTreeSearch
 from games.connect4.connect4env import Connect4Env
+from games.connect4.modules import ConvNetConnect4
 from games.general.manual import ManualPlay
 
 save_dir = "saves__c4mtcs_par"

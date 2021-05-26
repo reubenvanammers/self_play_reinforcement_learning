@@ -1,10 +1,12 @@
-from torch import nn, tensor
+import datetime
+import logging
+import traceback
+
 import torch
+from torch import nn, tensor
+
 from games.algos.base_worker import BaseWorker
 from rl_utils.queues import BidirectionalQueue, QueueContainer
-import traceback
-import logging
-import datetime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -43,14 +45,13 @@ class EvaluatorWorker(BaseWorker):
     """
 
     def __init__(
-            self,
-            queues,
-            policy,
-            opposing_policy_evaluator=None,
-            evaluation_policy_evaluator=None,
-            epoch_value=None,
-            save_dir=None,
-
+        self,
+        queues,
+        policy,
+        opposing_policy_evaluator=None,
+        evaluation_policy_evaluator=None,
+        epoch_value=None,
+        save_dir=None,
     ):
         logging.info("setting up Evaluator worker")
         self.policy = policy.to(device).train(False)
@@ -100,7 +101,8 @@ class EvaluatorWorker(BaseWorker):
                 if self.counter > self.counter_last + self.counter_diff:
                     now = datetime.datetime.now()
                     logging.info(
-                        f"Number of requests handled is {self.counter}, {self.counter - self.counter_last} requests took {(now - self.counter_time).total_seconds()} seconds")
+                        f"Number of requests handled is {self.counter}, {self.counter - self.counter_last} requests took {(now - self.counter_time).total_seconds()} seconds"
+                    )
                     self.counter_last = self.counter
                     self.counter_time = now
                 self.distribute(self.policy_queues, self.policy)

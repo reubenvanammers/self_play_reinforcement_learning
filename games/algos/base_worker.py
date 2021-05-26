@@ -2,14 +2,11 @@ import logging
 import os
 import pickle
 from os import listdir
-from os.path import join, isfile
+from os.path import isfile, join
 
 import torch
-# from apex import amp
 from torch import multiprocessing
 
-
-# from games.algos.self_play_parallel import APEX_AVAILABLE
 
 
 class BaseWorker(multiprocessing.Process):

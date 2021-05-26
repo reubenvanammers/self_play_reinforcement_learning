@@ -1,13 +1,7 @@
-from collections import namedtuple
-import copy
-import numpy as np
 import torch
-from anytree import NodeMixin
 from torch import nn
 from torch.functional import F
-import random
-from rl_utils.flat import MSELossFlat
-from rl_utils.memory import Memory
+
 from rl_utils.weights import init_weights
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -217,7 +211,7 @@ class DeepConvNetConnect4(nn.Module):
 
         # x = x.view(x.size(0), -1)
 
-        #TODO Check double dropouts?
+        # TODO Check double dropouts?
 
         policy = F.leaky_relu(self.policy_bn(self.conv_policy(x))).view(x.size(0), -1)
         policy = self.policy_dropout(policy)

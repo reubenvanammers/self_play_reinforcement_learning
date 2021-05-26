@@ -1,11 +1,13 @@
-from collections import namedtuple
 import copy
+import random
+from collections import namedtuple
+
 import numpy as np
 import torch
 from anytree import NodeMixin
 from torch import nn
 from torch.functional import F
-import random
+
 from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights

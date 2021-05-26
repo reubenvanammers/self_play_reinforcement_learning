@@ -10,9 +10,9 @@ import torch
 from torch import multiprocessing
 from torch.utils.tensorboard import SummaryWriter
 
+from games.algos.evaluator_proxy import EvaluatorProxy, EvaluatorWorker
 from games.algos.selfplayworker import SelfPlayWorker
 from games.algos.updateworker import UpdateWorker
-from games.algos.evaluator_proxy import EvaluatorWorker, EvaluatorProxy
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -29,22 +29,23 @@ logging.info("initializing logging")
 multiprocessing_logging.install_mp_handler()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 class SelfPlayScheduler:
     def __init__(
-            self,
-            policy_container,
-            opposing_policy_container,
-            env_gen,
-            evaluation_policy_container=None,
-            network=None,
-            swap_sides=True,
-            save_dir="saves",
-            epoch_length=500,
-            initial_games=64,
-            self_play=False,
-            lr=0.001,
-            stagger=False,
-            evaluation_games=100,
+        self,
+        policy_container,
+        opposing_policy_container,
+        env_gen,
+        evaluation_policy_container=None,
+        network=None,
+        swap_sides=True,
+        save_dir="saves",
+        epoch_length=500,
+        initial_games=64,
+        self_play=False,
+        lr=0.001,
+        stagger=False,
+        evaluation_games=100,
     ):
         self.policy_container = policy_container
         self.opposing_policy_container = opposing_policy_container
@@ -106,8 +107,10 @@ class SelfPlayScheduler:
         total_rewards, breakdown = self.parse_results(reward_list)
         return total_rewards, breakdown
 
-    def train_model(self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None, threads_per_worker=8):
-        epoch_value = multiprocessing.Value('i', 0)
+    def train_model(
+        self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None, threads_per_worker=8
+    ):
+        epoch_value = multiprocessing.Value("i", 0)
         try:
             num_workers = num_workers or multiprocessing.cpu_count()
 
@@ -116,7 +119,7 @@ class SelfPlayScheduler:
                 num_play_workers = num_workers - 2
                 assert num_play_workers >= 1
                 # Use two worker threads per MCTS game
-                queues = [QueueContainer(threading=threads_per_worker*2) for _ in range(num_play_workers)]
+                queues = [QueueContainer(threading=threads_per_worker * 2) for _ in range(num_play_workers)]
                 evaluators = [EvaluatorProxy(queue.policy_queues) for queue in queues]
                 player_workers = [
                     SelfPlayWorker(
@@ -137,7 +140,9 @@ class SelfPlayScheduler:
                     )
                     for i in range(num_play_workers)
                 ]
-                evaluator_worker = EvaluatorWorker(queues, self.network, epoch_value=epoch_value, save_dir=self.save_dir)
+                evaluator_worker = EvaluatorWorker(
+                    queues, self.network, epoch_value=epoch_value, save_dir=self.save_dir
+                )
                 evaluator_worker.start()
             else:
                 num_play_workers = num_workers - 1
@@ -160,7 +165,7 @@ class SelfPlayScheduler:
                         save_dir=self.save_dir,
                         resume=resume_model,
                         self_play=self.self_play,
-                        epoch_value=epoch_value
+                        epoch_value=epoch_value,
                     )
                     for _ in range(num_play_workers)
                 ]
@@ -207,9 +212,7 @@ class SelfPlayScheduler:
                 update_flag.set()
                 for i in range(self.epoch_length):
                     swap_sides = not i % 2 == 0
-                    self.task_queue.put(
-                        {"play": {"swap_sides": swap_sides, "update": True}}
-                    )
+                    self.task_queue.put({"play": {"swap_sides": swap_sides, "update": True}})
                 self.task_queue.join()
                 logging.info(f"finished generating {self.epoch_length} self play games: epoch {epoch}")
 

@@ -1,14 +1,13 @@
 import os
-from games.algos.base_model import ModelContainer
 
 from torch import multiprocessing
+
+from games.algos.base_model import ModelContainer
 from games.algos.mcts import MCTreeSearch
-
-from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4
-
-from games.connect4.hardcoded_players import OnestepLookahead
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
+from games.connect4.hardcoded_players import OnestepLookahead
+from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4
 
 try:
     save_dir = "saves__c4mtcs_par"
@@ -32,18 +31,14 @@ def run_training():
         memory_size=20000,
         env_gen=Connect4Env,
         # evaluator=network,
-        batch_size=64
+        batch_size=64,
     )
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     opposing_policy_gen = MCTreeSearch
     opposing_policy_args = []
     opposing_policy_kwargs = dict(
-        iterations=400,
-        min_memory=100000,
-        memory_size=20000,
-        env_gen=Connect4Env,
-        batch_size=64
+        iterations=400, min_memory=100000, memory_size=20000, env_gen=Connect4Env, batch_size=64
     )
     opposing_policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
 
@@ -52,8 +47,9 @@ def run_training():
     evaluation_policy_gen = OnestepLookahead
     evaluation_policy_args = []
     evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
-    evaluation_policy_container = ModelContainer(evaluation_policy_gen, evaluation_policy_args,
-                                                 evaluation_policy_kwargs)
+    evaluation_policy_container = ModelContainer(
+        evaluation_policy_gen, evaluation_policy_args, evaluation_policy_kwargs
+    )
 
     self_play = SelfPlayScheduler(
         env_gen=Connect4Env,

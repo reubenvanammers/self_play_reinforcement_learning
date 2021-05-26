@@ -1,5 +1,6 @@
-from torch import nn
 import functools
+
+from torch import nn
 
 
 class FlattenedLoss:
