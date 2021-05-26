@@ -8,7 +8,6 @@ import torch
 from torch import multiprocessing
 
 
-
 class BaseWorker(multiprocessing.Process):
     def load_model(self, prev_run=False, model_file=None):
         logging.info("loading model")
@@ -48,9 +47,6 @@ class BaseWorker(multiprocessing.Process):
 
         if getattr(self, "self_play", None):
             self.opposing_policy_train.load_state_dict(checkpoint["model"])
-
-        # if APEX_AVAILABLE:
-        #     amp.load_state_dict(checkpoint["amp"])
 
     def load_memory(self, prev_run=False):
         logging.info("loading memory")

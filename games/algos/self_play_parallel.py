@@ -219,7 +219,7 @@ class SelfPlayScheduler:
                 saved_model_name = os.path.join(
                     self.save_dir,
                     self.start_time,
-                    "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * epoch),
+                    "model-" + datetime.datetime.now().isoformat() + ":" + str(self.epoch_length * (epoch + 1)),
                 )
                 update_flag.clear()
                 update_worker_queue.put({"saved_name": saved_model_name})
