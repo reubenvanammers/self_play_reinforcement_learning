@@ -21,18 +21,6 @@ from games.algos.base_model import BaseModel
 
 Move = namedtuple("Move", ("state", "actual_val", "tree_probs"), )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-try:
-    from apex import amp
-
-    if torch.cuda.is_available():
-        print("Apex available")
-        APEX_AVAILABLE = False
-    else:
-        APEX_AVAILABLE = False
-        print("apex not available")
-except ModuleNotFoundError:
-    APEX_AVAILABLE = False
-    print("apex not available")
 
 
 class MCNode(NodeMixin):
@@ -158,21 +146,6 @@ class MCTreeSearch(BaseModel):
 
         self.batch_size = batch_size
 
-        if APEX_AVAILABLE:
-            opt_level = "O1"
-
-            if self.optim:
-                self.evaluator, self.optim = amp.initialize(evaluator, optim, opt_level=opt_level)
-                print("updating optimizer and evaluator")
-            else:
-                self.evaluator = amp.initialize(evaluator, opt_level=opt_level)
-                print(" updated evaluator")
-            self.amp_state_dict = amp.state_dict()
-            print(vars(amp._amp_state))
-        elif APEX_AVAILABLE:
-            opt_level = "O1"
-            print(vars(amp._amp_state))
-
         if self.starting_state_dict:
             print("laoding [sic] state dict in mcts")
             self.load_state_dict(self.starting_state_dict)
@@ -279,7 +252,8 @@ class MCTreeSearch(BaseModel):
 
         self.optim.zero_grad()
 
-        if APEX_AVAILABLE:
+        #if APEX_AVAILABLE: keep just in case want to use amp
+        if False:
             with amp.scale_loss(loss, self.optim) as scaled_loss:
                 scaled_loss.backward()
         else:
@@ -305,7 +279,6 @@ class MCTreeSearch(BaseModel):
 
         self.temp_memory.append(
             Move(torch.tensor(self.root_node.state), None, torch.tensor(play_probs).float(), )
-            # Move(torch.tensor(self.root_node.state).to(device), None, torch.tensor(play_probs).float().to(device), )
 
         )
         return action
@@ -340,12 +313,11 @@ class MCTreeSearch(BaseModel):
             self.root_node.remove_noise()  # Don't think this is necessary?
 
     def search_node(self):
-        # name = threading.Thread.name()
         node = self.root_node
         while True:
             select_probs = [
                 child.select_prob if child.valid else -10000000000 for child in node.children
-            ]  # real big negative nuber
+            ]  # real big negative number
             if all(i <-100000 for i in select_probs):
                 #TODO check if this causes any problems - most of the time if this is happening its getting close to the
                 # end of the game. Caused because all threads are currently active

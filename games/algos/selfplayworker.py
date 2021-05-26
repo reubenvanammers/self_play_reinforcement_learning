@@ -59,32 +59,21 @@ class SelfPlayWorker(BaseWorker):
             if self.self_play:
                 policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator)
                 policy.train(False)
-
                 if evaluate:
-                    opposing_policy_evaluate = self.evaluation_policy_container.setup()
-                    opposing_policy_evaluate.train(False)
-                    opposing_policy_evaluate.env = self.env_gen()
-
-
+                    opposing_policy = self.evaluation_policy_container.setup()
+                    opposing_policy.train(False)
+                    opposing_policy.env = self.env_gen()
                     # Both environments will (basically) try their hardest
                     policy.evaluate(True)
-                    opposing_policy_evaluate.evaluate(True)
-
-
-
-                    opposing_policy = opposing_policy_evaluate
-
+                    opposing_policy.evaluate(True)
                 else:
-                    opposing_policy_train = self.opposing_policy_container.setup(evaluator=self.evaluator)
-                    opposing_policy_train.env = self.env_gen()
-                    opposing_policy_train.train(False)
-
+                    opposing_policy = self.opposing_policy_container.setup(evaluator=self.evaluator)
+                    opposing_policy.env = self.env_gen()
+                    opposing_policy.train(False)
                     # Both environments are more willing to explore
                     policy.evaluate(False)
-                    opposing_policy_train.evaluate(False)
-
-                    opposing_policy = opposing_policy_train
-            logging.info("Created SelfPlayWorker")
+                    opposing_policy.evaluate(False)
+            logging.debug("Created SelfPlayWorker")
 
             return SelfPlayer(policy, opposing_policy, self.env_gen(), self.result_queue)
         except Exception as e:
@@ -94,7 +83,6 @@ class SelfPlayWorker(BaseWorker):
     def run(self):
         logging.info("running self play worker")
 
-        # self.set_up_policies()  # dont do in init because of global apex
         if self.resume:
             self.load_model(prev_run=True)
 

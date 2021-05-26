@@ -8,25 +8,6 @@ import datetime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# class EvaluatorProxy:
-#     """
-#     Used for evalutation via queues. Should only be used for evaluation, not for training.
-#     """
-#
-#     def __init__(self, request_queue: Queue, answer_queue: Queue):
-#         self.request_queue = request_queue
-#         self.answer_queue = answer_queue
-#
-#     def forward(self, s):
-#         self.request_queue.put(s)
-#         policy, value = self.answer_queue.get(block=True)
-#         return policy, value
-#
-#     def __call__(self, s, player=1):
-#         state = s* player
-#         policy, value = self.forward(state)
-#         return policy, value * player
-
 
 class EvaluatorProxy:
     """
@@ -160,16 +141,3 @@ class EvaluatorWorker(BaseWorker):
         batch = torch.stack(tensor_requests)
         policy, value = evaluator.forward(batch)
         return policy.tolist(), value.tolist()
-
-    # def get_queue(self, queue):
-    #     result_list = [[]]
-    #     while not queue.empty():
-    #         result_list.append(queue.get())
-    #     return result_list
-
-# self.request_queues = request_queues
-# self.answer_queues = answer_queues
-# self.evaluator = evaluator
-#
-# self.attatched_workers = len(request_queues)
-# assert len(answer_queues) == self.attatched_workers

@@ -6,10 +6,8 @@ import time
 import traceback
 
 import torch
-# from apex import amp
 
 from games.algos.base_worker import BaseWorker
-# from games.algos.self_play_parallel import APEX_AVAILABLE
 
 
 class UpdateWorker(BaseWorker):
@@ -88,16 +86,6 @@ class UpdateWorker(BaseWorker):
 
     def save_model(self, saved_name):
         logging.info("saving model")
-        # if APEX_AVAILABLE:
-        #     checkpoint = {
-        #         "model": self.policy.state_dict(),
-        #         "amp": amp.state_dict(),
-        #     }
-        # else:
-        #     checkpoint = {
-        #         "model": self.policy.state_dict(),
-        #     }
-         #     }
         checkpoint = {
             "model": self.policy.state_dict(),
         }

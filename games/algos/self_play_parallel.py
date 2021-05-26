@@ -1,4 +1,3 @@
-import ctypes
 import datetime
 import logging
 import os
@@ -29,25 +28,6 @@ logging.info("initializing logging")
 
 multiprocessing_logging.install_mp_handler()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-try:
-    from apex import amp
-
-    if torch.cuda.is_available():
-        print("Apex available")
-        APEX_AVAILABLE = False
-    else:
-        APEX_AVAILABLE = False
-        print("apex not available")
-except ModuleNotFoundError:
-    APEX_AVAILABLE = False
-    print("apex not available")
-try:
-    from torch2trt import TRTModule
-
-    TRT_AVAILABLE = True
-except ModuleNotFoundError:
-    TRT_AVAILABLE = False
-
 
 class SelfPlayScheduler:
     def __init__(
