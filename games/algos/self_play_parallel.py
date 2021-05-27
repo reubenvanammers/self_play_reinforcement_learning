@@ -106,7 +106,13 @@ class SelfPlayScheduler:
         return total_rewards, breakdown
 
     def train_model(
-        self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None, threads_per_worker=8, inference_proxy=True,
+        self,
+        num_epochs=10,
+        resume_model=False,
+        resume_memory=False,
+        num_workers=None,
+        threads_per_worker=8,
+        inference_proxy=True,
     ):
         epoch_value = multiprocessing.Value("i", 0)
         try:
@@ -131,7 +137,7 @@ class SelfPlayScheduler:
                         save_dir=self.save_dir,
                         resume=resume_model,
                         self_play=self.self_play,
-                        threading=threads_per_worker
+                        threading=threads_per_worker,
                     )
                     for i in range(num_play_workers)
                 ]

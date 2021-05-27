@@ -150,9 +150,9 @@ class SelfPlayer:
                     break
             self.result_queue.put({"reward": r, "swap_sides": swap_sides})
             if update:
-                self.policy.push_to_queue(done=True,r=r)
+                self.policy.push_to_queue(done=True, r=r)
                 # Also push opposing policies perspective, but swap winner/loser
-                self.opposing_policy.push_to_queue(done=True,r=r*-1)
+                self.opposing_policy.push_to_queue(done=True, r=r * -1)
             return state_list, r
         except Exception as e:
             logging.info(traceback.format_exc())
