@@ -28,7 +28,7 @@ def run_training():
     policy_kwargs = dict(
         iterations=400,
         min_memory=100000,
-        memory_size=20000,
+        memory_size=200000,
         env_gen=Connect4Env,
         # evaluator=network,
         batch_size=64,
@@ -38,7 +38,7 @@ def run_training():
     opposing_policy_gen = MCTreeSearch
     opposing_policy_args = []
     opposing_policy_kwargs = dict(
-        iterations=400, min_memory=100000, memory_size=20000, env_gen=Connect4Env, batch_size=64
+        iterations=400, min_memory=100000, memory_size=200000, env_gen=Connect4Env, batch_size=64
     )
     opposing_policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
 
@@ -58,7 +58,7 @@ def run_training():
         opposing_policy_container=opposing_policy_container,
         evaluation_policy_container=evaluation_policy_container,
         initial_games=40,
-        epoch_length=500,
+        epoch_length=1000,
         evaluation_games=100,
         save_dir=save_dir,
         self_play=True,

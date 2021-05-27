@@ -68,7 +68,7 @@ class SelfPlayWorker(BaseWorker):
                     policy.evaluate(True)
                     opposing_policy.evaluate(True)
                 else:
-                    opposing_policy = self.opposing_policy_container.setup(evaluator=self.evaluator)
+                    opposing_policy = self.opposing_policy_container.setup(evaluator=self.evaluator, memory_queue=self.memory_queue)
                     opposing_policy.env = self.env_gen()
                     opposing_policy.train(False)
                     # Both environments are more willing to explore
@@ -151,6 +151,10 @@ class SelfPlayer:
                 if done:
                     break
             self.result_queue.put({"reward": r, "swap_sides": swap_sides})
+            if update:
+                self.policy.push_to_queue(done=True,r=r)
+                # Also push opposing policies perspective, but swap winner/loser
+                self.opposing_policy.push_to_queue(done=True,r=r*-1)
             return state_list, r
         except Exception as e:
             logging.info(traceback.format_exc())
@@ -159,14 +163,9 @@ class SelfPlayer:
         s = s.copy()
         s_intermediate, own_a, r, done, info = self.get_and_play_moves(s)
         if done:
-            if update:
-                self.policy.push_to_queue(s, own_a, r, done, s_intermediate)
             return s_intermediate, done, r
         else:
             s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
-            if update:
-                self.policy.push_to_queue(s, own_a, r, done, s_next)
-                # self.policy.update(s, own_a, r, done, s_next)
             return s_next, done, r
 
     def swap_state(self, s):

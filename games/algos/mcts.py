@@ -210,7 +210,7 @@ class MCTreeSearch(BaseModel):
             self.memory.add(experience)
             # logging.info(f"memory size is  is {len(self.memory)}")
 
-    def push_to_queue(self, s, a, r, done, next_s):
+    def push_to_queue(self, s=None, a=None, r=None, done=None, next_s=None):
         # Push memory of the game to the memory queue with the actual result of the game
         if done:
             # logging.info('pushing to queue')

@@ -37,8 +37,10 @@ class UpdateWorker(BaseWorker):
         self.resume = resume
         self.stagger = stagger
 
-        self.mem_step = 2500
-        self.max_mem = 100000
+        self.mem_step = 10000
+        self.max_mem = 200000
+
+        self.memory_size_step = 5000
 
         super().__init__()
 
@@ -95,7 +97,7 @@ class UpdateWorker(BaseWorker):
     def pull(self):
         self.policy.pull_from_queue()
         new_memory_size = len(self.policy.memory)
-        if new_memory_size // 1000 - self.memory_size // 1000 > 0:
+        if new_memory_size // self.memory_size_step - self.memory_size // self.memory_size_step > 0:
             self.memory_size = new_memory_size
             self.save_memory()
         self.memory_size = new_memory_size
@@ -114,5 +116,7 @@ class UpdateWorker(BaseWorker):
         self.pull()
         logging.info("updating from memory")
         for _ in range(100):
-            time.sleep(0.10)
+            # We are creating new games at the same time we update our model. This is more limited by the running
+            # of new games, so we rate limit the updates to speed up the evaluation and help prevent overfitting
+            time.sleep(0.01)
             self.policy.update_from_memory()
