@@ -14,7 +14,7 @@ from torch import nn
 from torch.functional import F
 
 from games.algos.base_model import BaseModel
-from games.algos.evaluator_proxy import EvaluatorProxy
+from games.algos.inference_proxy import InferenceProxy
 from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
@@ -110,7 +110,7 @@ class MCNode(NodeMixin):
 class MCTreeSearch(BaseModel):
     def __init__(
         self,
-        evaluator,
+        network,
         env_gen,
         optim=None,
         memory_queue=None,
@@ -124,7 +124,7 @@ class MCTreeSearch(BaseModel):
         # threading=True,
     ):
         self.iterations = iterations
-        self.evaluator = evaluator.to(device)
+        self.network = network.to(device)
         # self.evaluator = evaluator
         self.env_gen = env_gen
         self.optim = optim
@@ -142,7 +142,7 @@ class MCTreeSearch(BaseModel):
         self.actions = self.env.action_space.n
 
         self.evaluating = False
-        self.threading = isinstance(self.evaluator, EvaluatorProxy)
+        self.threading = isinstance(self.network, InferenceProxy)
 
         self.batch_size = batch_size
 
@@ -152,7 +152,7 @@ class MCTreeSearch(BaseModel):
 
     def reset(self, player=1):
         base_state = self.env.reset()
-        probs, v = self.evaluator(base_state)
+        probs, v = self.network(base_state)
         self._set_root(MCNode(state=base_state, v=v, player=player))
         self.root_node.create_children(probs, self.env.valid_moves())
         self.moves_played = 0
@@ -226,7 +226,7 @@ class MCTreeSearch(BaseModel):
         batch_t = Move(*zip(*batch))  # transposed batch
         s, actual_val, tree_probs = batch_t
         s_batch = torch.stack(s)
-        net_probs_batch, predict_val_batch = self.evaluator.forward(s_batch)
+        net_probs_batch, predict_val_batch = self.network.forward(s_batch)
         predict_val_batch = predict_val_batch.view(-1)
         actual_val_batch = torch.stack(actual_val)
         tree_probs_batch = torch.stack(tree_probs)
@@ -290,7 +290,7 @@ class MCTreeSearch(BaseModel):
             v = r
             child_node = parent_node.children[action]
         else:
-            probs, v = self.evaluator(s, parent_node.player)
+            probs, v = self.network(s, parent_node.player)
             child_node = parent_node.children[action]
             child_node.create_children(probs, env.valid_moves())
             assert child_node.children
@@ -335,16 +335,16 @@ class MCTreeSearch(BaseModel):
                 node = child_node
 
     def load_state_dict(self, state_dict, target=False):
-        self.evaluator.load_state_dict(state_dict)
+        self.network.load_state_dict(state_dict)
 
     # determines when a neural net has enough data to train
     @property
     def ready(self):
         # Hard code value for the moment
-        return len(self.memory) >= self.min_memory and self.update_nn
+        return len(self.memory) >= self.min_memory and self.update_nnevaluator
 
     def state_dict(self):
-        return self.evaluator.state_dict()
+        return self.network.state_dict()
 
     def update_target_net(self):
         # No target net so pass
@@ -355,7 +355,7 @@ class MCTreeSearch(BaseModel):
 
     def train(self, train_state=True):
         # Sets training true/false
-        return self.evaluator.train(train_state)
+        return self.network.train(train_state)
 
     def evaluate(self, evaluate_state=False):
         # like train - sets evaluate state

@@ -14,23 +14,21 @@ class SelfPlayWorker(BaseWorker):
         result_queue,
         env_gen,
         policy_container,
-        opposing_policy_container,
         start_time,
-        evaluator=None,
+        network=None,
         save_dir="save_dir",
         resume=False,
         self_play=False,
         evaluation_policy_container=None,
-        model_save_location=None,
+        epoch_value=None,
         threading=0,
     ):
         logging.info("initializing self play worker worker")
         self.env_gen = env_gen
         self.env = env_gen()
-        self.evaluator = evaluator
+        self.network = network
 
         self.policy_container = policy_container
-        self.opposing_policy_container = opposing_policy_container
         self.evaluation_policy_container = evaluation_policy_container
 
         self.policy = None
@@ -47,7 +45,7 @@ class SelfPlayWorker(BaseWorker):
 
         self.current_model_file = None
         self.resume = resume
-        self.epoch_value = model_save_location
+        self.epoch_value = epoch_value
 
         self.epoch_count = 0
 
@@ -58,7 +56,7 @@ class SelfPlayWorker(BaseWorker):
     def set_up_policies(self, evaluate=False):
         try:
             if self.self_play:
-                policy = self.policy_container.setup(memory_queue=self.memory_queue, evaluator=self.evaluator)
+                policy = self.policy_container.setup(memory_queue=self.memory_queue, network=self.network)
                 policy.train(False)
                 if evaluate:
                     opposing_policy = self.evaluation_policy_container.setup()
@@ -68,7 +66,7 @@ class SelfPlayWorker(BaseWorker):
                     policy.evaluate(True)
                     opposing_policy.evaluate(True)
                 else:
-                    opposing_policy = self.opposing_policy_container.setup(evaluator=self.evaluator, memory_queue=self.memory_queue)
+                    opposing_policy = self.policy_container.setup(network=self.network, memory_queue=self.memory_queue)
                     opposing_policy.env = self.env_gen()
                     opposing_policy.train(False)
                     # Both environments are more willing to explore
@@ -93,7 +91,7 @@ class SelfPlayWorker(BaseWorker):
 
         while True:
             task = self.task_queue.get()
-            logging.info(f"task {task}")
+            logging.debug(f"task {task}")
             try:
                 if self.epoch_value:
                     if self.epoch_value.value:

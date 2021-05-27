@@ -10,7 +10,7 @@ import torch
 from torch import multiprocessing
 from torch.utils.tensorboard import SummaryWriter
 
-from games.algos.evaluator_proxy import EvaluatorProxy, EvaluatorWorker
+from games.algos.inference_proxy import InferenceProxy, InferenceWorker
 from games.algos.selfplayworker import SelfPlayWorker
 from games.algos.updateworker import UpdateWorker
 
@@ -34,7 +34,7 @@ class SelfPlayScheduler:
     def __init__(
         self,
         policy_container,
-        opposing_policy_container,
+        # opposing_policy_container,
         env_gen,
         evaluation_policy_container=None,
         network=None,
@@ -48,7 +48,6 @@ class SelfPlayScheduler:
         evaluation_games=100,
     ):
         self.policy_container = policy_container
-        self.opposing_policy_container = opposing_policy_container
         self.evaluation_policy_container = evaluation_policy_container
         self.env_gen = env_gen
         self.swap_sides = swap_sides
@@ -85,7 +84,6 @@ class SelfPlayScheduler:
                 # evaluator=evaluator,
                 start_time=self.start_time,
                 policy_container=self.policy_container,
-                opposing_policy_container=self.opposing_policy_container,
                 evaluation_policy_container=self.evaluation_policy_container,
                 save_dir=self.save_dir,
                 self_play=self.self_play,
@@ -108,48 +106,45 @@ class SelfPlayScheduler:
         return total_rewards, breakdown
 
     def train_model(
-        self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None, threads_per_worker=8
+        self, num_epochs=10, resume_model=False, resume_memory=False, num_workers=None, threads_per_worker=8, inference_proxy=True,
     ):
         epoch_value = multiprocessing.Value("i", 0)
         try:
             num_workers = num_workers or multiprocessing.cpu_count()
 
-            evaluator_proxy = True
-            if evaluator_proxy:
+            if inference_proxy:
                 num_play_workers = num_workers - 2
                 assert num_play_workers >= 1
                 # Use two worker threads per MCTS game
                 queues = [QueueContainer(threading=threads_per_worker * 2) for _ in range(num_play_workers)]
-                evaluators = [EvaluatorProxy(queue.policy_queues) for queue in queues]
+                network_inference_proxy = [InferenceProxy(queue.policy_queues) for queue in queues]
                 player_workers = [
                     SelfPlayWorker(
                         self.task_queue,
                         self.memory_queue,
                         self.result_queue,
                         self.env_gen,
-                        evaluator=evaluators[i],
+                        network=network_inference_proxy[i],
                         start_time=self.start_time,
                         policy_container=self.policy_container,
-                        opposing_policy_container=self.opposing_policy_container,
                         evaluation_policy_container=self.evaluation_policy_container,
                         save_dir=self.save_dir,
                         resume=resume_model,
                         self_play=self.self_play,
                         threading=threads_per_worker
-                        # model_save_location=saved_name
                     )
                     for i in range(num_play_workers)
                 ]
-                evaluator_worker = EvaluatorWorker(
+                inference_worker = InferenceWorker(
                     queues, self.network, epoch_value=epoch_value, save_dir=self.save_dir
                 )
-                evaluator_worker.start()
+                inference_worker.start()
             else:
                 num_play_workers = num_workers - 1
                 assert num_play_workers >= 1
 
-                evaluator = self.network
-                evaluator.share_memory()
+                network = self.network
+                network.share_memory()
 
                 player_workers = [
                     SelfPlayWorker(
@@ -157,10 +152,9 @@ class SelfPlayScheduler:
                         self.memory_queue,
                         self.result_queue,
                         self.env_gen,
-                        evaluator=evaluator,
+                        network=network,
                         start_time=self.start_time,
                         policy_container=self.policy_container,
-                        opposing_policy_container=self.opposing_policy_container,
                         evaluation_policy_container=self.evaluation_policy_container,
                         save_dir=self.save_dir,
                         resume=resume_model,
@@ -177,13 +171,13 @@ class SelfPlayScheduler:
 
             update_flag = multiprocessing.Event()
             update_flag.clear()
-            evaluator = self.network
-            optim = torch.optim.SGD(evaluator.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
+            network = self.network
+            optim = torch.optim.SGD(network.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
 
             update_worker = UpdateWorker(
                 memory_queue=self.memory_queue,
                 policy_container=self.policy_container,
-                evaluator=evaluator,
+                network=network,
                 optim=optim,
                 update_flag=update_flag,
                 update_worker_queue=update_worker_queue,
@@ -233,8 +227,8 @@ class SelfPlayScheduler:
             # Clean up
             update_worker.terminate()
             [w.terminate() for w in player_workers]
-            if evaluator_proxy:
-                evaluator_worker.terminate()
+            if inference_proxy:
+                inference_worker.terminate()
             del self.memory_queue
             del self.task_queue
             del self.result_queue

@@ -66,11 +66,9 @@ class QueueContainer:
     def __init__(self, threading=1):
         if threading == 1:
             self.policy_queues = BidirectionalQueue()
-            self.opposing_policy_queues = BidirectionalQueue()
             self.evaluation_policy_queues = BidirectionalQueue()
             self.threaded = False
         else:
             self.policy_queues = ThreadedBidirectionalQueue(threading)
-            self.opposing_policy_queues = ThreadedBidirectionalQueue(threading)
             self.evaluation_policy_queues = ThreadedBidirectionalQueue(threading)
             self.threaded = True

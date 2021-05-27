@@ -14,7 +14,7 @@ class UpdateWorker(BaseWorker):
     def __init__(
         self,
         memory_queue,
-        evaluator,
+        network,
         optim,
         policy_container,
         update_flag,
@@ -26,7 +26,7 @@ class UpdateWorker(BaseWorker):
     ):
         logging.info("initializing update worker")
         self.memory_queue = memory_queue
-        self.evaluator = evaluator
+        self.network = network
         self.optim = optim
         self.policy_container = policy_container
         self.update_flag = update_flag
@@ -48,7 +48,7 @@ class UpdateWorker(BaseWorker):
         logging.info("running update worker")
         try:
             self.policy = self.policy_container.setup(
-                memory_queue=self.memory_queue, evaluator=self.evaluator, optim=self.optim,
+                memory_queue=self.memory_queue, network=self.network, optim=self.optim,
             )
             self.policy.train()
 

@@ -11,7 +11,7 @@ from rl_utils.queues import BidirectionalQueue, QueueContainer
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class EvaluatorProxy:
+class InferenceProxy:
     """
     Used for evalutation via queues. Should only be used for evaluation, not for training.
     """
@@ -37,7 +37,7 @@ class EvaluatorProxy:
         return self
 
 
-class EvaluatorWorker(BaseWorker):
+class InferenceWorker(BaseWorker):
     """
     Worker for batching evaluation results and hopefully being more efficient.
 
@@ -48,20 +48,15 @@ class EvaluatorWorker(BaseWorker):
         self,
         queues,
         policy,
-        opposing_policy_evaluator=None,
         evaluation_policy_evaluator=None,
         epoch_value=None,
         save_dir=None,
     ):
         logging.info("setting up Evaluator worker")
         self.policy = policy.to(device).train(False)
-        # self.opposing_policy_evaluator = opposing_policy_evaluator.to(device).train(False)
         # self.evaluation_policy_evaluator = evaluation_policy_evaluator.to(device).train(False)
 
-        # self.policy_queues = [queue.policy_queues for queue in queues]
-        # self.opposing_policy_queues = [queue.opposing_policy_queues for queue in queues]
-        # self.evaluation_policy_queues = [queue.evaluation_policy_queues for queue in queues]
-        self.policy_queues, self.opposing_policy_queues, self.evaluation_policy_queues = self._expand_queues(queues)
+        self.policy_queues, self.evaluation_policy_queues = self._expand_queues(queues)
 
         self.counter = 0
         self.counter_last = 0
@@ -78,16 +73,13 @@ class EvaluatorWorker(BaseWorker):
     def _expand_queues(self, queues):
         if not queues[0].threaded:
             policy_queues = [queue.policy_queues for queue in queues]
-            opposing_policy_queues = [queue.opposing_policy_queues for queue in queues]
             evaluation_policy_queues = [queue.evaluation_policy_queues for queue in queues]
         else:
             policy_queues = [queue.policy_queues.bidirectional_queues for queue in queues]
             policy_queues = [item for sublist in policy_queues for item in sublist]
-            opposing_policy_queues = [queue.opposing_policy_queues.bidirectional_queues for queue in queues]
-            opposing_policy_queues = [item for sublist in opposing_policy_queues for item in sublist]
             evaluation_policy_queues = [queue.evaluation_policy_queues.bidirectional_queues for queue in queues]
             evaluation_policy_queues = [item for sublist in evaluation_policy_queues for item in sublist]
-        return policy_queues, opposing_policy_queues, evaluation_policy_queues
+        return policy_queues, evaluation_policy_queues
 
     def run(self):
         while True:

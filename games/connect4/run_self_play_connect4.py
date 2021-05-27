@@ -35,13 +35,6 @@ def run_training():
     )
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
-    opposing_policy_gen = MCTreeSearch
-    opposing_policy_args = []
-    opposing_policy_kwargs = dict(
-        iterations=400, min_memory=100000, memory_size=200000, env_gen=Connect4Env, batch_size=64
-    )
-    opposing_policy_container = ModelContainer(policy_gen=opposing_policy_gen, policy_kwargs=opposing_policy_kwargs)
-
     # Can update evaluation network if wanting to have a more powerful evaluation function, eg after the
     # model has gotten strong enough.
     evaluation_policy_gen = OnestepLookahead
@@ -55,7 +48,6 @@ def run_training():
         env_gen=Connect4Env,
         network=network,
         policy_container=policy_container,
-        opposing_policy_container=opposing_policy_container,
         evaluation_policy_container=evaluation_policy_container,
         initial_games=40,
         epoch_length=1000,
