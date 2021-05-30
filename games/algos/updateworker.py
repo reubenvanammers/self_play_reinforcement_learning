@@ -118,5 +118,5 @@ class UpdateWorker(BaseWorker):
         for _ in range(100):
             # We are creating new games at the same time we update our model. This is more limited by the running
             # of new games, so we rate limit the updates to speed up the evaluation and help prevent overfitting
-            time.sleep(0.01)
+            time.sleep(0.1)
             self.policy.update_from_memory()
