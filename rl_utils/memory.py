@@ -48,7 +48,7 @@ class Memory:
         new_buffer = deque(maxlen=maxlen)
         for state_index in length_dict:
             if len(length_dict[state_index]) == 1:
-                new_buffer.append(self.buffer[state_index])  # Should chckd
+                new_buffer.append(self.buffer[length_dict[state_index][0]])  # Should chckd
             else:
                 tuple_kwarg_dict = {key: unique_keys[state_index]}  # Used for making new namedtuple instance
                 for v in values:
