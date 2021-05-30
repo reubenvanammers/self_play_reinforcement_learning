@@ -46,6 +46,7 @@ class SelfPlayScheduler:
         lr=0.001,
         stagger=False,
         evaluation_games=100,
+        evaluation_network=None,
     ):
         self.policy_container = policy_container
         self.evaluation_policy_container = evaluation_policy_container
@@ -67,6 +68,8 @@ class SelfPlayScheduler:
         self.result_queue = multiprocessing.Queue()
         self.initial_games = initial_games
         self.writer = SummaryWriter()
+
+        self.evaluation_network=evaluation_network
 
         if save_dir:
             os.mkdir(os.path.join(save_dir, self.start_time))
@@ -124,6 +127,15 @@ class SelfPlayScheduler:
                 # Use two worker threads per MCTS game
                 queues = [QueueContainer(threading=threads_per_worker * 2) for _ in range(num_play_workers)]
                 network_inference_proxy = [InferenceProxy(queue.policy_queues) for queue in queues]
+
+                if self.evaluation_network:
+                    evaluation_network = self.evaluation_network
+                    evaluation_network_inference_proxy = [InferenceProxy(queue.evaluation_policy_queues) for queue in queues]
+                else:
+                    evaluation_network=None
+                    evaluation_network_inference_proxy = None
+
+
                 player_workers = [
                     SelfPlayWorker(
                         self.task_queue,
@@ -131,6 +143,7 @@ class SelfPlayScheduler:
                         self.result_queue,
                         self.env_gen,
                         network=network_inference_proxy[i],
+                        evaluation_network=evaluation_network_inference_proxy[i] if evaluation_network_inference_proxy else None,
                         start_time=self.start_time,
                         policy_container=self.policy_container,
                         evaluation_policy_container=self.evaluation_policy_container,
@@ -142,7 +155,7 @@ class SelfPlayScheduler:
                     for i in range(num_play_workers)
                 ]
                 inference_worker = InferenceWorker(
-                    queues, self.network, epoch_value=epoch_value, save_dir=self.save_dir
+                    queues, self.network, epoch_value=epoch_value, save_dir=self.save_dir, evaluation_policy=evaluation_network
                 )
                 inference_worker.start()
             else:

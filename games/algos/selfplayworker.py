@@ -16,6 +16,7 @@ class SelfPlayWorker(BaseWorker):
         policy_container,
         start_time,
         network=None,
+        evaluation_network=None,
         save_dir="save_dir",
         resume=False,
         self_play=False,
@@ -27,6 +28,7 @@ class SelfPlayWorker(BaseWorker):
         self.env_gen = env_gen
         self.env = env_gen()
         self.network = network
+        self.evaluation_network=evaluation_network
 
         self.policy_container = policy_container
         self.evaluation_policy_container = evaluation_policy_container
@@ -59,14 +61,18 @@ class SelfPlayWorker(BaseWorker):
                 policy = self.policy_container.setup(memory_queue=self.memory_queue, network=self.network)
                 policy.train(False)
                 if evaluate:
-                    opposing_policy = self.evaluation_policy_container.setup()
+                    if self.evaluation_network:
+                        opposing_policy = self.evaluation_policy_container.setup(network=self.evaluation_network)
+                    else:
+                        opposing_policy = self.evaluation_policy_container.setup()
+
                     opposing_policy.train(False)
                     opposing_policy.env = self.env_gen()
                     # Both environments will (basically) try their hardest
                     policy.evaluate(True)
                     opposing_policy.evaluate(True)
                 else:
-                    opposing_policy = self.policy_container.setup(network=self.network, memory_queue=self.memory_queue)
+                    opposing_policy = self.policy_container.setup(memory_queue=self.memory_queue, network=self.network)
                     opposing_policy.env = self.env_gen()
                     opposing_policy.train(False)
                     # Both environments are more willing to explore

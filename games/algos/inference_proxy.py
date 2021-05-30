@@ -36,6 +36,10 @@ class InferenceProxy:
     def train(self, *args, **kwargs):
         return self
 
+    # train is always false for evaluator proxy
+    def load_state_dict(self, *args, **kwargs):
+        return self
+
 
 class InferenceWorker(BaseWorker):
     """
@@ -45,11 +49,11 @@ class InferenceWorker(BaseWorker):
     """
 
     def __init__(
-        self, queues, policy, evaluation_policy_evaluator=None, epoch_value=None, save_dir=None,
+        self, queues, policy, evaluation_policy=None, epoch_value=None, save_dir=None,
     ):
         logging.info("setting up Evaluator worker")
         self.policy = policy.to(device).train(False)
-        # self.evaluation_policy_evaluator = evaluation_policy_evaluator.to(device).train(False)
+        self.evaluation_policy = evaluation_policy.to(device).train(False) if evaluation_policy else None
 
         self.policy_queues, self.evaluation_policy_queues = self._expand_queues(queues)
 
@@ -93,6 +97,9 @@ class InferenceWorker(BaseWorker):
                     self.counter_last = self.counter
                     self.counter_time = now
                 self.distribute(self.policy_queues, self.policy)
+                if self.evaluation_policy:
+                    self.distribute(self.evaluation_policy_queues, self.evaluation_policy)
+
             except Exception as e:
                 traceback.print_exc()
                 logging.exception(traceback.format_exc())

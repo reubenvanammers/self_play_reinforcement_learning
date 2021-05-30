@@ -49,6 +49,12 @@ class ModelDatabase:
         self.result_shelf.close()
         self.elo_value_shelf.close()
 
+    def elos(self):
+        return {key:self.elo_value_shelf[key] for key in self.elo_value_shelf.keys()}
+
+    def get_model(self, model_name):
+        return self.model_shelf[model_name]
+
     def add_model(self, name, model_container):
         try:
             if self.model_shelf[name]:
