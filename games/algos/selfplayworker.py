@@ -28,7 +28,7 @@ class SelfPlayWorker(BaseWorker):
         self.env_gen = env_gen
         self.env = env_gen()
         self.network = network
-        self.evaluation_network=evaluation_network
+        self.evaluation_network = evaluation_network
 
         self.policy_container = policy_container
         self.evaluation_policy_container = evaluation_policy_container

@@ -4,6 +4,8 @@ import os
 import traceback
 from os.path import join
 
+import time
+
 import multiprocessing_logging
 import numpy as np
 import torch
@@ -69,7 +71,7 @@ class SelfPlayScheduler:
         self.initial_games = initial_games
         self.writer = SummaryWriter()
 
-        self.evaluation_network=evaluation_network
+        self.evaluation_network = evaluation_network
 
         if save_dir:
             os.mkdir(os.path.join(save_dir, self.start_time))
@@ -130,11 +132,12 @@ class SelfPlayScheduler:
 
                 if self.evaluation_network:
                     evaluation_network = self.evaluation_network
-                    evaluation_network_inference_proxy = [InferenceProxy(queue.evaluation_policy_queues) for queue in queues]
+                    evaluation_network_inference_proxy = [
+                        InferenceProxy(queue.evaluation_policy_queues) for queue in queues
+                    ]
                 else:
-                    evaluation_network=None
+                    evaluation_network = None
                     evaluation_network_inference_proxy = None
-
 
                 player_workers = [
                     SelfPlayWorker(
@@ -143,19 +146,27 @@ class SelfPlayScheduler:
                         self.result_queue,
                         self.env_gen,
                         network=network_inference_proxy[i],
-                        evaluation_network=evaluation_network_inference_proxy[i] if evaluation_network_inference_proxy else None,
+                        evaluation_network=evaluation_network_inference_proxy[i]
+                        if evaluation_network_inference_proxy
+                        else None,
                         start_time=self.start_time,
                         policy_container=self.policy_container,
                         evaluation_policy_container=self.evaluation_policy_container,
                         save_dir=self.save_dir,
-                        resume=resume_model,
+                        # resume=resume_model,
                         self_play=self.self_play,
                         threading=threads_per_worker,
                     )
                     for i in range(num_play_workers)
                 ]
                 inference_worker = InferenceWorker(
-                    queues, self.network, epoch_value=epoch_value, save_dir=self.save_dir, evaluation_policy=evaluation_network
+                    queues,
+                    self.network,
+                    epoch_value=epoch_value,
+                    save_dir=self.save_dir,
+                    evaluation_policy=evaluation_network,
+                    resume=resume_model,
+                    start_time=self.start_time
                 )
                 inference_worker.start()
             else:
@@ -218,11 +229,14 @@ class SelfPlayScheduler:
                 self.result_queue.get()
 
             # saved_model_name = None
-            reward = self.evaluate_policy(-1)
+            if self.evaluation_games:
+                reward = self.evaluate_policy(-1)
             for epoch in range(num_epochs):
                 logging.info(f"generating {self.epoch_length} self play games: epoch {epoch}")
 
                 update_flag.set()
+
+
                 for i in range(self.epoch_length):
                     swap_sides = not i % 2 == 0
                     self.task_queue.put({"play": {"swap_sides": swap_sides, "update": True}})
@@ -236,11 +250,12 @@ class SelfPlayScheduler:
                 )
                 update_flag.clear()
                 update_worker_queue.put({"saved_name": saved_model_name})
-                reward = self.evaluate_policy(epoch)
-
                 update_worker_queue.join()
                 # Update saved name after worker has loaded it
                 epoch_value.value += 1
+                time.sleep(1)
+                reward = self.evaluate_policy(epoch)
+
                 update_worker_queue.put({"reward": reward})
 
             # Clean up

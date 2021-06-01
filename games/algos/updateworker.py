@@ -40,7 +40,9 @@ class UpdateWorker(BaseWorker):
         self.mem_step = 10000
         self.max_mem = 200000
 
-        self.memory_size_step = 5000
+        self.recent_save=None
+
+        self.memory_size_step = 50000
 
         super().__init__()
 
@@ -68,6 +70,7 @@ class UpdateWorker(BaseWorker):
                         self.pull()
                         if self.stagger:
                             self.stagger_memory()
+                        self.policy.deduplicate()
                         self.save_memory()
                         self.save_model(saved_name)
                     elif task.get("reward"):
@@ -111,13 +114,16 @@ class UpdateWorker(BaseWorker):
         )
         with open(saved_name, "wb") as f:
             pickle.dump(self.policy.memory, f)
+        if self.recent_save:
+            logging.info(f"removing {self.recent_save}")
+            os.remove(self.recent_save)
+        self.recent_save = saved_name
 
     def update(self):
         self.pull()
-        self.policy.deduplicate()
         logging.info("updating from memory")
         for _ in range(100):
             # We are creating new games at the same time we update our model. This is more limited by the running
             # of new games, so we rate limit the updates to speed up the evaluation and help prevent overfitting
-            time.sleep(0.1)
+            time.sleep(0.03)
             self.policy.update_from_memory()

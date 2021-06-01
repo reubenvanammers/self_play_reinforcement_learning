@@ -4,6 +4,7 @@ import logging
 import random
 import threading
 import time
+import traceback
 from collections import namedtuple
 from multiprocessing import Queue
 
@@ -147,7 +148,7 @@ class MCTreeSearch(BaseModel):
         self.batch_size = batch_size
 
         if self.starting_state_dict:
-            print("laoding [sic] state dict in mcts")
+            # print("laoding [sic] state dict in mcts")
             self.load_state_dict(self.starting_state_dict)
 
     def reset(self, player=1):
@@ -275,6 +276,7 @@ class MCTreeSearch(BaseModel):
             action = np.random.choice(self.actions, p=play_probs)
         except Exception:
             logging.info(f"action exception, actions{self.actions} p = {play_probs}")
+            logging.info(traceback.format_exc())
 
         self.moves_played += 1
 
