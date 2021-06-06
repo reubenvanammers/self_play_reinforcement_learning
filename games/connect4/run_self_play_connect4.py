@@ -47,11 +47,16 @@ def run_training():
     #     evaluation_policy_gen, evaluation_policy_args, evaluation_policy_kwargs
     # )
 
-    evaluation_policy_container = model_db.get_model("15layer-num1")
-    if evaluation_policy_container.policy_kwargs["evaluator"]:
+    # evaluation_policy_container = model_db.get_model("15layer-num1")
+    # evaluation_policy_container = model_db.get_model("onesteplook")
+    evaluation_policy_container = model_db.get_model("cloudmcts")
+
+    if evaluation_policy_container.policy_kwargs.get("evaluator"):
         evaluation_network = evaluation_policy_container.policy_kwargs["evaluator"]
         evaluation_network.load_state_dict(evaluation_policy_container.policy_kwargs["starting_state_dict"])
         del evaluation_policy_container.policy_kwargs["evaluator"]
+    else:
+        evaluation_network=None
 
     self_play = SelfPlayScheduler(
         env_gen=Connect4Env,
