@@ -59,7 +59,7 @@ class UpdateWorker(BaseWorker):
                 self.load_model(prev_run=True)
 
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
-                self.policy.optim, "max", patience=10, factor=0.2, verbose=True, min_lr=0.00001,
+                self.policy.optim, "max", patience=15, factor=0.2, verbose=True, min_lr=0.00001,
             )
 
             while True:
@@ -70,7 +70,7 @@ class UpdateWorker(BaseWorker):
                         self.pull()
                         if self.stagger:
                             self.stagger_memory()
-                        self.policy.deduplicate()
+                        # self.policy.deduplicate()
                         self.save_memory()
                         self.save_model(saved_name)
                     elif task.get("reward"):
@@ -125,5 +125,5 @@ class UpdateWorker(BaseWorker):
         for _ in range(100):
             # We are creating new games at the same time we update our model. This is more limited by the running
             # of new games, so we rate limit the updates to speed up the evaluation and help prevent overfitting
-            time.sleep(0.03)
+            time.sleep(0.01)
             self.policy.update_from_memory()
