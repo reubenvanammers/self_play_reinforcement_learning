@@ -49,7 +49,7 @@ class InferenceWorker(BaseWorker):
     """
 
     def __init__(
-        self, queues, policy, evaluation_policy=None, epoch_value=None, save_dir=None, resume=False,start_time=None
+        self, queues, policy, evaluation_policy=None, epoch_value=None, save_dir=None, resume=False, start_time=None
     ):
         logging.info("setting up Evaluator worker")
         self.policy = policy.to(device).train(False)
@@ -64,8 +64,8 @@ class InferenceWorker(BaseWorker):
         self.epoch_value = epoch_value
         self.current_model_file = None
         self.save_dir = save_dir
-        self.resume=resume
-        self.start_time=start_time
+        self.resume = resume
+        self.start_time = start_time
 
         self.epoch_count = 0
 

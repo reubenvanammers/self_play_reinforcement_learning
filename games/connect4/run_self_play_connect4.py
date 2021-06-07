@@ -4,11 +4,11 @@ from torch import multiprocessing
 
 from games.algos.base_model import ModelContainer
 from games.algos.mcts import MCTreeSearch
+from games.algos.model_database import ModelDatabase
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 from games.connect4.hardcoded_players import OnestepLookahead
 from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4
-from games.algos.model_database import ModelDatabase
 
 try:
     save_dir = "saves__c4mtcs_par"
@@ -26,13 +26,7 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(
-        iterations=400,
-        min_memory=100000,
-        memory_size=25000,
-        env_gen=Connect4Env,
-        batch_size=64,
-    )
+    policy_kwargs = dict(iterations=400, min_memory=100000, memory_size=25000, env_gen=Connect4Env, batch_size=64,)
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     model_db = ModelDatabase()
@@ -55,7 +49,7 @@ def run_training():
         evaluation_network.load_state_dict(evaluation_policy_container.policy_kwargs["starting_state_dict"])
         del evaluation_policy_container.policy_kwargs["evaluator"]
     else:
-        evaluation_network=None
+        evaluation_network = None
 
     self_play = SelfPlayScheduler(
         env_gen=Connect4Env,

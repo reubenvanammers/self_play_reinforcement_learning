@@ -139,7 +139,7 @@ class SelfPlayer:
         self.opposing_policy = opposing_policy
         self.env = env
         self.result_queue = result_queue
-        self.update_opponent=update_opponent
+        self.update_opponent = update_opponent
 
     def play_episode(self, swap_sides=False, update=True):
         try:

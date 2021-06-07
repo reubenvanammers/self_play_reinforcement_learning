@@ -25,7 +25,7 @@ class UpdateWorker(BaseWorker):
         stagger=False,
         mem_step=5000,
         max_mem=500000,
-        deduplicate=False
+        deduplicate=False,
     ):
         logging.info("initializing update worker")
         self.memory_queue = memory_queue
@@ -39,12 +39,12 @@ class UpdateWorker(BaseWorker):
         self.memory_size = 0
         self.resume = resume
         self.stagger = stagger
-        self.deduplicate=deduplicate
+        self.deduplicate = deduplicate
 
         self.mem_step = mem_step
         self.max_mem = max_mem
 
-        self.recent_save=None
+        self.recent_save = None
 
         self.memory_size_step = 50000
 

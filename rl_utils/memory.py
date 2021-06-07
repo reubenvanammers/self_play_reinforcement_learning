@@ -1,8 +1,9 @@
+import logging
 from collections import defaultdict, deque
 
 import numpy as np
 import torch
-import logging
+
 
 class Memory:
     def __init__(self, max_size=None):
@@ -80,7 +81,6 @@ class Deduplicator:
         self.counter = defaultdict(dict)
         self.temp_queue = deque(buffer) or deque()
 
-
     def deduplicate(self, max_size=None):
         for experience in self.temp_queue:
             self.add(experience)
@@ -109,6 +109,6 @@ class Deduplicator:
             count = self.counter[key]
             tuple_kwarg_dict = {self.key: count[self.key]}  # Used for making new namedtuple instance
             for v in self.values:
-                tuple_kwarg_dict[v] = count[v] / count['count']
+                tuple_kwarg_dict[v] = count[v] / count["count"]
             buffer.append(self.named_tuple(**tuple_kwarg_dict))
         return buffer

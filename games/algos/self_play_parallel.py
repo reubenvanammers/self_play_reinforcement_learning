@@ -1,10 +1,9 @@
 import datetime
 import logging
 import os
+import time
 import traceback
 from os.path import join
-
-import time
 
 import multiprocessing_logging
 import numpy as np
@@ -50,7 +49,7 @@ class SelfPlayScheduler:
         evaluation_games=100,
         evaluation_network=None,
         stagger_mem_step=5000,
-        deduplicate=False
+        deduplicate=False,
     ):
         self.policy_container = policy_container
         self.evaluation_policy_container = evaluation_policy_container
@@ -61,8 +60,8 @@ class SelfPlayScheduler:
         self.self_play = self_play
         self.lr = lr
         self.stagger = stagger
-        self.stagger_mem_step=stagger_mem_step
-        self.deduplicate=deduplicate
+        self.stagger_mem_step = stagger_mem_step
+        self.deduplicate = deduplicate
 
         self.network = network
         self.evaluation_games = evaluation_games
@@ -170,7 +169,7 @@ class SelfPlayScheduler:
                     save_dir=self.save_dir,
                     evaluation_policy=evaluation_network,
                     resume=resume_model,
-                    start_time=self.start_time
+                    start_time=self.start_time,
                 )
                 inference_worker.start()
             else:
@@ -220,7 +219,7 @@ class SelfPlayScheduler:
                 start_time=self.start_time,
                 stagger=self.stagger,
                 mem_step=self.stagger_mem_step,
-                deduplicate=self.deduplicate
+                deduplicate=self.deduplicate,
             )
 
             update_worker.start()
@@ -241,7 +240,6 @@ class SelfPlayScheduler:
                 logging.info(f"generating {self.epoch_length} self play games: epoch {epoch}")
 
                 update_flag.set()
-
 
                 for i in range(self.epoch_length):
                     swap_sides = not i % 2 == 0
@@ -303,7 +301,6 @@ class SelfPlayScheduler:
             breakdown[start] = dict(wins=wins, draws=draws, losses=losses)
             print(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
             logging.info(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
-
 
         total_rewards = np.sum([r["reward"] for r in reward_list])
         logging.info(f"rewards are {total_rewards}")
