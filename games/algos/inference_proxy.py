@@ -96,7 +96,7 @@ class InferenceWorker(BaseWorker):
                             self.epoch_count = self.epoch_value.value
                 if self.counter > self.counter_last + self.counter_diff:
                     now = datetime.datetime.now()
-                    logging.info(
+                    logging.debug(
                         f"Number of requests handled is {self.counter}, {self.counter - self.counter_last} requests took {(now - self.counter_time).total_seconds()} seconds"
                     )
                     self.counter_last = self.counter

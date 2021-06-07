@@ -49,6 +49,8 @@ class SelfPlayScheduler:
         stagger=False,
         evaluation_games=100,
         evaluation_network=None,
+        stagger_mem_step=5000,
+        deduplicate=False
     ):
         self.policy_container = policy_container
         self.evaluation_policy_container = evaluation_policy_container
@@ -59,6 +61,8 @@ class SelfPlayScheduler:
         self.self_play = self_play
         self.lr = lr
         self.stagger = stagger
+        self.stagger_mem_step=stagger_mem_step
+        self.deduplicate=deduplicate
 
         self.network = network
         self.evaluation_games = evaluation_games
@@ -215,6 +219,8 @@ class SelfPlayScheduler:
                 resume=resume_memory,
                 start_time=self.start_time,
                 stagger=self.stagger,
+                mem_step=self.stagger_mem_step,
+                deduplicate=self.deduplicate
             )
 
             update_worker.start()
@@ -284,6 +290,8 @@ class SelfPlayScheduler:
 
         print(f"win percent : {win_percent}%")
         print(f"wins: {wins}, draws: {draws}, losses: {losses}")
+        logging.info(f"win percent : {win_percent}%")
+
         logging.info(f"wins: {wins}, draws: {draws}, losses: {losses}")
 
         starts = ["first", "second"]
@@ -294,6 +302,8 @@ class SelfPlayScheduler:
             losses = len([i for k, i in enumerate(reward_list) if i["reward"] == -1 and i["swap_sides"] == bool(j)])
             breakdown[start] = dict(wins=wins, draws=draws, losses=losses)
             print(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
+            logging.info(f"starting {start}: wins: {wins}, draws: {draws}, losses: {losses}")
+
 
         total_rewards = np.sum([r["reward"] for r in reward_list])
         logging.info(f"rewards are {total_rewards}")

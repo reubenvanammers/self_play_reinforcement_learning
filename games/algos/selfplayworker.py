@@ -130,15 +130,16 @@ class SelfPlayWorker(BaseWorker):
     def _task_finished(self, future):
         if future.done():
             self.task_queue.task_done()
-            logging.info("task done")
+            logging.debug("task done")
 
 
 class SelfPlayer:
-    def __init__(self, policy, opposing_policy, env, result_queue):
+    def __init__(self, policy, opposing_policy, env, result_queue, update_opponent=False):
         self.policy = policy
         self.opposing_policy = opposing_policy
         self.env = env
         self.result_queue = result_queue
+        self.update_opponent=update_opponent
 
     def play_episode(self, swap_sides=False, update=True):
         try:
@@ -158,7 +159,8 @@ class SelfPlayer:
             if update:
                 self.policy.push_to_queue(done=True, r=r)
                 # Also push opposing policies perspective, but swap winner/loser
-                self.opposing_policy.push_to_queue(done=True, r=r * -1)
+                if self.update_opponent:
+                    self.opposing_policy.push_to_queue(done=True, r=r * -1)
             return state_list, r
         except Exception as e:
             logging.info(traceback.format_exc())

@@ -23,6 +23,9 @@ class UpdateWorker(BaseWorker):
         save_dir="saves",
         resume=False,
         stagger=False,
+        mem_step=5000,
+        max_mem=500000,
+        deduplicate=False
     ):
         logging.info("initializing update worker")
         self.memory_queue = memory_queue
@@ -36,9 +39,10 @@ class UpdateWorker(BaseWorker):
         self.memory_size = 0
         self.resume = resume
         self.stagger = stagger
+        self.deduplicate=deduplicate
 
-        self.mem_step = 10000
-        self.max_mem = 200000
+        self.mem_step = mem_step
+        self.max_mem = max_mem
 
         self.recent_save=None
 
@@ -70,7 +74,8 @@ class UpdateWorker(BaseWorker):
                         self.pull()
                         if self.stagger:
                             self.stagger_memory()
-                        # self.policy.deduplicate()
+                        if self.deduplicate:
+                            self.policy.deduplicate()
                         self.save_memory()
                         self.save_model(saved_name)
                     elif task.get("reward"):
@@ -121,7 +126,7 @@ class UpdateWorker(BaseWorker):
 
     def update(self):
         self.pull()
-        logging.info("updating from memory")
+        logging.debug("updating from memory")
         for _ in range(100):
             # We are creating new games at the same time we update our model. This is more limited by the running
             # of new games, so we rate limit the updates to speed up the evaluation and help prevent overfitting

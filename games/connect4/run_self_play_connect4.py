@@ -29,9 +29,8 @@ def run_training():
     policy_kwargs = dict(
         iterations=400,
         min_memory=100000,
-        memory_size=200000,
+        memory_size=25000,
         env_gen=Connect4Env,
-        # evaluator=network,
         batch_size=64,
     )
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
@@ -68,9 +67,11 @@ def run_training():
         evaluation_games=100,
         save_dir=save_dir,
         self_play=True,
-        stagger=False,
+        stagger=True,
+        stagger_mem_step=5000,
         lr=0.0003,
         evaluation_network=evaluation_network,
+        deduplicate=False,
     )
 
     self_play.train_model(100, resume_memory=False, resume_model=False)
