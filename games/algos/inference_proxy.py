@@ -13,7 +13,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class InferenceProxy:
     """
-    Used for evalutation via queues. Should only be used for evaluation, not for training.
+    Used for evaluation via queues. Should only be used for evaluation, not for training.
     """
 
     def __init__(self, queues: BidirectionalQueue):
@@ -49,7 +49,7 @@ class InferenceWorker(BaseWorker):
     """
 
     def __init__(
-        self, queues, policy, evaluation_policy=None, epoch_value=None, save_dir=None, resume=False, start_time=None
+        self, queues, policy: nn.Module, evaluation_policy: nn.Module = None, epoch_value=None, save_dir=None, resume=False, start_time=None
     ):
         logging.info("setting up Evaluator worker")
         self.policy = policy.to(device).train(False)
@@ -129,12 +129,9 @@ class InferenceWorker(BaseWorker):
             while j < len(requests):
                 if queue_active[i] == 1:
                     active_queue = queues[i]
-                    if j >= len(policy):
-                        print("asdf")
                     active_queue.answer_queue.put((policy[j], value[j][0]))
                     j += 1
                 i += 1
-                # queue_active.pop()
             self.counter += j
 
     def calculate(self, requests, evaluator):

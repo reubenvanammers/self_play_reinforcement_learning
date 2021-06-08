@@ -265,7 +265,7 @@ class SelfPlayScheduler:
             # Clean up
             update_worker.terminate()
             [w.terminate() for w in player_workers]
-            if inference_proxy:
+            if inference_worker:
                 inference_worker.terminate()
             del self.memory_queue
             del self.task_queue

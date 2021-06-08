@@ -47,6 +47,7 @@ class MCNode(NodeMixin):
 
         # Flag for threading
         self.in_use = False
+        self.virtual_loss = 0
 
         self.active_root = False
         self.v = v
@@ -63,7 +64,8 @@ class MCNode(NodeMixin):
 
     @property
     def q(self,):  # Attractiveness of a node from player ones pespective - average of downstream results
-        return self.w / self.n if self.n else 0
+        n_eff = self.n + self.virtual_loss
+        return (self.w - self.virtual_loss) / n_eff if n_eff else 0
 
     @property  # effective p - p if noise isn't active, otherwise adds noise factor
     def p_eff(self):
@@ -86,9 +88,18 @@ class MCNode(NodeMixin):
     def valid(self):
         return self._valid and not self.in_use
 
+    def remove_virtual_loss(self):
+        self.virtual_loss -=1
+        assert self.virtual_loss >= 0
+
     def backup(self, v):
         self.w += v
         self.n += 1
+        # self.virtual_loss -= 1
+        # try:
+        #     assert self.virtual_loss >= 0
+        # except AssertionError:
+        #     print(f"{self.virtual_loss}")
         if self.parent:
             self.parent.backup(v)
 
@@ -106,9 +117,9 @@ class MCNode(NodeMixin):
         pass
 
 
-# TODO deal with opposite player choosing moves
-# TODO Start off with opponent using their own policy (eg random) and then move to MCTS as well
 class MCTreeSearch(BaseModel):
+    root_node: MCNode
+
     def __init__(
         self,
         network,
@@ -126,7 +137,6 @@ class MCTreeSearch(BaseModel):
     ):
         self.iterations = iterations
         self.network = network.to(device)
-        # self.evaluator = evaluator
         self.env_gen = env_gen
         self.optim = optim
         self.env = env_gen()
@@ -302,6 +312,8 @@ class MCTreeSearch(BaseModel):
     def search(self):
         if self.evaluating:
             self.root_node.add_noise()  # Might want to remove this in evaluation?
+        else:
+            self.root_node.add_noise()
         if self.threading:
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 [executor.submit(self.search_node) for _ in range(self.iterations)]
@@ -311,10 +323,15 @@ class MCTreeSearch(BaseModel):
                 self.search_node()
         if self.evaluating:
             self.root_node.remove_noise()  # Don't think this is necessary?
+        else:
+            self.root_node.remove_noise()
 
     def search_node(self):
         node = self.root_node
+        node_list = []
         while True:
+            node_list.append(node)
+            node.virtual_loss += 1
             select_probs = [
                 child.select_prob if child.valid else -10000000000 for child in node.children
             ]  # real big negative number
@@ -332,6 +349,7 @@ class MCTreeSearch(BaseModel):
                 node.backup(v)
                 node.v = v
                 node.in_use = False
+                [n.remove_virtual_loss() for n in node_list]
                 break
             else:
                 node = child_node
