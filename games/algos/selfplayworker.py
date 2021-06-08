@@ -134,7 +134,7 @@ class SelfPlayWorker(BaseWorker):
 
 
 class SelfPlayer:
-    def __init__(self, policy, opposing_policy, env, result_queue, update_opponent=True):
+    def __init__(self, policy, opposing_policy, env, result_queue, update_opponent=False):
         self.policy = policy
         self.opposing_policy = opposing_policy
         self.env = env

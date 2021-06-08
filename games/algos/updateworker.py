@@ -26,6 +26,7 @@ class UpdateWorker(BaseWorker):
         mem_step=5000,
         max_mem=500000,
         deduplicate=False,
+        update_delay=0.01
     ):
         logging.info("initializing update worker")
         self.memory_queue = memory_queue
@@ -47,6 +48,8 @@ class UpdateWorker(BaseWorker):
         self.recent_save = None
 
         self.memory_size_step = 50000
+
+        self.update_delay = update_delay
 
         super().__init__()
 
@@ -130,5 +133,5 @@ class UpdateWorker(BaseWorker):
         for _ in range(100):
             # We are creating new games at the same time we update our model. This is more limited by the running
             # of new games, so we rate limit the updates to speed up the evaluation and help prevent overfitting
-            time.sleep(0.01)
+            time.sleep(self.update_delay)
             self.policy.update_from_memory()
