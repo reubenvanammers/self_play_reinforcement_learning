@@ -89,7 +89,7 @@ class MCNode(NodeMixin):
         return self._valid and not self.in_use
 
     def remove_virtual_loss(self):
-        self.virtual_loss -=1
+        self.virtual_loss -= 1
         assert self.virtual_loss >= 0
 
     def backup(self, v):

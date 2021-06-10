@@ -66,7 +66,7 @@ def run_training():
         lr=0.0003,
         evaluation_network=evaluation_network,
         deduplicate=False,
-        update_delay=0.01
+        update_delay=0.01,
     )
 
     self_play.train_model(100, resume_memory=False, resume_model=False)

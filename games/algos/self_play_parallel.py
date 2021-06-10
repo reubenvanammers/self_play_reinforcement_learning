@@ -63,7 +63,7 @@ class SelfPlayScheduler:
         self.stagger = stagger
         self.stagger_mem_step = stagger_mem_step
         self.deduplicate = deduplicate
-        self.update_delay=update_delay
+        self.update_delay = update_delay
 
         self.network = network
         self.evaluation_games = evaluation_games
@@ -222,7 +222,7 @@ class SelfPlayScheduler:
                 stagger=self.stagger,
                 mem_step=self.stagger_mem_step,
                 deduplicate=self.deduplicate,
-                update_delay=self.update_delay
+                update_delay=self.update_delay,
             )
 
             update_worker.start()

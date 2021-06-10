@@ -26,7 +26,7 @@ class UpdateWorker(BaseWorker):
         mem_step=5000,
         max_mem=500000,
         deduplicate=False,
-        update_delay=0.01
+        update_delay=0.01,
     ):
         logging.info("initializing update worker")
         self.memory_queue = memory_queue
