@@ -133,6 +133,7 @@ class MCTreeSearch(BaseModel):
         min_memory=20000,
         update_nn=True,
         starting_state_dict=None,
+        thread_count=1
         # threading=True,
     ):
         self.iterations = iterations
@@ -154,6 +155,7 @@ class MCTreeSearch(BaseModel):
 
         self.evaluating = False
         self.threading = isinstance(self.network, InferenceProxy)
+        self.thread_count = 2
 
         self.batch_size = batch_size
 
@@ -314,8 +316,8 @@ class MCTreeSearch(BaseModel):
             self.root_node.add_noise()  # Might want to remove this in evaluation?
         else:
             self.root_node.add_noise()
-        if self.threading:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        if self.threading and self.thread_count > 1:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.thread_count) as executor:
                 [executor.submit(self.search_node) for _ in range(self.iterations)]
                 executor.shutdown()
         else:
