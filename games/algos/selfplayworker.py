@@ -4,6 +4,7 @@ import traceback
 from concurrent import futures
 
 from games.algos.base_worker import BaseWorker
+from games.algos.evaluation_worker import PerfectEvaluator
 
 
 class SelfPlayWorker(BaseWorker):
@@ -105,7 +106,9 @@ class SelfPlayWorker(BaseWorker):
                             logging.info("loading model")
                             self.load_model()
                             self.epoch_count = self.epoch_value.value
-
+                if task.get("reference"):
+                    print("checking reference")
+                    self.check_reference()
                 evaluate = task.get("evaluate")
                 self_player = self.set_up_policies(evaluate=evaluate)
 
@@ -126,6 +129,15 @@ class SelfPlayWorker(BaseWorker):
             except Exception as e:
                 logging.exception(traceback.format_exc())
                 self.task_queue.task_done()
+
+    def check_reference(self):
+        try:
+            reference = PerfectEvaluator(self.network)
+            reference.test()
+            self.task_queue.task_done()
+        except Exception:
+            logging.exception(traceback.format_exc())
+            self.task_queue.task_done()
 
     def _task_finished(self, future):
         if future.done():

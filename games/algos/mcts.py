@@ -7,7 +7,6 @@ import time
 import traceback
 from collections import namedtuple
 from multiprocessing import Queue
-
 import numpy as np
 import torch
 from anytree import NodeMixin
@@ -133,7 +132,7 @@ class MCTreeSearch(BaseModel):
         min_memory=20000,
         update_nn=True,
         starting_state_dict=None,
-        thread_count=1
+        thread_count=2
         # threading=True,
     ):
         self.iterations = iterations
@@ -155,7 +154,7 @@ class MCTreeSearch(BaseModel):
 
         self.evaluating = False
         self.threading = isinstance(self.network, InferenceProxy)
-        self.thread_count = 2
+        self.thread_count = thread_count
 
         self.batch_size = batch_size
 
@@ -175,7 +174,7 @@ class MCTreeSearch(BaseModel):
 
     ## Ignores the inputted state for the moment. Produces the correct action, and changes the root node appropriately
     # TODO might want to do a check on the state to make sure it is consistent
-    def __call__(self, s):  # not using player
+    def __call__(self, s=None):  # not using player
         move = self._search_and_play()
         return move
 

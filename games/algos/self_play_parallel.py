@@ -21,7 +21,7 @@ from rl_utils.queues import QueueContainer
 
 logging.basicConfig(
     filename="log.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
@@ -261,6 +261,8 @@ class SelfPlayScheduler:
                 # Update saved name after worker has loaded it
                 epoch_value.value += 1
                 time.sleep(1)
+                self.task_queue.put({"reference": True})
+
                 reward = self.evaluate_policy(epoch)
 
                 update_worker_queue.put({"reward": reward})
