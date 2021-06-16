@@ -8,7 +8,8 @@ import traceback
 import torch
 
 from games.algos.base_worker import BaseWorker
-
+torch.backends.cudnn.benchmark = True
+from torch.cuda.amp import autocast
 
 class UpdateWorker(BaseWorker):
     def __init__(
@@ -134,4 +135,5 @@ class UpdateWorker(BaseWorker):
             # We are creating new games at the same time we update our model. This is more limited by the running
             # of new games, so we rate limit the updates to speed up the evaluation and help prevent overfitting
             time.sleep(self.update_delay)
-            self.policy.update_from_memory()
+            with autocast():
+                self.policy.update_from_memory()

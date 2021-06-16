@@ -4,11 +4,13 @@ import traceback
 
 import torch
 from torch import nn, tensor
+from torch.cuda import amp
 
 from games.algos.base_worker import BaseWorker
 from rl_utils.queues import BidirectionalQueue, QueueContainer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.backends.cudnn.benchmark = True
 
 #TODO try torch.backends.cudnn.benchmark = True
 #TODO try pytorch amp
@@ -145,5 +147,6 @@ class InferenceWorker(BaseWorker):
     def calculate(self, requests, evaluator):
         tensor_requests = [tensor(s) for s in requests]
         batch = torch.stack(tensor_requests)
-        policy, value = evaluator.forward(batch)
+        with amp.autocast():
+            policy, value = evaluator.forward(batch)
         return policy.tolist(), value.tolist()

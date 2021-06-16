@@ -1,5 +1,6 @@
 import copy
 import logging
+import time
 import traceback
 from concurrent import futures
 
@@ -119,6 +120,8 @@ class SelfPlayWorker(BaseWorker):
                     self.task_queue.task_done()
                     logging.info("task done")
                 else:
+                    #small delay to allow threads to be more equal across core
+                    time.sleep(0.1)
                     future = executor.submit(self_player.play_episode, **episode_args)
                     future.add_done_callback(self._task_finished)
                     future_set.add(future)

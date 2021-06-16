@@ -121,7 +121,7 @@ class SelfPlayScheduler:
         resume_model=False,
         resume_memory=False,
         num_workers=None,
-        threads_per_worker=8,
+        threads_per_worker=16,
         inference_proxy=True,
     ):
         epoch_value = multiprocessing.Value("i", 0)
