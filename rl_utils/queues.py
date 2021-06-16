@@ -3,7 +3,13 @@ import re
 import threading
 import traceback
 from collections import deque
-from multiprocessing import Queue
+# from multiprocessing import Queue
+
+try:
+    from faster_fifo import Queue
+except Exception as e:
+    print("consider using fifo-fast-queues, only available on linux/macos")
+    from multiprocessing import Queue
 
 
 class BidirectionalQueue:

@@ -183,6 +183,7 @@ class SelfPlayer:
                     self.opposing_policy.push_to_queue(done=True, r=r * -1)
             return state_list, r
         except Exception as e:
+            logging.info("Error in Self play worker")
             logging.info(traceback.format_exc())
 
     def play_round(self, s, update=True):
