@@ -22,20 +22,26 @@ class PerfectEvaluator:
             self.pos_list = [line[0] for line in lines]
         self.evaluator = evaluator
 
-    def test(self, num_pos=100):
+    # TODO add test for evaluator without MCTS as well
+    # TODO add to tensorboard?
+    def test(self, num_pos=100, base_network=False):
         games = random.sample(self.pos_list,num_pos)
         total = 0
         for game in games:
-            total += self.compare(game)
-            print(total)
-        logging.info(f"{total} correct moves out of {num_pos}")
-        print(f"{total} correct moves out of {num_pos}")
+            total += self.compare(game, base_network=base_network)
+            # print(total)
+        logging.info(f"{total} correct moves out of {num_pos}: base_network = {base_network}")
+        print(f"{total} correct moves out of {num_pos}: base_network = {base_network}")
 
-    def compare(self, moves):
+    def compare(self, moves, base_network=False):
         np_moves = np.array([int(m) for m in moves])
         reference_result = self.perfect_player.get_position_scores(np_moves)
         self._text_to_board(moves)
-        chosen_move = self.evaluator()
+        if not base_network:
+            chosen_move = self.evaluator()
+        else:
+            move = self.evaluator.network(self.evaluator.root_node.state)
+            chosen_move = np.argmax(move[0])
         # print(chosen_move)
         if reference_result[2][0][chosen_move] > 0:
             # If the move is judged best:
@@ -66,6 +72,7 @@ if __name__ == "__main__":
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     eval = PerfectEvaluator(policy_container.setup(network=network))
+    eval.test(base_network=True)
     eval.test()
     # eval.evaluator.env.step(1)
     # eval.evaluator.env.step(2,-1)

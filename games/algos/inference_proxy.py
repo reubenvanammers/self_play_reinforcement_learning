@@ -10,7 +10,8 @@ from rl_utils.queues import BidirectionalQueue, QueueContainer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
+#TODO try torch.backends.cudnn.benchmark = True
+#TODO try pytorch amp
 class InferenceProxy:
     """
     Used for evaluation via queues. Should only be used for evaluation, not for training.

@@ -109,6 +109,7 @@ class SelfPlayWorker(BaseWorker):
                 if task.get("reference"):
                     print("checking reference")
                     self.check_reference()
+                    continue
                 evaluate = task.get("evaluate")
                 self_player = self.set_up_policies(evaluate=evaluate)
 
@@ -132,8 +133,12 @@ class SelfPlayWorker(BaseWorker):
 
     def check_reference(self):
         try:
-            reference = PerfectEvaluator(self.network)
+            policy = self.policy_container.setup(network=self.network)
+            policy.train(False)
+            policy.evaluate(True)
+            reference = PerfectEvaluator(policy)
             reference.test()
+            reference.test(base_network=True)
             self.task_queue.task_done()
         except Exception:
             logging.exception(traceback.format_exc())
