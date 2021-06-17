@@ -25,7 +25,7 @@ class UpdateWorker(BaseWorker):
         resume=False,
         stagger=False,
         mem_step=5000,
-        max_mem=500000,
+        max_mem=1000000,
         deduplicate=False,
         update_delay=0.01,
     ):
