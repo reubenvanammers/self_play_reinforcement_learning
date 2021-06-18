@@ -24,18 +24,18 @@ class PerfectEvaluator:
 
     # TODO add test for evaluator without MCTS as well
     # TODO add to tensorboard?
-    def test(self, num_pos=100, base_network=False):
+    def test(self, num_pos=100, base_network=False, weak=False):
         games = random.sample(self.pos_list,num_pos)
         total = 0
         for game in games:
-            total += self.compare(game, base_network=base_network)
+            total += self.compare(game, base_network=base_network, weak=weak)
             # print(total)
         logging.info(f"{total} correct moves out of {num_pos}: base_network = {base_network}")
         print(f"{total} correct moves out of {num_pos}: base_network = {base_network}")
 
-    def compare(self, moves, base_network=False):
+    def compare(self, moves, base_network=False, weak=False):
         np_moves = np.array([int(m) for m in moves])
-        reference_result = self.perfect_player.get_position_scores(np_moves)
+        reference_result = self.perfect_player.get_position_scores(np_moves, weak)
         self._text_to_board(moves)
         if not base_network:
             chosen_move = self.evaluator()

@@ -133,7 +133,7 @@ class MCTreeSearch(BaseModel):
         update_nn=True,
         starting_state_dict=None,
         thread_count=2,
-        strong_play=True, # Whether or not  to prefer short games to long ones
+        strong_play=False, # Whether or not  to prefer short games to long ones
         # threading=True,
     ):
         self.iterations = iterations
@@ -304,6 +304,8 @@ class MCTreeSearch(BaseModel):
         if done:
             if self.strong_play:
                 num_steps = np.sum(np.abs(parent_node.state)) + 1
+                # A win at 7 moves is worth 1, and a win at 42 moves is worth 0.1 - prioritizes shorter games
+                # TODO genericize formulae
                 v = (1.18 - (9 * num_steps / 350)) * r
             else:
                 v = r

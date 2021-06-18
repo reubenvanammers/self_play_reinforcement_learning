@@ -8,7 +8,7 @@ from games.algos.model_database import ModelDatabase
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 from games.connect4.hardcoded_players import OnestepLookahead
-from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4
+from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4, ResidualTower
 
 try:
     save_dir = "saves__c4mtcs_par"
@@ -21,12 +21,13 @@ def run_training():
     # Can update config for training from here
     env = Connect4Env()
 
-    network = DeepConvNetConnect4()
+    # network = DeepConvNetConnect4()
+    network = ResidualTower(width=7, height=6,action_size=7,num_blocks=15)
     network.share_memory()
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=400, min_memory=25000, memory_size=100000, env_gen=Connect4Env, batch_size=64,)
+    policy_kwargs = dict(iterations=400, min_memory=25000, memory_size=300000, env_gen=Connect4Env, batch_size=64,)
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     model_db = ModelDatabase()
@@ -58,7 +59,7 @@ def run_training():
         evaluation_policy_container=evaluation_policy_container,
         initial_games=40,
         epoch_length=1500,
-        evaluation_games=150,
+        evaluation_games=200,
         save_dir=save_dir,
         self_play=True,
         stagger=True,
@@ -69,7 +70,7 @@ def run_training():
         update_delay=0.01,
     )
 
-    self_play.train_model(100, resume_memory=False, resume_model=False)
+    self_play.train_model(500, resume_memory=False, resume_model=False)
     print("Training Done")
 
 

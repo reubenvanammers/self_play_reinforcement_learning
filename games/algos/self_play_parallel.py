@@ -21,7 +21,7 @@ from rl_utils.queues import QueueContainer
 
 logging.basicConfig(
     filename="log.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
@@ -275,6 +275,7 @@ class SelfPlayScheduler:
             del self.memory_queue
             del self.task_queue
             del self.result_queue
+            del queues
         except Exception as e:
             logging.exception(traceback.format_exc())
             logging.exception("error in main loop" + str(e))
