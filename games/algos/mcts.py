@@ -132,7 +132,8 @@ class MCTreeSearch(BaseModel):
         min_memory=20000,
         update_nn=True,
         starting_state_dict=None,
-        thread_count=2
+        thread_count=2,
+        strong_play=True, # Whether or not  to prefer short games to long ones
         # threading=True,
     ):
         self.iterations = iterations
@@ -157,6 +158,7 @@ class MCTreeSearch(BaseModel):
         self.thread_count = thread_count
 
         self.batch_size = batch_size
+        self.strong_play=strong_play
 
         if self.starting_state_dict:
             # print("laoding [sic] state dict in mcts")
@@ -300,7 +302,11 @@ class MCTreeSearch(BaseModel):
         s, r, done, _ = env.step(action, player=player)
         r = r * player
         if done:
-            v = r
+            if self.strong_play:
+                num_steps = np.sum(np.abs(parent_node.state)) + 1
+                v = (1.18 - (9 * num_steps / 350)) * r
+            else:
+                v = r
             child_node = parent_node.children[action]
         else:
             probs, v = self.network(s, parent_node.player)
