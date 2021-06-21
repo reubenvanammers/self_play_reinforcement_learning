@@ -120,7 +120,10 @@ class ResidualTower(nn.Module):
 
         return policy, value
 
-
+    def __call__(self, state, player=1):
+        state = state * player
+        policy, value = super().__call__(state)
+        return policy.tolist()[0], value.item() * player
 
 
 

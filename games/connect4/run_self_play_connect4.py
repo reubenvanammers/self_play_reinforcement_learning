@@ -22,12 +22,12 @@ def run_training():
     env = Connect4Env()
 
     # network = DeepConvNetConnect4()
-    network = ResidualTower(width=7, height=6,action_size=7,num_blocks=15)
+    network = ResidualTower(width=7, height=6,action_size=7,num_blocks=20)
     network.share_memory()
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=400, min_memory=25000, memory_size=300000, env_gen=Connect4Env, batch_size=64,)
+    policy_kwargs = dict(iterations=400, min_memory=25000, memory_size=300000, env_gen=Connect4Env, batch_size=128,)
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     model_db = ModelDatabase()
@@ -41,9 +41,9 @@ def run_training():
     #     evaluation_policy_gen, evaluation_policy_args, evaluation_policy_kwargs
     # )
 
-    # evaluation_policy_container = model_db.get_model("15layer-num1")
+    evaluation_policy_container = model_db.get_model("15layer-num1")
     # evaluation_policy_container = model_db.get_model("onesteplook")
-    evaluation_policy_container = model_db.get_model("cloudmcts")
+    # evaluation_policy_container = model_db.get_model("cloudmcts")
 
     if evaluation_policy_container.policy_kwargs.get("evaluator"):
         evaluation_network = evaluation_policy_container.policy_kwargs["evaluator"]
@@ -64,13 +64,13 @@ def run_training():
         self_play=True,
         stagger=True,
         stagger_mem_step=15000,
-        lr=0.0003,
+        lr=0.02,
         evaluation_network=evaluation_network,
         deduplicate=False,
         update_delay=0.01,
     )
 
-    self_play.train_model(500, resume_memory=False, resume_model=False)
+    self_play.train_model(500, resume_memory=True, resume_model=True)
     print("Training Done")
 
 

@@ -94,6 +94,7 @@ class InferenceWorker(BaseWorker):
 
     def run(self):
         if self.resume:
+            logging.info("loading model into inference proxy")
             self.load_model(prev_run=True)
 
         while True:

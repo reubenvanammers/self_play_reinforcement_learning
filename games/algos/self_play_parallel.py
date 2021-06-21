@@ -21,7 +21,7 @@ from rl_utils.queues import QueueContainer
 
 logging.basicConfig(
     filename="log.log",
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )

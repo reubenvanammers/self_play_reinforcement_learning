@@ -63,11 +63,12 @@ class UpdateWorker(BaseWorker):
             self.policy.train()
 
             if self.resume:
+                logging.info('resuming memory and model for worker')
                 self.load_memory(prev_run=True)
                 self.load_model(prev_run=True)
 
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
-                self.policy.optim, "max", patience=20, factor=0.5, verbose=True, min_lr=0.00001,
+                self.policy.optim, "max", patience=15, factor=0.5, verbose=True, min_lr=0.00001,
             )
 
             while True:
