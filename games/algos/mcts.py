@@ -19,7 +19,7 @@ from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 from rl_utils.weights import init_weights
 
-Move = namedtuple("Move", ("state", "actual_val", "tree_probs"),)
+Move = namedtuple("Move", ("state", "actual_val", "tree_probs", "q"),)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -133,7 +133,8 @@ class MCTreeSearch(BaseModel):
         update_nn=True,
         starting_state_dict=None,
         thread_count=2,
-        strong_play=False, # Whether or not  to prefer short games to long ones
+        strong_play=False,  # Whether or not  to prefer short games to long ones
+        q_average=True,
         # threading=True,
     ):
         self.iterations = iterations
@@ -159,6 +160,7 @@ class MCTreeSearch(BaseModel):
 
         self.batch_size = batch_size
         self.strong_play=strong_play
+        self.q_average=q_average
 
         if self.starting_state_dict:
             # print("laoding [sic] state dict in mcts")
@@ -220,7 +222,7 @@ class MCTreeSearch(BaseModel):
         while not self.memory_queue.empty():
             # logging.info(f"queue size in policy is {self.memory_queue.qsize()}")
             experience = self.memory_queue.get()
-            experience = Move(*[experience[i].to(device,) for i in range(3)])
+            experience = Move(*[experience[i].to(device,) for i in range(4)])
             self.memory.add(experience)
             # logging.info(f"memory size is  is {len(self.memory)}")
 
@@ -238,12 +240,16 @@ class MCTreeSearch(BaseModel):
 
     def loss(self, batch):
         batch_t = Move(*zip(*batch))  # transposed batch
-        s, actual_val, tree_probs = batch_t
+        s, actual_val, tree_probs, q = batch_t
         s_batch = torch.stack(s)
         net_probs_batch, predict_val_batch = self.network.forward(s_batch)
         predict_val_batch = predict_val_batch.view(-1)
         actual_val_batch = torch.stack(actual_val)
         tree_probs_batch = torch.stack(tree_probs)
+        q_batch = torch.stack(q)
+        if self.q_average:
+            actual_val_batch = actual_val_batch + q_batch
+
 
         c = MSELossFlat(floatify=True)
         value_loss = c(predict_val_batch, actual_val_batch)
@@ -293,7 +299,7 @@ class MCTreeSearch(BaseModel):
 
         self.moves_played += 1
 
-        self.temp_memory.append(Move(torch.tensor(self.root_node.state), None, torch.tensor(play_probs).float(),))
+        self.temp_memory.append(Move(torch.tensor(self.root_node.state), None, torch.tensor(play_probs).float(),torch.tensor(self.root_node.q)))
         return action
 
     def _expand_node(self, parent_node, action, player=1):
