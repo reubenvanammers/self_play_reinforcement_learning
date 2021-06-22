@@ -21,7 +21,7 @@ from rl_utils.queues import QueueContainer
 
 logging.basicConfig(
     filename="log.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
@@ -248,6 +248,10 @@ class SelfPlayScheduler:
                     swap_sides = not i % 2 == 0
                     self.task_queue.put({"play": {"swap_sides": swap_sides, "update": True}})
                 self.task_queue.join()
+                # Sometimes joinable queue acts a bit weirdly due to full pipes - may be a better solution to this
+                time.sleep(10)
+                self.task_queue.join()
+
                 logging.info(f"finished generating {self.epoch_length} self play games: epoch {epoch}")
 
                 saved_model_name = os.path.join(

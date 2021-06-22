@@ -27,7 +27,7 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=400, min_memory=25000, memory_size=300000, env_gen=Connect4Env, batch_size=128,)
+    policy_kwargs = dict(iterations=800, min_memory=25000, memory_size=300000, env_gen=Connect4Env, batch_size=128,)
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     model_db = ModelDatabase()
@@ -58,19 +58,19 @@ def run_training():
         policy_container=policy_container,
         evaluation_policy_container=evaluation_policy_container,
         initial_games=40,
-        epoch_length=1500,
+        epoch_length=2000,
         evaluation_games=200,
         save_dir=save_dir,
         self_play=True,
         stagger=True,
         stagger_mem_step=15000,
-        lr=0.02,
+        lr=0.05,
         evaluation_network=evaluation_network,
         deduplicate=False,
         update_delay=0.01,
     )
 
-    self_play.train_model(500, resume_memory=True, resume_model=True)
+    self_play.train_model(500, resume_memory=False, resume_model=False)
     print("Training Done")
 
 

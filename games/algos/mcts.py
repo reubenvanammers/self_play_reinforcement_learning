@@ -75,7 +75,7 @@ class MCNode(NodeMixin):
 
     @property
     def u(self,):  # Factor to encourage exploration - higher values of cpuct increase exploration
-        return self.cpuct * self.p_eff * np.sqrt(self.parent.n) / (1 + self.n)
+        return self.cpuct * self.p_eff * np.sqrt(self.parent.n + self.parent.virtual_loss) / (1 + self.n + self.virtual_loss)
 
     @property
     def select_prob(self,):  # TODO check if this works? might need to be ther other way round

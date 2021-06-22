@@ -26,12 +26,17 @@ class PerfectEvaluator:
     # TODO add to tensorboard?
     def test(self, num_pos=100, base_network=False, weak=False):
         games = random.sample(self.pos_list,num_pos)
-        total = 0
-        for game in games:
-            total += self.compare(game, base_network=base_network, weak=weak)
-            # print(total)
-        logging.info(f"{total} correct moves out of {num_pos}: base_network = {base_network}")
-        print(f"{total} correct moves out of {num_pos}: base_network = {base_network}")
+        if base_network:
+            compare_vals = [True, False]
+        else:
+            compare_vals = [False]
+        for compare_val in compare_vals:
+            total = 0
+            for game in games:
+                total += self.compare(game, base_network=compare_val, weak=weak)
+                # print(total)
+            logging.info(f"{total} correct moves out of {num_pos}: base_network = {compare_val}")
+            print(f"{total} correct moves out of {num_pos}: base_network = {compare_val}")
 
     def compare(self, moves, base_network=False, weak=False):
         np_moves = np.array([int(m) for m in moves])

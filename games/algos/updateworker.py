@@ -68,7 +68,7 @@ class UpdateWorker(BaseWorker):
                 self.load_model(prev_run=True)
 
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
-                self.policy.optim, "max", patience=15, factor=0.5, verbose=True, min_lr=0.00001,
+                self.policy.optim, "max", patience=15, factor=0.5, verbose=True, min_lr=0.00001, cooldown=5
             )
 
             while True:
@@ -81,12 +81,16 @@ class UpdateWorker(BaseWorker):
                             self.stagger_memory()
                         if self.deduplicate:
                             self.policy.deduplicate()
-                        self.save_memory()
                         self.save_model(saved_name)
+                        self.update_worker_queue.task_done()
+                        self.save_memory()
+
+
                     elif task.get("reward"):
                         reward = task.get("reward")
                         self.scheduler.step(reward)
-                    self.update_worker_queue.task_done()
+                        self.update_worker_queue.task_done()
+                    # self.update_worker_queue.task_done()
                 elif self.update_flag.is_set():
                     self.update()
                 else:

@@ -73,17 +73,17 @@ class ResidualTower(nn.Module):
 
 
         # Policy Head
-        self.conv_policy = nn.Conv2d(self.inplanes, 2, kernel_size=1, stride=1)
-        self.policy_bn = nn.BatchNorm2d(2)
+        self.conv_policy = nn.Conv2d(self.inplanes, 32, kernel_size=1, stride=1)
+        self.policy_bn = nn.BatchNorm2d(32)
         self.policy_dropout = nn.Dropout(p=0.5)
-        self.linear_policy = nn.Linear(linear_input_size * 2, action_size)
+        self.linear_policy = nn.Linear(linear_input_size * 32, action_size)
         self.softmax = nn.Softmax()
 
         # Value head
-        self.conv_value = nn.Conv2d(self.inplanes, 1, kernel_size=1, stride=1)
-        self.value_bn = nn.BatchNorm2d(1)
+        self.conv_value = nn.Conv2d(self.inplanes, 32, kernel_size=1, stride=1)
+        self.value_bn = nn.BatchNorm2d(32)
         self.value_dropout = nn.Dropout(p=0.5)
-        self.fc_value = nn.Linear(linear_input_size * 1, 256)
+        self.fc_value = nn.Linear(linear_input_size * 32, 256)
         self.linear_output = nn.Linear(256, 1)
 
         self.apply(init_weights)

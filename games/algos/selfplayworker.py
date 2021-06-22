@@ -141,8 +141,8 @@ class SelfPlayWorker(BaseWorker):
             policy.evaluate(True)
             reference = PerfectEvaluator(policy)
             weak = not policy.strong_play
-            reference.test(weak=weak)
-            reference.test(base_network=True,weak=weak)
+            reference.test(weak=weak, base_network=True)
+            # reference.test(base_network=True,weak=weak)
             self.task_queue.task_done()
         except Exception:
             logging.exception(traceback.format_exc())
