@@ -58,8 +58,8 @@ def run_training():
         policy_container=policy_container,
         evaluation_policy_container=evaluation_policy_container,
         initial_games=40,
-        epoch_length=2000,
-        evaluation_games=200,
+        epoch_length=1500,
+        evaluation_games=150,
         save_dir=save_dir,
         self_play=True,
         stagger=True,
@@ -69,7 +69,6 @@ def run_training():
         deduplicate=False,
         update_delay=0.01,
     )
-
     self_play.train_model(500, resume_memory=False, resume_model=False)
     print("Training Done")
 

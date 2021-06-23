@@ -21,7 +21,7 @@ from rl_utils.queues import QueueContainer
 
 logging.basicConfig(
     filename="log.log",
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
@@ -121,7 +121,7 @@ class SelfPlayScheduler:
         resume_model=False,
         resume_memory=False,
         num_workers=None,
-        threads_per_worker=16,
+        threads_per_worker=8,
         inference_proxy=True,
     ):
         epoch_value = multiprocessing.Value("i", 0)
@@ -132,7 +132,7 @@ class SelfPlayScheduler:
                 num_play_workers = num_workers - 2
                 assert num_play_workers >= 1
                 # Use two worker threads per MCTS game
-                queues = [QueueContainer(threading=threads_per_worker * 2) for _ in range(num_play_workers)]
+                queues = [QueueContainer(threading=threads_per_worker * 4) for _ in range(num_play_workers)]
                 network_inference_proxy = [InferenceProxy(queue.policy_queues) for queue in queues]
 
                 if self.evaluation_network:
@@ -235,6 +235,7 @@ class SelfPlayScheduler:
             logging.info("finished initial evaluation games (if any)")
             while not self.result_queue.empty():
                 self.result_queue.get()
+            self.task_queue.put({"reference": True})
 
             # saved_model_name = None
             if self.evaluation_games:
@@ -249,8 +250,11 @@ class SelfPlayScheduler:
                     self.task_queue.put({"play": {"swap_sides": swap_sides, "update": True}})
                 self.task_queue.join()
                 # Sometimes joinable queue acts a bit weirdly due to full pipes - may be a better solution to this
-                time.sleep(10)
+                time.sleep(5)
                 self.task_queue.join()
+                time.sleep(5)
+                self.task_queue.join()
+
 
                 logging.info(f"finished generating {self.epoch_length} self play games: epoch {epoch}")
 

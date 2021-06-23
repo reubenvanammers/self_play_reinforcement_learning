@@ -132,7 +132,7 @@ class MCTreeSearch(BaseModel):
         min_memory=20000,
         update_nn=True,
         starting_state_dict=None,
-        thread_count=2,
+        thread_count=4,
         strong_play=False,  # Whether or not  to prefer short games to long ones
         q_average=True,
         # threading=True,
