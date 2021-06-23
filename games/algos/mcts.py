@@ -7,6 +7,7 @@ import time
 import traceback
 from collections import namedtuple
 from multiprocessing import Queue
+
 import numpy as np
 import torch
 from anytree import NodeMixin
@@ -75,7 +76,12 @@ class MCNode(NodeMixin):
 
     @property
     def u(self,):  # Factor to encourage exploration - higher values of cpuct increase exploration
-        return self.cpuct * self.p_eff * np.sqrt(self.parent.n + self.parent.virtual_loss) / (1 + self.n + self.virtual_loss)
+        return (
+            self.cpuct
+            * self.p_eff
+            * np.sqrt(self.parent.n + self.parent.virtual_loss)
+            / (1 + self.n + self.virtual_loss)
+        )
 
     @property
     def select_prob(self,):  # TODO check if this works? might need to be ther other way round
@@ -159,8 +165,8 @@ class MCTreeSearch(BaseModel):
         self.thread_count = thread_count
 
         self.batch_size = batch_size
-        self.strong_play=strong_play
-        self.q_average=q_average
+        self.strong_play = strong_play
+        self.q_average = q_average
 
         if self.starting_state_dict:
             # print("laoding [sic] state dict in mcts")
@@ -250,7 +256,6 @@ class MCTreeSearch(BaseModel):
         if self.q_average:
             actual_val_batch = actual_val_batch + q_batch
 
-
         c = MSELossFlat(floatify=True)
         value_loss = c(predict_val_batch, actual_val_batch)
 
@@ -299,7 +304,14 @@ class MCTreeSearch(BaseModel):
 
         self.moves_played += 1
 
-        self.temp_memory.append(Move(torch.tensor(self.root_node.state), None, torch.tensor(play_probs).float(),torch.tensor(self.root_node.q)))
+        self.temp_memory.append(
+            Move(
+                torch.tensor(self.root_node.state),
+                None,
+                torch.tensor(play_probs).float(),
+                torch.tensor(self.root_node.q),
+            )
+        )
         return action
 
     def _expand_node(self, parent_node, action, player=1):

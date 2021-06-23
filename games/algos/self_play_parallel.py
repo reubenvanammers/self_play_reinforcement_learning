@@ -21,7 +21,7 @@ from rl_utils.queues import QueueContainer
 
 logging.basicConfig(
     filename="log.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
@@ -83,23 +83,14 @@ class SelfPlayScheduler:
             logging.basicConfig(filename=join(save_dir, self.start_time, "log"), level=logging.INFO)
         multiprocessing_logging.install_mp_handler()
 
-    def compare_models(self, num_workers=None):
-        num_workers = num_workers or multiprocessing.cpu_count()
-        player_workers = [
-            SelfPlayWorker(
-                self.task_queue,
-                self.memory_queue,
-                self.result_queue,
-                self.env_gen,
-                # evaluator=evaluator,
-                start_time=self.start_time,
-                policy_container=self.policy_container,
-                evaluation_policy_container=self.evaluation_policy_container,
-                save_dir=self.save_dir,
-                self_play=self.self_play,
-            )
-            for _ in range(num_workers)
-        ]
+    def compare_models(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
+        player_workers, inference_worker = self.setup_player_workers(
+            resume_model=resume_model,
+            inference_proxy=inference_proxy,
+            threads_per_worker=threads_per_worker,
+            num_workers=num_workers,
+        )
+
         for w in player_workers:
             w.start()
 
@@ -113,7 +104,122 @@ class SelfPlayScheduler:
             reward_list.append(self.result_queue.get())
 
         total_rewards, breakdown = self.parse_results(reward_list)
+        for w in player_workers:
+            w.terminate()
+        inference_worker.terminate()
         return total_rewards, breakdown
+
+    def _get_network(self, network, container):
+        if network:  # TODO cleanup
+            used_network = network
+        elif container.policy_kwargs.get("network"):
+            used_network = container.policy_kwargs.get("network")
+            del container.policy_kwargs["network"]
+        elif container.policy_kwargs.get("evaluator"):  # deprecated value
+            used_network = container.policy_kwargs.get("evaluator")
+            del container.policy_kwargs["evaluator"]
+        else:
+            used_network = None
+        return used_network
+
+    def setup_player_workers(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
+        epoch_value = multiprocessing.Value("i", 0)
+        num_workers = num_workers or multiprocessing.cpu_count()
+
+        if inference_proxy:
+            num_play_workers = num_workers - 2
+            assert num_play_workers >= 1
+            # Use four worker threads per MCTS game
+            queues = [QueueContainer(threading=threads_per_worker * 4) for _ in range(num_play_workers)]
+            network_inference_proxy = [InferenceProxy(queue.policy_queues) for queue in queues]
+
+            evaluation_network = self._get_network(self.evaluation_network, self.evaluation_policy_container)
+            network = self._get_network(self.network, self.policy_container)
+
+            if evaluation_network:
+                evaluation_network_inference_proxy = [
+                    InferenceProxy(queue.evaluation_policy_queues) for queue in queues
+                ]
+
+            player_workers = [
+                SelfPlayWorker(
+                    self.task_queue,
+                    self.memory_queue,
+                    self.result_queue,
+                    self.env_gen,
+                    network=network_inference_proxy[i],
+                    evaluation_network=evaluation_network_inference_proxy[i] if evaluation_network else None,
+                    start_time=self.start_time,
+                    policy_container=self.policy_container,
+                    evaluation_policy_container=self.evaluation_policy_container,
+                    save_dir=self.save_dir,
+                    self_play=self.self_play,
+                    threading=threads_per_worker,
+                )
+                for i in range(num_play_workers)
+            ]
+
+            inference_worker = InferenceWorker(
+                queues,
+                network,
+                epoch_value=epoch_value,
+                save_dir=self.save_dir,
+                evaluation_policy=evaluation_network,
+                resume=resume_model,
+                start_time=self.start_time,
+            )
+            inference_worker.start()
+        else:
+            num_play_workers = num_workers - 1
+            assert num_play_workers >= 1
+
+            network = self.network
+            network.share_memory()
+
+            player_workers = [
+                SelfPlayWorker(
+                    self.task_queue,
+                    self.memory_queue,
+                    self.result_queue,
+                    self.env_gen,
+                    network=network,
+                    start_time=self.start_time,
+                    policy_container=self.policy_container,
+                    evaluation_policy_container=self.evaluation_policy_container,
+                    save_dir=self.save_dir,
+                    resume=resume_model,
+                    self_play=self.self_play,
+                    epoch_value=epoch_value,
+                )
+                for _ in range(num_play_workers)
+            ]
+        return player_workers, inference_worker, epoch_value
+
+    def setup_update_worker(self, resume_memory=False):
+
+        update_worker_queue = multiprocessing.JoinableQueue()
+
+        update_flag = multiprocessing.Event()
+        update_flag.clear()
+        network = self.network
+        optim = torch.optim.SGD(network.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
+
+        update_worker = UpdateWorker(
+            memory_queue=self.memory_queue,
+            policy_container=self.policy_container,
+            network=network,
+            optim=optim,
+            update_flag=update_flag,
+            update_worker_queue=update_worker_queue,
+            save_dir=self.save_dir,
+            resume=resume_memory,
+            start_time=self.start_time,
+            stagger=self.stagger,
+            mem_step=self.stagger_mem_step,
+            deduplicate=self.deduplicate,
+            update_delay=self.update_delay,
+        )
+        return update_worker, update_flag, update_worker_queue
 
     def train_model(
         self,
@@ -124,107 +230,15 @@ class SelfPlayScheduler:
         threads_per_worker=8,
         inference_proxy=True,
     ):
-        epoch_value = multiprocessing.Value("i", 0)
         try:
-            num_workers = num_workers or multiprocessing.cpu_count()
-
-            if inference_proxy:
-                num_play_workers = num_workers - 2
-                assert num_play_workers >= 1
-                # Use two worker threads per MCTS game
-                queues = [QueueContainer(threading=threads_per_worker * 4) for _ in range(num_play_workers)]
-                network_inference_proxy = [InferenceProxy(queue.policy_queues) for queue in queues]
-
-                if self.evaluation_network:
-                    evaluation_network = self.evaluation_network
-                    evaluation_network_inference_proxy = [
-                        InferenceProxy(queue.evaluation_policy_queues) for queue in queues
-                    ]
-                else:
-                    evaluation_network = None
-                    evaluation_network_inference_proxy = None
-
-                player_workers = [
-                    SelfPlayWorker(
-                        self.task_queue,
-                        self.memory_queue,
-                        self.result_queue,
-                        self.env_gen,
-                        network=network_inference_proxy[i],
-                        evaluation_network=evaluation_network_inference_proxy[i]
-                        if evaluation_network_inference_proxy
-                        else None,
-                        start_time=self.start_time,
-                        policy_container=self.policy_container,
-                        evaluation_policy_container=self.evaluation_policy_container,
-                        save_dir=self.save_dir,
-                        # resume=resume_model,
-                        self_play=self.self_play,
-                        threading=threads_per_worker,
-                    )
-                    for i in range(num_play_workers)
-                ]
-                inference_worker = InferenceWorker(
-                    queues,
-                    self.network,
-                    epoch_value=epoch_value,
-                    save_dir=self.save_dir,
-                    evaluation_policy=evaluation_network,
-                    resume=resume_model,
-                    start_time=self.start_time,
-                )
-                inference_worker.start()
-            else:
-                num_play_workers = num_workers - 1
-                assert num_play_workers >= 1
-
-                network = self.network
-                network.share_memory()
-
-                player_workers = [
-                    SelfPlayWorker(
-                        self.task_queue,
-                        self.memory_queue,
-                        self.result_queue,
-                        self.env_gen,
-                        network=network,
-                        start_time=self.start_time,
-                        policy_container=self.policy_container,
-                        evaluation_policy_container=self.evaluation_policy_container,
-                        save_dir=self.save_dir,
-                        resume=resume_model,
-                        self_play=self.self_play,
-                        epoch_value=epoch_value,
-                    )
-                    for _ in range(num_play_workers)
-                ]
-
-            for w in player_workers:
-                w.start()
-
-            update_worker_queue = multiprocessing.JoinableQueue()
-
-            update_flag = multiprocessing.Event()
-            update_flag.clear()
-            network = self.network
-            optim = torch.optim.SGD(network.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
-
-            update_worker = UpdateWorker(
-                memory_queue=self.memory_queue,
-                policy_container=self.policy_container,
-                network=network,
-                optim=optim,
-                update_flag=update_flag,
-                update_worker_queue=update_worker_queue,
-                save_dir=self.save_dir,
-                resume=resume_memory,
-                start_time=self.start_time,
-                stagger=self.stagger,
-                mem_step=self.stagger_mem_step,
-                deduplicate=self.deduplicate,
-                update_delay=self.update_delay,
+            player_workers, inference_worker, epoch_value = self.setup_player_workers(
+                resume_model=resume_model,
+                inference_proxy=inference_proxy,
+                threads_per_worker=threads_per_worker,
+                num_workers=num_workers,
             )
-
+            [player_worker.start() for player_worker in player_workers]
+            update_worker, update_flag, update_worker_queue = self.setup_update_worker(resume_memory=resume_memory)
             update_worker.start()
 
             logging.info(f"generating {self.initial_games} initial games")
@@ -235,11 +249,9 @@ class SelfPlayScheduler:
             logging.info("finished initial evaluation games (if any)")
             while not self.result_queue.empty():
                 self.result_queue.get()
-            self.task_queue.put({"reference": True})
 
-            # saved_model_name = None
             if self.evaluation_games:
-                reward = self.evaluate_policy(-1)
+                self.evaluate_policy(-1)
             for epoch in range(num_epochs):
                 logging.info(f"generating {self.epoch_length} self play games: epoch {epoch}")
 
@@ -254,7 +266,6 @@ class SelfPlayScheduler:
                 self.task_queue.join()
                 time.sleep(5)
                 self.task_queue.join()
-
 
                 logging.info(f"finished generating {self.epoch_length} self play games: epoch {epoch}")
 
@@ -283,12 +294,13 @@ class SelfPlayScheduler:
             del self.memory_queue
             del self.task_queue
             del self.result_queue
-            del queues
         except Exception as e:
             logging.exception(traceback.format_exc())
             logging.exception("error in main loop" + str(e))
 
     def run_evaluation_games(self):
+        self.task_queue.put({"reference": True})
+
         for i in range(self.evaluation_games):
             swap_sides = not i % 2 == 0
             self.task_queue.put({"play": {"swap_sides": swap_sides, "update": False}, "evaluate": True})

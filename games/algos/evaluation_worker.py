@@ -1,31 +1,31 @@
-import logging
-
-from c4_perfect_player.connect4_perfect_player import PerfectPlayer
-import numpy as np
 import csv
+import logging
+import random
+
+import numpy as np
+from c4_perfect_player.connect4_perfect_player import PerfectPlayer
+
 # p = PerfectPlayer(book_dir='/home/reuben/projects/update/connect4/7x6.book')
 #
 # state = p.get_one_position_score(np.array([3,3]))
-from games.algos.base_model import ModelContainer, BaseModel
+from games.algos.base_model import BaseModel, ModelContainer
 from games.algos.mcts import MCTreeSearch
 from games.connect4.connect4env import Connect4Env
 from games.connect4.modules import DeepConvNetConnect4
-import random
 
 
 class PerfectEvaluator:
-
     def __init__(self, evaluator: MCTreeSearch):
-        self.perfect_player = PerfectPlayer(book_dir='/home/reuben/projects/update/connect4/7x6.book')
-        with open('/home/reuben/Downloads/pos_list.txt') as f:
-            lines =csv.reader(f,delimiter=' ')
+        self.perfect_player = PerfectPlayer(book_dir="/home/reuben/projects/update/connect4/7x6.book")
+        with open("/home/reuben/Downloads/pos_list.txt") as f:
+            lines = csv.reader(f, delimiter=" ")
             self.pos_list = [line[0] for line in lines]
         self.evaluator = evaluator
 
     # TODO add test for evaluator without MCTS as well
     # TODO add to tensorboard?
     def test(self, num_pos=100, base_network=False, weak=False):
-        games = random.sample(self.pos_list,num_pos)
+        games = random.sample(self.pos_list, num_pos)
         if base_network:
             compare_vals = [True, False]
         else:
@@ -61,9 +61,10 @@ class PerfectEvaluator:
         self.evaluator.reset()
         player = 1
         for move in text:
-            move = int(move)-1
-            self.evaluator.play_action(move,player)
+            move = int(move) - 1
+            self.evaluator.play_action(move, player)
             player = player * -1
+
 
 if __name__ == "__main__":
     print("asdf")
@@ -81,7 +82,5 @@ if __name__ == "__main__":
     eval.test()
     # eval.evaluator.env.step(1)
     # eval.evaluator.env.step(2,-1)
-
-
 
     print("asdf")

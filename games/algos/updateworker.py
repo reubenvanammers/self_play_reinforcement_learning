@@ -8,8 +8,10 @@ import traceback
 import torch
 
 from games.algos.base_worker import BaseWorker
+
 torch.backends.cudnn.benchmark = True
 from torch.cuda.amp import autocast
+
 
 class UpdateWorker(BaseWorker):
     def __init__(
@@ -63,7 +65,7 @@ class UpdateWorker(BaseWorker):
             self.policy.train()
 
             if self.resume:
-                logging.info('resuming memory and model for worker')
+                logging.info("resuming memory and model for worker")
                 self.load_memory(prev_run=True)
                 self.load_model(prev_run=True)
 
@@ -84,7 +86,6 @@ class UpdateWorker(BaseWorker):
                         self.save_model(saved_name)
                         self.update_worker_queue.task_done()
                         self.save_memory()
-
 
                     elif task.get("reward"):
                         reward = task.get("reward")

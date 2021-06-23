@@ -22,7 +22,7 @@ def run_training():
     env = Connect4Env()
 
     # network = DeepConvNetConnect4()
-    network = ResidualTower(width=7, height=6,action_size=7,num_blocks=20)
+    network = ResidualTower(width=7, height=6, action_size=7, num_blocks=20)
     network.share_memory()
 
     policy_gen = MCTreeSearch

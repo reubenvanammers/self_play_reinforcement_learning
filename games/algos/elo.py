@@ -7,6 +7,7 @@ from games.algos import self_play_parallel
 from games.algos.model_database import ModelDatabase
 
 result_container = namedtuple("result", ["players", "result"])
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Elo:
@@ -93,9 +94,9 @@ class Elo:
         model_qs = {model: torch.ones(1, requires_grad=True) for model in models}  # q = 10^(rating/400)
         model_qs[anchor_model] = torch.tensor(10 ** (anchor_elo / self.ELO_CONSTANT), requires_grad=False)
         epoch_length = 1000
-        num_epochs = 200
+        num_epochs = 100
         batch_size = 32
-        elo_net = EloNetwork(len(models), initial_weights)
+        elo_net = EloNetwork(len(models), initial_weights).to(device)
         optim = torch.optim.SGD([elo_net.elo_vals.weight], lr=400)
 
         for i in range(num_epochs):
@@ -161,7 +162,7 @@ class EloNetwork(torch.nn.Module):
         self.elo_vals.requires_grad = True
 
     def forward(self, batch):
-        batch = batch.float()
+        batch = batch.float().to(device)
         batch1, batch2 = torch.split(batch, 1, 1)
         r1 = self.elo_vals.forward(batch1)
         r2 = self.elo_vals.forward(batch2)
@@ -173,6 +174,6 @@ class EloNetwork(torch.nn.Module):
         return expected
 
     def loss(self, expected, result):
-        result_tensor = torch.tensor(result, requires_grad=False, dtype=torch.float)
+        result_tensor = torch.tensor(result, requires_grad=False, dtype=torch.float).to(device)
         loss = torch.nn.functional.binary_cross_entropy(expected.view(-1), result_tensor)
         return loss

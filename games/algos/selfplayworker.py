@@ -21,7 +21,7 @@ class SelfPlayWorker(BaseWorker):
         evaluation_network=None,
         save_dir="save_dir",
         resume=False,
-        self_play=False,
+        self_play=True,
         evaluation_policy_container=None,
         epoch_value=None,
         threading=0,
@@ -59,27 +59,26 @@ class SelfPlayWorker(BaseWorker):
 
     def set_up_policies(self, evaluate=False):
         try:
-            if self.self_play:
-                policy = self.policy_container.setup(memory_queue=self.memory_queue, network=self.network)
-                policy.train(False)
-                if evaluate:
-                    if self.evaluation_network:
-                        opposing_policy = self.evaluation_policy_container.setup(network=self.evaluation_network)
-                    else:
-                        opposing_policy = self.evaluation_policy_container.setup()
-
-                    opposing_policy.train(False)
-                    opposing_policy.env = self.env_gen()
-                    # Both environments will (basically) try their hardest
-                    policy.evaluate(True)
-                    opposing_policy.evaluate(True)
+            policy = self.policy_container.setup(memory_queue=self.memory_queue, network=self.network)
+            policy.train(False)
+            if evaluate:
+                if self.evaluation_network:
+                    opposing_policy = self.evaluation_policy_container.setup(network=self.evaluation_network)
                 else:
-                    opposing_policy = self.policy_container.setup(memory_queue=self.memory_queue, network=self.network)
-                    opposing_policy.env = self.env_gen()
-                    opposing_policy.train(False)
-                    # Both environments are more willing to explore
-                    policy.evaluate(False)
-                    opposing_policy.evaluate(False)
+                    opposing_policy = self.evaluation_policy_container.setup()
+
+                opposing_policy.train(False)
+                opposing_policy.env = self.env_gen()
+                # Both environments will (basically) try their hardest
+                policy.evaluate(True)
+                opposing_policy.evaluate(True)
+            else:
+                opposing_policy = self.policy_container.setup(memory_queue=self.memory_queue, network=self.network)
+                opposing_policy.env = self.env_gen()
+                opposing_policy.train(False)
+                # Both environments are more willing to explore
+                policy.evaluate(False)
+                opposing_policy.evaluate(False)
             logging.debug("Created SelfPlayWorker")
 
             return SelfPlayer(policy, opposing_policy, self.env_gen(), self.result_queue)
@@ -120,7 +119,7 @@ class SelfPlayWorker(BaseWorker):
                     self.task_queue.task_done()
                     logging.info("task done")
                 else:
-                    #small delay to allow threads to be more equal across core
+                    # small delay to allow threads to be more equal across core
                     time.sleep(0.1)
                     future = executor.submit(self_player.play_episode, **episode_args)
                     future.add_done_callback(self._task_finished)
@@ -142,7 +141,6 @@ class SelfPlayWorker(BaseWorker):
             reference = PerfectEvaluator(policy)
             weak = not policy.strong_play
             reference.test(weak=weak, base_network=True)
-            # reference.test(base_network=True,weak=weak)
             self.task_queue.task_done()
         except Exception:
             logging.exception(traceback.format_exc())

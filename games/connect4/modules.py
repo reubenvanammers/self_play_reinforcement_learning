@@ -31,10 +31,10 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
         norm_layer = nn.BatchNorm2d
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
-        self.conv1 = nn.Conv2d(inplanes, planes,kernel_size=3, stride=stride, padding=1, bias=True)
+        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=stride, padding=1, bias=True)
         self.bn1 = norm_layer(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(planes, planes,kernel_size=3,stride=stride,padding=1,bias=True)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=True)
         self.bn2 = norm_layer(planes)
         self.stride = stride
 
@@ -53,24 +53,23 @@ class BasicBlock(nn.Module):
 
         return out
 
+
 # Use actual dropout layers?
 class ResidualTower(nn.Module):
-
-    def __init__(self, width=7, height=6, action_size=7, num_blocks=15,default_kernel_size=3):
+    def __init__(self, width=7, height=6, action_size=7, num_blocks=15, default_kernel_size=3):
         super(ResidualTower, self).__init__()
-        self.inplanes=128
-        self.width=width
-        self.height=height
+        self.inplanes = 128
+        self.width = width
+        self.height = height
 
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
-        self.residual_blocks = self._make_layer(BasicBlock,128,num_blocks)
+        self.residual_blocks = self._make_layer(BasicBlock, 128, num_blocks)
 
         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)
         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(height))), 1, 1, 0)
         linear_input_size = convw * convh
-
 
         # Policy Head
         self.conv_policy = nn.Conv2d(self.inplanes, 32, kernel_size=1, stride=1)
@@ -87,8 +86,6 @@ class ResidualTower(nn.Module):
         self.linear_output = nn.Linear(256, 1)
 
         self.apply(init_weights)
-
-
 
     def _make_layer(self, block, planes, blocks, stride=1):
         layers = []
@@ -124,9 +121,6 @@ class ResidualTower(nn.Module):
         state = state * player
         policy, value = super().__call__(state)
         return policy.tolist()[0], value.item() * player
-
-
-
 
 
 class ConvNetConnect4(nn.Module):
