@@ -1,6 +1,7 @@
 import itertools
+import logging
 from collections import namedtuple
-
+import traceback
 import torch
 
 from games.algos import self_play_parallel
@@ -26,11 +27,19 @@ class Elo:
     def __init__(self, model_database: ModelDatabase):
         self.model_database = model_database
 
+    def compare_all(self):
+        models = list(self.model_database.model_shelf.keys())
+        self.compare_models(*models)
+
     def compare_models(self, *args):
         combinations = itertools.combinations(args, 2)
 
         for model_1, model_2 in combinations:
-            self._compare(model_1, model_2)
+            try:
+                self._compare(model_1, model_2)
+            except Exception as e:
+                print(traceback.format_exc())
+                logging.info(traceback.format_exc())
 
     def _compare(self, model_1, model_2, num_games=100):
         assert model_1 != model_2
@@ -76,6 +85,8 @@ class Elo:
             status: breakdown["first"][status] + breakdown["second"][status] for status in ("wins", "draws", "losses")
         }
         print(f"{model_1} wins: {results['wins']} {model_2} wins: {results['losses']} draws: {results['draws']}")
+        logging.info(f"{model_1} wins: {results['wins']} {model_2} wins: {results['losses']} draws: {results['draws']}")
+
         return results
 
     def calculate_elo(self, anchor_model="random", anchor_elo=0):

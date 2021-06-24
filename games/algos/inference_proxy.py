@@ -12,9 +12,10 @@ from rl_utils.queues import BidirectionalQueue, QueueContainer
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.backends.cudnn.benchmark = True
 
+
 class InferenceProxy:
     """
-    Used for evaluation via queues. Should only be used for evaluation, not for training.
+    Used for evaluation via queues. Should only be used for inference, not for training.
     """
 
     def __init__(self, queues: BidirectionalQueue):
@@ -44,9 +45,11 @@ class InferenceProxy:
 
 class InferenceWorker(BaseWorker):
     """
-    Worker for batching evaluation results and hopefully being more efficient.
+    Worker for batching evaluation results. Pass the inference proxy instead of the network and the actual
+    calculations will be batched in the inference worker, processed, and the result sent back.
+    This is due to the fact that GPU operations are much more efficient when batched, and can often be slower than
+    simply running on the CPU when each worker attempts to evaluate its result by itself.
 
-    TODO: Add loading, opposing,evaluation policies
     """
 
     def __init__(

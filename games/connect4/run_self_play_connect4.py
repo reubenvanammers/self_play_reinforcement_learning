@@ -64,12 +64,12 @@ def run_training():
         self_play=True,
         stagger=True,
         stagger_mem_step=15000,
-        lr=0.05,
+        lr=0.02,
         evaluation_network=evaluation_network,
         deduplicate=False,
         update_delay=0.01,
     )
-    self_play.train_model(500, resume_memory=False, resume_model=False)
+    self_play.train_model(500, resume_memory=True, resume_model=True)
     print("Training Done")
 
 

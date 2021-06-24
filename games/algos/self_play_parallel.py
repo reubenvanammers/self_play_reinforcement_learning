@@ -21,7 +21,7 @@ from rl_utils.queues import QueueContainer
 
 logging.basicConfig(
     filename="log.log",
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
@@ -35,7 +35,6 @@ class SelfPlayScheduler:
     def __init__(
         self,
         policy_container,
-        # opposing_policy_container,
         env_gen,
         evaluation_policy_container=None,
         network=None,
@@ -82,45 +81,6 @@ class SelfPlayScheduler:
             os.mkdir(os.path.join(save_dir, self.start_time))
             logging.basicConfig(filename=join(save_dir, self.start_time, "log"), level=logging.INFO)
         multiprocessing_logging.install_mp_handler()
-
-    def compare_models(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
-        player_workers, inference_worker = self.setup_player_workers(
-            resume_model=resume_model,
-            inference_proxy=inference_proxy,
-            threads_per_worker=threads_per_worker,
-            num_workers=num_workers,
-        )
-
-        for w in player_workers:
-            w.start()
-
-        for i in range(self.epoch_length):
-            swap_sides = not i % 2 == 0
-            self.task_queue.put({"play": {"swap_sides": swap_sides, "update": False}, "evaluate": True})
-        self.task_queue.join()
-
-        reward_list = []
-        while not self.result_queue.empty():
-            reward_list.append(self.result_queue.get())
-
-        total_rewards, breakdown = self.parse_results(reward_list)
-        for w in player_workers:
-            w.terminate()
-        inference_worker.terminate()
-        return total_rewards, breakdown
-
-    def _get_network(self, network, container):
-        if network:  # TODO cleanup
-            used_network = network
-        elif container.policy_kwargs.get("network"):
-            used_network = container.policy_kwargs.get("network")
-            del container.policy_kwargs["network"]
-        elif container.policy_kwargs.get("evaluator"):  # deprecated value
-            used_network = container.policy_kwargs.get("evaluator")
-            del container.policy_kwargs["evaluator"]
-        else:
-            used_network = None
-        return used_network
 
     def setup_player_workers(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
         epoch_value = multiprocessing.Value("i", 0)
@@ -194,6 +154,19 @@ class SelfPlayScheduler:
                 for _ in range(num_play_workers)
             ]
         return player_workers, inference_worker, epoch_value
+
+    def _get_network(self, network, container):
+        if network:  # TODO cleanup
+            used_network = network
+        elif container.policy_kwargs.get("network"):
+            used_network = container.policy_kwargs.get("network")
+            del container.policy_kwargs["network"]
+        elif container.policy_kwargs.get("evaluator"):  # deprecated value
+            used_network = container.policy_kwargs.get("evaluator")
+            del container.policy_kwargs["evaluator"]
+        else:
+            used_network = None
+        return used_network
 
     def setup_update_worker(self, resume_memory=False):
 
@@ -280,7 +253,7 @@ class SelfPlayScheduler:
                 # Update saved name after worker has loaded it
                 epoch_value.value += 1
                 time.sleep(1)
-                self.task_queue.put({"reference": True})
+                # self.task_queue.put({"reference": True})
 
                 reward = self.evaluate_policy(epoch)
 
@@ -358,3 +331,29 @@ class SelfPlayScheduler:
         self.writer.add_scalar("total_reward", total_rewards, epoch * self.epoch_length)
 
         return total_rewards
+
+    def compare_models(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
+        player_workers, inference_worker = self.setup_player_workers(
+            resume_model=resume_model,
+            inference_proxy=inference_proxy,
+            threads_per_worker=threads_per_worker,
+            num_workers=num_workers,
+        )
+
+        for w in player_workers:
+            w.start()
+
+        for i in range(self.epoch_length):
+            swap_sides = not i % 2 == 0
+            self.task_queue.put({"play": {"swap_sides": swap_sides, "update": False}, "evaluate": True})
+        self.task_queue.join()
+
+        reward_list = []
+        while not self.result_queue.empty():
+            reward_list.append(self.result_queue.get())
+
+        total_rewards, breakdown = self.parse_results(reward_list)
+        for w in player_workers:
+            w.terminate()
+        inference_worker.terminate()
+        return total_rewards, breakdown

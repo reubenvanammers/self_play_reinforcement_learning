@@ -44,26 +44,6 @@ class Memory:
 
         return length_dict, unique_keys
 
-    # def deduplicate(self, key, values, named_tuple, maxlen=None):  # is a bit complicated?
-    #     # Key: thing in namedtuple to count as what is a duplicate
-    #     # Value: field name in named tuples to average over
-    #     maxlen = maxlen or self._buffer.maxlen
-    #     length_dict, unique_keys = self.get_duplicates(key)
-    #     new_buffer = deque(maxlen=maxlen)
-    #     for state_index in length_dict:
-    #         if len(length_dict[state_index]) == 1:
-    #             new_buffer.append(self._buffer[length_dict[state_index][0]])  # Should chckd
-    #         else:
-    #             tuple_kwarg_dict = {key: unique_keys[state_index]}  # Used for making new namedtuple instance
-    #             for v in values:
-    #                 # dim = len(getattr(self.buffer[0], v).size())
-    #                 tuple_kwarg_dict[v] = torch.mean(
-    #                     torch.stack([getattr(self._buffer[i], v) for i in length_dict[state_index]], dim=0, ).float(),
-    #                     dim=0,
-    #                 )
-    #             new_buffer.append(named_tuple(**tuple_kwarg_dict))
-    #     self._buffer = new_buffer
-
     def deduplicate(self, key, values, named_tuple, maxlen=None):
         if not self.deduplicator:
             self.deduplicator = Deduplicator(key=key, values=values, named_tuple=named_tuple, buffer=self._buffer)
