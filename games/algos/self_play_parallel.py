@@ -168,7 +168,7 @@ class SelfPlayScheduler:
             used_network = None
         return used_network
 
-    def setup_update_worker(self, resume_memory=False):
+    def setup_update_worker(self, resume_memory=False, resume_model=False):
 
         update_worker_queue = multiprocessing.JoinableQueue()
 
@@ -185,7 +185,8 @@ class SelfPlayScheduler:
             update_flag=update_flag,
             update_worker_queue=update_worker_queue,
             save_dir=self.save_dir,
-            resume=resume_memory,
+            resume_memory=resume_memory,
+            resume_model=resume_model,
             start_time=self.start_time,
             stagger=self.stagger,
             mem_step=self.stagger_mem_step,
@@ -211,7 +212,7 @@ class SelfPlayScheduler:
                 num_workers=num_workers,
             )
             [player_worker.start() for player_worker in player_workers]
-            update_worker, update_flag, update_worker_queue = self.setup_update_worker(resume_memory=resume_memory)
+            update_worker, update_flag, update_worker_queue = self.setup_update_worker(resume_memory=resume_memory, resume_model=resume_model)
             update_worker.start()
 
             logging.info(f"generating {self.initial_games} initial games")

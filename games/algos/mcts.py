@@ -235,11 +235,7 @@ class MCTreeSearch(BaseModel):
     def push_to_queue(self, s=None, a=None, r=None, done=None, next_s=None):
         # Push memory of the game to the memory queue with the actual result of the game
         if done:
-            # logging.info('pushing to queue')
             for experience in self.temp_memory:
-                # logging.info(self.memory_queue.qsize())
-                # logging.info('pushing experience to queue')
-                # experience = experience._replace(actual_val=torch.tensor(r).float().to(device))
                 experience = experience._replace(actual_val=torch.tensor(r).float())
                 self.memory_queue.put(experience)
             self.temp_memory = []
@@ -278,12 +274,7 @@ class MCTreeSearch(BaseModel):
 
         self.optim.zero_grad()
 
-        # if APEX_AVAILABLE: keep just in case want to use amp
-        if False:
-            with amp.scale_loss(loss, self.optim) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
+        loss.backward()
 
         # for param in self.evaluator.parameters():  # see if this ends up doing anything - should just be relu
         #     param.grad.data.clamp_(-1, 1)

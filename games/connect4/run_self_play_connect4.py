@@ -64,7 +64,7 @@ def run_training():
         self_play=True,
         stagger=True,
         stagger_mem_step=15000,
-        lr=0.02,
+        lr=0.005,
         evaluation_network=evaluation_network,
         deduplicate=False,
         update_delay=0.01,

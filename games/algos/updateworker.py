@@ -24,7 +24,8 @@ class UpdateWorker(BaseWorker):
         update_worker_queue,
         start_time,
         save_dir="saves",
-        resume=False,
+        resume_memory=False,
+        resume_model=False,
         stagger=False,
         mem_step=5000,
         max_mem=1500000,
@@ -41,7 +42,8 @@ class UpdateWorker(BaseWorker):
         self.save_dir = save_dir
         self.start_time = start_time
         self.memory_size = 0
-        self.resume = resume
+        self.resume_memory = resume_memory
+        self.resume_model = resume_model
         self.stagger = stagger
         self.deduplicate = deduplicate
 
@@ -64,9 +66,10 @@ class UpdateWorker(BaseWorker):
             )
             self.policy.train()
 
-            if self.resume:
+            if self.resume_memory:
                 logging.info("resuming memory and model for worker")
                 self.load_memory(prev_run=True)
+            if self.resume_model:
                 self.load_model(prev_run=True)
 
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
