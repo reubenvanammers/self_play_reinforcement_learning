@@ -100,11 +100,6 @@ class MCNode(NodeMixin):
     def backup(self, v):
         self.w += v
         self.n += 1
-        # self.virtual_loss -= 1
-        # try:
-        #     assert self.virtual_loss >= 0
-        # except AssertionError:
-        #     print(f"{self.virtual_loss}")
         if self.parent:
             self.parent.backup(v)
 
@@ -112,9 +107,8 @@ class MCNode(NodeMixin):
         return np.power(self.n, 1 / temp)
 
     def create_children(self, action_probs, validities):
-        # action_probs = list(action_probs)  # TODO make everything torch native if possible
         children_list = []
-        for i, action_prob in enumerate(action_probs):  # .tolist()[0]:
+        for i, action_prob in enumerate(action_probs):
             children_list.append(MCNode(p=action_prob, parent=self, valid=validities[i]))
             self.children = children_list
 
@@ -141,7 +135,6 @@ class MCTreeSearch(BaseModel):
         thread_count=4,
         strong_play=False,  # Whether or not  to prefer short games to long ones
         q_average=True,
-        # threading=True,
     ):
         self.iterations = iterations
         self.network = network.to(device)
@@ -276,8 +269,6 @@ class MCTreeSearch(BaseModel):
 
         loss.backward()
 
-        # for param in self.evaluator.parameters():  # see if this ends up doing anything - should just be relu
-        #     param.grad.data.clamp_(-1, 1)
         self.optim.step()
 
     def _play(self, temp=0.05):
