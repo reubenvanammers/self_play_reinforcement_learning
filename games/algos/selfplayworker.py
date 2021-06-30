@@ -5,7 +5,12 @@ import traceback
 from concurrent import futures
 
 from games.algos.base_worker import BaseWorker
-from games.algos.evaluation_worker import PerfectEvaluator
+
+try:
+    from games.algos.evaluation_worker import PerfectEvaluator
+except ImportError as e:
+    # Requires external validator
+    pass
 
 
 class SelfPlayWorker(BaseWorker):

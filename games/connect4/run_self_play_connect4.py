@@ -8,8 +8,7 @@ from games.algos.model_database import ModelDatabase
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 from games.connect4.hardcoded_players import OnestepLookahead
-from games.connect4.modules import (ConvNetConnect4, DeepConvNetConnect4,
-                                    ResidualTower)
+from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4, ResidualTower
 
 try:
     save_dir = "saves__c4mtcs_par"
