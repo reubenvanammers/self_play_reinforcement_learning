@@ -134,6 +134,7 @@ class SelfPlayWorker(BaseWorker):
                 self.task_queue.task_done()
 
     def check_reference(self):
+        # Requires external validator to work - not used at the moment
         try:
             policy = self.policy_container.setup(network=self.network)
             policy.train(False)

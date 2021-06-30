@@ -1,7 +1,8 @@
 import itertools
 import logging
-from collections import namedtuple
 import traceback
+from collections import namedtuple
+
 import torch
 
 from games.algos import self_play_parallel

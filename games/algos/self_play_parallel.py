@@ -212,7 +212,9 @@ class SelfPlayScheduler:
                 num_workers=num_workers,
             )
             [player_worker.start() for player_worker in player_workers]
-            update_worker, update_flag, update_worker_queue = self.setup_update_worker(resume_memory=resume_memory, resume_model=resume_model)
+            update_worker, update_flag, update_worker_queue = self.setup_update_worker(
+                resume_memory=resume_memory, resume_model=resume_model
+            )
             update_worker.start()
 
             logging.info(f"generating {self.initial_games} initial games")
@@ -273,7 +275,8 @@ class SelfPlayScheduler:
             logging.exception("error in main loop" + str(e))
 
     def run_evaluation_games(self):
-        self.task_queue.put({"reference": True})
+        # Requires external validator
+        # self.task_queue.put({"reference": True})
 
         for i in range(self.evaluation_games):
             swap_sides = not i % 2 == 0

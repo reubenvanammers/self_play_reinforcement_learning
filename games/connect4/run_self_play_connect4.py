@@ -8,7 +8,8 @@ from games.algos.model_database import ModelDatabase
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 from games.connect4.hardcoded_players import OnestepLookahead
-from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4, ResidualTower
+from games.connect4.modules import (ConvNetConnect4, DeepConvNetConnect4,
+                                    ResidualTower)
 
 try:
     save_dir = "saves__c4mtcs_par"
@@ -19,7 +20,6 @@ except Exception:
 
 def run_training():
     # Can update config for training from here
-    env = Connect4Env()
 
     # network = DeepConvNetConnect4()
     network = ResidualTower(width=7, height=6, action_size=7, num_blocks=20)
@@ -34,16 +34,14 @@ def run_training():
 
     # Can update evaluation network if wanting to have a more powerful evaluation function, eg after the
     # model has gotten strong enough.
-    # evaluation_policy_gen = OnestepLookahead
-    # evaluation_policy_args = []
-    # evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
-    # evaluation_policy_container = ModelContainer(
-    #     evaluation_policy_gen, evaluation_policy_args, evaluation_policy_kwargs
-    # )
+    evaluation_policy_gen = OnestepLookahead
+    evaluation_policy_args = []
+    evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
+    evaluation_policy_container = ModelContainer(
+        evaluation_policy_gen, evaluation_policy_args, evaluation_policy_kwargs
+    )
 
-    evaluation_policy_container = model_db.get_model("15layer-num1")
-    # evaluation_policy_container = model_db.get_model("onesteplook")
-    # evaluation_policy_container = model_db.get_model("cloudmcts")
+    # evaluation_policy_container = model_db.get_model("model_name")
 
     if evaluation_policy_container.policy_kwargs.get("evaluator"):
         evaluation_network = evaluation_policy_container.policy_kwargs["evaluator"]
