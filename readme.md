@@ -26,3 +26,8 @@ games, storing the models as well as a memory of the most recent positions along
 The models can be evaluated by the use of the games/algos/elo.py file, which can persist model versions along with 
 arguments and weights, and play them against eachother. The results of this can then be used to calculate the Elo value.  
 
+## Writeup 
+
+I've posted some explanations, results and thoughts on my website:
+
+https://reubenvanammers.github.io/blog/2020/09/07/reinforcement-learning-connect4.html
