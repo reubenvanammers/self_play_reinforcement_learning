@@ -1,7 +1,9 @@
 from functools import reduce
 
+import colorama
 import numpy as np
 from gym import spaces
+from colorama import Fore, Style
 
 
 class GameOver(Exception):
@@ -56,11 +58,13 @@ class Connect4Env:
         self.heights = np.sum(np.abs(state), axis=1)
 
     def render(self, board=None):
+        colorama.init()
         l = []
         board = board or self.board
-        map = {0: " ", 1: "X", -1: "O"}
+        map = {0: " ", 1: f"{Fore.YELLOW}X{Style.RESET_ALL}", -1: f"{Fore.RED}O{Style.RESET_ALL}"}
         for row_number in range(self.height):
-            l.append("|" + "|".join([map[piece] for piece in board[:, row_number]]) + "|")
+            boundary = f"{Fore.BLUE}|{Style.RESET_ALL}"
+            l.append(boundary + boundary.join([map[piece] for piece in board[:, row_number]]) + boundary)
         l.reverse()
         l.append(" " + " ".join((str(i) for i in range(7))))
         print("\n".join(l))
