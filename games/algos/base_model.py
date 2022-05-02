@@ -62,6 +62,6 @@ class ModelContainer:
         self.policy_kwargs = policy_kwargs
 
     def setup(self, **kwargs):
-        if 'evaluator' in self.policy_kwargs:
-            self.policy_kwargs['network'] = self.policy_kwargs.pop('evaluator')
+        if "evaluator" in self.policy_kwargs:
+            self.policy_kwargs["network"] = self.policy_kwargs.pop("evaluator")
         return self.policy_gen(*self.policy_args, **self.policy_kwargs, **kwargs)

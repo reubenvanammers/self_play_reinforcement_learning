@@ -92,7 +92,12 @@ class ResidualTower(nn.Module):
         layers.append(block(self.inplanes, planes, stride))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes,))
+            layers.append(
+                block(
+                    self.inplanes,
+                    planes,
+                )
+            )
 
         return nn.Sequential(*layers)
 

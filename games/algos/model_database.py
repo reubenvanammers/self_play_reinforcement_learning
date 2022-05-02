@@ -34,15 +34,15 @@ class ModelDatabase:
     ELO_VALUE_SAVE_FILE = ".ELO_VALUE"
 
     GAME_DICT = {
-        "connect4" : Connect4Env,
+        "connect4": Connect4Env,
         "tictactoe": TicTacToeEnv,
     }
 
-    def __init__(self, game = "connect4"):
+    def __init__(self, game="connect4"):
         path = os.path.dirname(__file__)
-        self.model_shelf = shelve.open(os.path.join(path, f'{game}{self.MODEL_SAVE_FILE}'))
-        self.result_shelf = shelve.open(os.path.join(path, f'{game}{self.RESULT_SAVE_FILE}'))
-        self.elo_value_shelf = shelve.open(os.path.join(path, f'{game}{self.ELO_VALUE_SAVE_FILE}'))
+        self.model_shelf = shelve.open(os.path.join(path, f"{game}{self.MODEL_SAVE_FILE}"))
+        self.result_shelf = shelve.open(os.path.join(path, f"{game}{self.RESULT_SAVE_FILE}"))
+        self.elo_value_shelf = shelve.open(os.path.join(path, f"{game}{self.ELO_VALUE_SAVE_FILE}"))
 
         self.game = game
 

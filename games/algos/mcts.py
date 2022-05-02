@@ -14,7 +14,10 @@ from games.algos.inference_proxy import InferenceProxy
 from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
 
-Move = namedtuple("Move", ("state", "actual_val", "tree_probs", "q"),)
+Move = namedtuple(
+    "Move",
+    ("state", "actual_val", "tree_probs", "q"),
+)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -22,7 +25,17 @@ class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
     def __init__(
-        self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True,
+        self,
+        state=None,
+        n=0,
+        w=0,
+        p=0,
+        x=0.25,
+        parent=None,
+        cpuct=4,
+        player=1,
+        v=None,
+        valid=True,
     ):
         self.state = state
         self.n = n
@@ -57,7 +70,9 @@ class MCNode(NodeMixin):
             c.noise_active = False
 
     @property
-    def q(self,):  # Attractiveness of a node from player ones pespective - average of downstream results
+    def q(
+        self,
+    ):  # Attractiveness of a node from player ones pespective - average of downstream results
         n_eff = self.n + self.virtual_loss
         return (self.w - self.virtual_loss) / n_eff if n_eff else 0
 
@@ -69,7 +84,9 @@ class MCNode(NodeMixin):
             return self.p
 
     @property
-    def u(self,):  # Factor to encourage exploration - higher values of cpuct increase exploration
+    def u(
+        self,
+    ):  # Factor to encourage exploration - higher values of cpuct increase exploration
         return (
             self.cpuct
             * self.p_eff
@@ -78,7 +95,9 @@ class MCNode(NodeMixin):
         )
 
     @property
-    def select_prob(self,):
+    def select_prob(
+        self,
+    ):
         return (
             -1 * self.player * self.q + self.u
         )  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
@@ -214,7 +233,14 @@ class MCTreeSearch(BaseModel):
         while not self.memory_queue.empty():
             # logging.info(f"queue size in policy is {self.memory_queue.qsize()}")
             experience = self.memory_queue.get()
-            experience = Move(*[experience[i].to(device,) for i in range(4)])
+            experience = Move(
+                *[
+                    experience[i].to(
+                        device,
+                    )
+                    for i in range(4)
+                ]
+            )
             self.memory.add(experience)
             # logging.info(f"memory size is  is {len(self.memory)}")
 

@@ -2,8 +2,8 @@ from functools import reduce
 
 import colorama
 import numpy as np
-from gym import spaces
 from colorama import Fore, Style
+from gym import spaces
 
 
 class GameOver(Exception):

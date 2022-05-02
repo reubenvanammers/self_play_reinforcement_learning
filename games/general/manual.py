@@ -1,5 +1,8 @@
 import time
 
+import colorama
+from colorama import Fore, Style
+
 
 class ManualPlay:
     def __init__(self, env, opponent):
@@ -57,10 +60,14 @@ class ManualPlay:
 
 
 class View:
+    SLEEP_TIME = 3  # In seconds
+
     def __init__(self, env, player1, player2):
+        colorama.init()
         self.env = env
         self.player1 = player1
         self.player2 = player2
+        self.timer = time.time()
 
     def play(self, swap_sides=False):
         s = self.env.reset()
@@ -75,11 +82,6 @@ class View:
                 print(f"Winner was {'player1' if r ==1 else 'player2'}")
                 self.env.render()
                 time.sleep(3000)
-                # play_again = input("Play again (y/n)").lower() == "y"
-                # if play_again:
-                #     self.play(not swap_sides)
-                # else:
-                #     break
 
     def play_round(self, s):
         s = s.copy()
@@ -90,20 +92,25 @@ class View:
             s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
             return s_next, done, r
 
+    def _sleep_delay(self):
+        time_diff = (self.timer + self.SLEEP_TIME) - time.time()
+        if time_diff > 0:
+            time.sleep(time_diff)
+        self.timer = time.time()
+
     def get_and_play_moves(self, s, player=1):
         self.env.render()
-        time.sleep(3)
+        self._sleep_delay()
 
         if player == 1:
-            # a = int(input("Choose your move (X)"))
             a = self.player1(s)
-            print(f"Player 1 chose move {a}")
+            print(f"{Fore.YELLOW}Player 1{Style.RESET_ALL} chose move {a}")
             s_next, r, done, info = self.play_move(a, player=1)
             return s_next, a, r, done, info
         else:
             opp_s = self.swap_state(s)
             a = self.player2(opp_s)
-            print(f"Player 2 chose move {a}")
+            print(f"{Fore.RED}Player 2{Style.RESET_ALL} chose move {a}")
             s_next, r, done, info = self.play_move(a, player=-1)
             r = r * player
             return s_next, a, r, done, info

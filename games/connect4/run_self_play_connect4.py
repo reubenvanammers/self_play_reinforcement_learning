@@ -8,8 +8,7 @@ from games.algos.model_database import ModelDatabase
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
 from games.connect4.hardcoded_players import OnestepLookahead
-from games.connect4.modules import (ConvNetConnect4, DeepConvNetConnect4,
-                                    ResidualTower)
+from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4, ResidualTower
 
 try:
     save_dir = "saves__c4mtcs_par"
@@ -27,7 +26,13 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(iterations=800, min_memory=25000, memory_size=300000, env_gen=Connect4Env, batch_size=128,)
+    policy_kwargs = dict(
+        iterations=800,
+        min_memory=25000,
+        memory_size=300000,
+        env_gen=Connect4Env,
+        batch_size=128,
+    )
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     model_db = ModelDatabase()

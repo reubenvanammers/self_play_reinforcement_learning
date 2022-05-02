@@ -62,7 +62,9 @@ class UpdateWorker(BaseWorker):
         logging.info("running update worker")
         try:
             self.policy = self.policy_container.setup(
-                memory_queue=self.memory_queue, network=self.network, optim=self.optim,
+                memory_queue=self.memory_queue,
+                network=self.network,
+                optim=self.optim,
             )
             self.policy.train()
 
