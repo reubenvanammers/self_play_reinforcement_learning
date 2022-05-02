@@ -1,6 +1,5 @@
 import copy
 import random
-import time
 from collections import namedtuple
 
 import gym

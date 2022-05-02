@@ -1,24 +1,18 @@
 import concurrent.futures
 import copy
 import logging
-import random
-import threading
 import time
 import traceback
 from collections import namedtuple
-from multiprocessing import Queue
 
 import numpy as np
 import torch
 from anytree import NodeMixin
-from torch import nn
-from torch.functional import F
 
 from games.algos.base_model import BaseModel
 from games.algos.inference_proxy import InferenceProxy
 from rl_utils.flat import MSELossFlat
 from rl_utils.memory import Memory
-from rl_utils.weights import init_weights
 
 Move = namedtuple("Move", ("state", "actual_val", "tree_probs", "q"),)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -84,7 +78,7 @@ class MCNode(NodeMixin):
         )
 
     @property
-    def select_prob(self,):  # TODO check if this works? might need to be ther other way round
+    def select_prob(self,):
         return (
             -1 * self.player * self.q + self.u
         )  # -1 is due to that this calculated from the perspective of the parent node, which has an opposite player
@@ -176,7 +170,6 @@ class MCTreeSearch(BaseModel):
         return base_state
 
     ## Ignores the inputted state for the moment. Produces the correct action, and changes the root node appropriately
-    # TODO might want to do a check on the state to make sure it is consistent
     def __call__(self, s=None):  # not using player
         move = self._search_and_play()
         return move

@@ -1,6 +1,6 @@
-numpy==1.17.4
 gym==0.15.4
 torch==1.8.0
 anytree==2.8.0
 multiprocessing-logging==0.3.1
 faster-fifo
+pytest

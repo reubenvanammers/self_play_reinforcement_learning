@@ -5,7 +5,8 @@ from torch import multiprocessing
 from games.algos.base_model import ModelContainer
 from games.algos.mcts import MCTreeSearch
 from games.connect4.connect4env import Connect4Env
-from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4, ResidualTower
+from games.connect4.modules import (ConvNetConnect4, DeepConvNetConnect4,
+                                    ResidualTower)
 
 if __name__ == "__main__":
     multiprocessing.set_start_method("spawn", force=True)  # May have to modify depending on environment
@@ -20,9 +21,9 @@ if __name__ == "__main__":
 
     md = ModelDatabase()
     elo = Elo(md)
-
+    md.observe('mcts1', 'test-big-res')
     # container = ModelContainer(MCTreeSearch, policy_kwargs=policy_kwargs)
     # md.add_model('test-big-res', container)
 
     # elo.compare_models('test-big-res', '15layer-num1', 'cloudmcts')
-    elo.calculate_elo()
+    # elo.calculate_elo()

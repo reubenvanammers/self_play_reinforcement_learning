@@ -4,6 +4,7 @@ import shelve
 
 from games.connect4.connect4env import Connect4Env
 from games.general.manual import ManualPlay, View
+from games.tictactoe.tictactoe_env import TicTacToeEnv
 from rl_utils.memory import Memory
 
 
@@ -32,13 +33,18 @@ class ModelDatabase:
     RESULT_SAVE_FILE = ".ELO_RESULT"
     ELO_VALUE_SAVE_FILE = ".ELO_VALUE"
 
-    def __init__(self, env=Connect4Env):
-        path = os.path.dirname(__file__)
-        self.model_shelf = shelve.open(os.path.join(path, self.MODEL_SAVE_FILE))
-        self.result_shelf = shelve.open(os.path.join(path, self.RESULT_SAVE_FILE))
-        self.elo_value_shelf = shelve.open(os.path.join(path, self.ELO_VALUE_SAVE_FILE))
+    GAME_DICT = {
+        "connect4" : Connect4Env,
+        "tictactoe": TicTacToeEnv,
+    }
 
-        self.env = env
+    def __init__(self, game = "connect4"):
+        path = os.path.dirname(__file__)
+        self.model_shelf = shelve.open(os.path.join(path, f'{game}{self.MODEL_SAVE_FILE}'))
+        self.result_shelf = shelve.open(os.path.join(path, f'{game}{self.RESULT_SAVE_FILE}'))
+        self.elo_value_shelf = shelve.open(os.path.join(path, f'{game}{self.ELO_VALUE_SAVE_FILE}'))
+
+        self.game = game
 
         self.memory = Memory()
 
@@ -68,7 +74,7 @@ class ModelDatabase:
         model.train(False)
         model.evaluate(True)
 
-        manual = ManualPlay(Connect4Env(), model)
+        manual = ManualPlay(self.GAME_DICT[self.game](), model)
         manual.play()
 
     def observe(self, model_name, opponent_model_name):
@@ -86,4 +92,5 @@ class ModelDatabase:
 
 
 if __name__ == "__main__":
-    elo = ModelDatabase()
+    model_database = ModelDatabase("connect4")
+    print(model_database.elos())
