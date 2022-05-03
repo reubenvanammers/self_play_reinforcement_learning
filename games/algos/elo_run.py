@@ -1,13 +1,7 @@
 import argparse
 
-import torch
 from elo import Elo, ModelDatabase
 from torch import multiprocessing
-
-from games.algos.base_model import ModelContainer
-from games.algos.mcts import MCTreeSearch
-from games.connect4.connect4env import Connect4Env
-from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4, ResidualTower
 
 if __name__ == "__main__":
     multiprocessing.set_start_method("spawn", force=True)  # May have to modify depending on environment

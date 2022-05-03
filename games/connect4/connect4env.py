@@ -5,12 +5,10 @@ import numpy as np
 from colorama import Fore, Style
 from gym import spaces
 
-
-class GameOver(Exception):
-    pass
+from games.general.base_env import BaseEnv, GameOver
 
 
-class Connect4Env:
+class Connect4Env(BaseEnv):
     def __init__(self, width=7, height=6, state=None):
         self.height = height
         self.width = width
@@ -23,6 +21,9 @@ class Connect4Env:
         else:
             self.board = np.zeros([width, height], dtype=np.int64)
             self.heights = np.zeros([width], dtype=np.int64)
+
+    def max_moves(self):
+        return self.height * self.width
 
     def step(self, action, player=1):
         if self.episode_over:

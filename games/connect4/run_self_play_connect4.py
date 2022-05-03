@@ -2,13 +2,13 @@ import os
 
 from torch import multiprocessing
 
-from games.algos.base_model import ModelContainer
 from games.algos.mcts import MCTreeSearch
 from games.algos.model_database import ModelDatabase
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
-from games.connect4.hardcoded_players import OnestepLookahead
-from games.connect4.modules import ConvNetConnect4, DeepConvNetConnect4, ResidualTower
+from games.connect4.modules import ResidualTower
+from games.general.base_model import ModelContainer
+from games.general.hardcoded_players import OneStepLookahead
 
 try:
     save_dir = "saves__c4mtcs_par"
@@ -39,7 +39,7 @@ def run_training():
 
     # Can update evaluation network if wanting to have a more powerful evaluation function, eg after the
     # model has gotten strong enough.
-    evaluation_policy_gen = OnestepLookahead
+    evaluation_policy_gen = OneStepLookahead
     evaluation_policy_args = []
     evaluation_policy_kwargs = dict(env_gen=Connect4Env, player=-1)
     evaluation_policy_container = ModelContainer(

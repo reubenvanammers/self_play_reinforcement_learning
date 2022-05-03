@@ -1,6 +1,17 @@
 from rl_utils.memory import Memory
 
 
+class BasePlayer:
+    def __call__(self, s):
+        raise NotImplementedError
+
+    def reset(self, player=1):
+        raise NotImplementedError
+
+    def play_action(self, action, player):
+        raise NotImplementedError
+
+
 class BaseModel:
     def __init__(self, memory_queue, memory_size, *args, **kwargs):
         self.memory = self.create_memory(memory_size)
@@ -9,9 +20,6 @@ class BaseModel:
 
     def create_memory(self, memory_size):
         return Memory(memory_size)
-
-    def __call__(self, s):
-        raise NotImplementedError
 
     def load_state_dict(self, state_dict, target=False):
         raise NotImplementedError
@@ -37,16 +45,6 @@ class BaseModel:
 
     def evaluate(self, evaluate_state=False):
         pass
-
-    def reset(self):
-        raise NotImplementedError
-
-    # @property
-    # def optim(self):
-    #     raise NotImplementedError
-
-    def play_action(self, action, player):
-        raise NotImplementedError
 
     def pull_from_queue(self):
         while not self.memory_queue.empty():

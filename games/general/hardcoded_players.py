@@ -1,10 +1,13 @@
 import random
 from copy import copy
 
+from games.general.base_env import BaseEnv
+from games.general.base_model import BaseModel, BasePlayer
 
-class OnestepLookahead:
+
+class OneStepLookahead(BasePlayer):
     def __init__(self, env_gen, player=-1, **kwargs):
-        self.env = env_gen()
+        self.env: BaseEnv = env_gen()
         self.env_gen = env_gen
         self.player = player
 
@@ -59,10 +62,9 @@ class OnestepLookahead:
 
     def play_action(self, action, player):
         self.env.step(action, player)
-        # pass  # does nothign atm - mostly for the mcts
 
 
-class Random:
+class Random(BasePlayer):
     def __init__(self, env_gen, player=-1, **kwargs):
         self.env = env_gen()
         self.env_gen = env_gen

@@ -5,13 +5,13 @@ import random
 import numpy as np
 from c4_perfect_player.connect4_perfect_player import PerfectPlayer
 
-# p = PerfectPlayer(book_dir='/home/reuben/projects/update/connect4/7x6.book')
-#
-# state = p.get_one_position_score(np.array([3,3]))
-from games.algos.base_model import BaseModel, ModelContainer
 from games.algos.mcts import MCTreeSearch
 from games.connect4.connect4env import Connect4Env
 from games.connect4.modules import DeepConvNetConnect4
+# p = PerfectPlayer(book_dir='/home/reuben/projects/update/connect4/7x6.book')
+#
+# state = p.get_one_position_score(np.array([3,3]))
+from games.general.base_model import ModelContainer
 
 
 class PerfectEvaluator:

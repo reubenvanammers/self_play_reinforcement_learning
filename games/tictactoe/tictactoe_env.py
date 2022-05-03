@@ -3,18 +3,20 @@ from functools import reduce
 import numpy as np
 from gym import spaces
 
-
-class GameOver(Exception):
-    pass
+from games.general.base_env import BaseEnv, GameOver
 
 
-class TicTacToeEnv:
-    def __init__(self, width=3, height=3):
+class TicTacToeEnv(BaseEnv):
+    def __init__(self, width=3, height=3, win_amount=3):
         self.height = height
         self.width = width
+        self.win_amount = win_amount
         self.episode_over = False
         self.board = np.zeros([width, height], dtype=np.int64)
         self.action_space = spaces.Discrete(width * height)  # Linear action space even though board is 3*3
+
+    def max_moves(self):
+        return self.height * self.width
 
     def step(self, action, player=1):
         if self.episode_over:
@@ -64,13 +66,13 @@ class TicTacToeEnv:
         connect = [
             reduce(self._calc_win_in_a_row, row * player, 0) for row in [horizontals, verticals, diagonal_1, diagonal_2]
         ]
-        if 3 in connect:
+        if self.win_amount in connect:
             return 1
         return 0
 
     def _calc_win_in_a_row(self, x, y):
-        if x >= 3:
-            return 3
+        if x >= self.win_amount:
+            return self.win_amount
         if y > 0:
             # if x > 0:
             return x + y

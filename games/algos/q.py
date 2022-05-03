@@ -2,13 +2,11 @@ import copy
 import random
 from collections import namedtuple
 
-import gym
 import numpy as np
 import torch
-from torch import nn
 from torch.functional import F
 
-from games.algos.base_model import BaseModel
+from games.general.base_model import BaseModel, BasePlayer
 from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.memory import Memory
 from rl_utils.sum_tree import WeightedMemory
@@ -18,9 +16,9 @@ Transition = namedtuple("Transition", ("state", "action", "reward", "done", "nex
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class EpsilonGreedy(BaseModel):
-    #TODO Fix this
-    MEM_TYPE = 'sumtree'
+class EpsilonGreedy(BasePlayer, BaseModel):
+    # TODO Fix this
+    MEM_TYPE = "sumtree"
 
     def __init__(
         self,
@@ -52,8 +50,6 @@ class EpsilonGreedy(BaseModel):
             self.memory = WeightedMemory(memory_size)
         else:
             self.memory = Memory(memory_size)
-
-
 
     def __call__(self, s):
         return self._epsilon_greedy(s)

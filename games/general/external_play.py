@@ -3,9 +3,16 @@ import time
 import colorama
 from colorama import Fore, Style
 
+from games.general.base_env import BaseEnv
+from games.general.base_model import BasePlayer
+
+
+def swap_state(s):
+    # Make state as opposing policy will see it
+    return s * -1
+
 
 class AbstractExternalPlay:
-
     def play(self):
         raise NotImplementedError
 
@@ -18,15 +25,12 @@ class AbstractExternalPlay:
             s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
             return s_next, done, r
 
-    def swap_state(self, s):
-        # Make state as opposing policy will see it
-        return s * -1
-
     def get_and_play_moves(self, s, player=1):
         raise NotImplementedError
 
+
 class ManualPlay(AbstractExternalPlay):
-    def __init__(self, env, opponent):
+    def __init__(self, env: BaseEnv, opponent: BasePlayer):
         self.env = env
         self.opposing_policy = opponent
 
@@ -36,7 +40,7 @@ class ManualPlay(AbstractExternalPlay):
         if swap_sides:
             s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
 
-        for i in range(100):  # Should be less than this
+        for i in range(self.env.max_moves()):
             s, done, r = self.play_round(s)
             if done:
                 print(f"reward was {r}")
@@ -47,7 +51,6 @@ class ManualPlay(AbstractExternalPlay):
                 else:
                     break
 
-
     def get_and_play_moves(self, s, player=1):
         self.env.render()
         if player == 1:
@@ -55,16 +58,14 @@ class ManualPlay(AbstractExternalPlay):
             s_next, r, done, info = self.play_move(a, player=1)
             return s_next, a, r, done, info
         else:
-            opp_s = self.swap_state(s)
+            opp_s = swap_state(s)
             a = self.opposing_policy(opp_s)
             print(f"Opponent chose move {a}")
             s_next, r, done, info = self.play_move(a, player=-1)
             r = r * player
             return s_next, a, r, done, info
 
-
     def play_move(self, a, player=1):
-        # self.policy.play_action(a, player)
         self.opposing_policy.play_action(a, player * -1)  # Opposing policy will be player 1, in their perspective
         return self.env.step(a, player=player)
 
@@ -72,7 +73,7 @@ class ManualPlay(AbstractExternalPlay):
 class View(AbstractExternalPlay):
     SLEEP_TIME = 3  # In seconds
 
-    def __init__(self, env, player1, player2):
+    def __init__(self, env, player1: BasePlayer, player2: BasePlayer):
         colorama.init()
         self.env = env
         self.player1 = player1
@@ -86,7 +87,7 @@ class View(AbstractExternalPlay):
         if swap_sides:
             s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
 
-        for i in range(100):  # Should be less than this
+        for i in range(self.env.max_moves()):
             s, done, r = self.play_round(s)
             if done:
                 print(f"Winner was {'player1' if r ==1 else 'player2'}")
@@ -109,13 +110,12 @@ class View(AbstractExternalPlay):
             s_next, r, done, info = self.play_move(a, player=1)
             return s_next, a, r, done, info
         else:
-            opp_s = self.swap_state(s)
+            opp_s = swap_state(s)
             a = self.player2(opp_s)
             print(f"{Fore.RED}Player 2{Style.RESET_ALL} chose move {a}")
             s_next, r, done, info = self.play_move(a, player=-1)
             r = r * player
             return s_next, a, r, done, info
-
 
     def play_move(self, a, player=1):
         self.player1.play_action(a, player)
