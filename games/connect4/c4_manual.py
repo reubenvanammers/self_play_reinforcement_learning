@@ -7,7 +7,7 @@ import torch
 from games.algos.mcts import MCTreeSearch
 from games.connect4.connect4env import Connect4Env
 from games.connect4.modules import ConvNetConnect4
-from games.general.manual import ManualPlay
+from games.general.external_play import ManualPlay
 
 save_dir = "saves__c4mtcs_par"
 

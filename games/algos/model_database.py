@@ -3,7 +3,7 @@ import os
 import shelve
 
 from games.connect4.connect4env import Connect4Env
-from games.general.manual import ManualPlay, View
+from games.general.external_play import ManualPlay, View
 from games.tictactoe.tictactoe_env import TicTacToeEnv
 from rl_utils.memory import Memory
 

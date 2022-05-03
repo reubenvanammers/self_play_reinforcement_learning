@@ -4,7 +4,28 @@ import colorama
 from colorama import Fore, Style
 
 
-class ManualPlay:
+class AbstractExternalPlay:
+
+    def play(self):
+        raise NotImplementedError
+
+    def play_round(self, s):
+        s = s.copy()
+        s_intermediate, own_a, r, done, info = self.get_and_play_moves(s)
+        if done:
+            return s_intermediate, done, r
+        else:
+            s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
+            return s_next, done, r
+
+    def swap_state(self, s):
+        # Make state as opposing policy will see it
+        return s * -1
+
+    def get_and_play_moves(self, s, player=1):
+        raise NotImplementedError
+
+class ManualPlay(AbstractExternalPlay):
     def __init__(self, env, opponent):
         self.env = env
         self.opposing_policy = opponent
@@ -26,14 +47,6 @@ class ManualPlay:
                 else:
                     break
 
-    def play_round(self, s):
-        s = s.copy()
-        s_intermediate, own_a, r, done, info = self.get_and_play_moves(s)
-        if done:
-            return s_intermediate, done, r
-        else:
-            s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
-            return s_next, done, r
 
     def get_and_play_moves(self, s, player=1):
         self.env.render()
@@ -49,9 +62,6 @@ class ManualPlay:
             r = r * player
             return s_next, a, r, done, info
 
-    def swap_state(self, s):
-        # Make state as opposing policy will see it
-        return s * -1
 
     def play_move(self, a, player=1):
         # self.policy.play_action(a, player)
@@ -59,7 +69,7 @@ class ManualPlay:
         return self.env.step(a, player=player)
 
 
-class View:
+class View(AbstractExternalPlay):
     SLEEP_TIME = 3  # In seconds
 
     def __init__(self, env, player1, player2):
@@ -82,15 +92,6 @@ class View:
                 print(f"Winner was {'player1' if r ==1 else 'player2'}")
                 self.env.render()
                 time.sleep(3000)
-
-    def play_round(self, s):
-        s = s.copy()
-        s_intermediate, own_a, r, done, info = self.get_and_play_moves(s)
-        if done:
-            return s_intermediate, done, r
-        else:
-            s_next, a, r, done, info = self.get_and_play_moves(s_intermediate, player=-1)
-            return s_next, done, r
 
     def _sleep_delay(self):
         time_diff = (self.timer + self.SLEEP_TIME) - time.time()
@@ -115,9 +116,6 @@ class View:
             r = r * player
             return s_next, a, r, done, info
 
-    def swap_state(self, s):
-        # Make state as opposing policy will see it
-        return s * -1
 
     def play_move(self, a, player=1):
         self.player1.play_action(a, player)
