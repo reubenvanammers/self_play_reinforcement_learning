@@ -10,7 +10,7 @@ import torch
 from anytree import NodeMixin
 
 from games.algos.inference_proxy import InferenceProxy
-from games.general.base_model import BaseModel, BasePlayer
+from games.general.base_model import BaseModel, BasePlayer, Policy
 from rl_utils.flat import MSELossFlat
 
 Move = namedtuple(
@@ -128,7 +128,7 @@ class MCNode(NodeMixin):
         pass
 
 
-class MCTreeSearch(BasePlayer, BaseModel):
+class MCTreeSearch(Policy):
     root_node: MCNode
 
     def __init__(

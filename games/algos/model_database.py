@@ -93,4 +93,17 @@ class ModelDatabase:
 
 if __name__ == "__main__":
     model_database = ModelDatabase("connect4")
+    import sys
+
+    from games.general import base_model, hardcoded_players
+    from games.general.modules import BasicBlock, ResidualTower
+
+    # sys.modules['games.algos.base_model'] = base_model
+    # sys.modules['games.connect4.modules'].ResidualTower = ResidualTower
+    # sys.modules['games.connect4.modules'].BasicBlock = BasicBlock
+    # sys.modules['games.connect4.hardcoded_players'] = hardcoded_players
+    # hardcoded_players.OnestepLookahead = hardcoded_players.OneStepLookahead
+    for model_name in model_database.model_shelf:
+        model = model_database.model_shelf[model_name]
+        model_database.model_shelf[model_name] = model
     print(model_database.elos())

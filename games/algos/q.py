@@ -6,7 +6,8 @@ import numpy as np
 import torch
 from torch.functional import F
 
-from games.general.base_model import BaseModel, BasePlayer
+import games.general.modules
+from games.general.base_model import BaseModel, BasePlayer, Policy
 from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.memory import Memory
 from rl_utils.sum_tree import WeightedMemory
@@ -16,7 +17,7 @@ Transition = namedtuple("Transition", ("state", "action", "reward", "done", "nex
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class EpsilonGreedy(BasePlayer, BaseModel):
+class EpsilonGreedy(Policy):
     # TODO Fix this
     MEM_TYPE = "sumtree"
 
@@ -209,7 +210,7 @@ class Q:
     def __call__(self, s, player=None):  # TODO use player variable
         if not isinstance(s, torch.Tensor):
             s = torch.from_numpy(s).long()
-        s = self.policy_net.preprocess(s)
+        s = games.general.modules.preprocess(s)
         return self.policy_net(s)
 
     def state_action_value(self, s, a):

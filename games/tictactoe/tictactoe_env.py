@@ -80,3 +80,6 @@ class TicTacToeEnv(BaseEnv):
 
     def get_state(self):
         return self.board, None
+
+    def variant_string(self):
+        return "tictactoe"

@@ -6,9 +6,9 @@ from games.algos.mcts import MCTreeSearch
 from games.algos.model_database import ModelDatabase
 from games.algos.self_play_parallel import SelfPlayScheduler
 from games.connect4.connect4env import Connect4Env
-from games.connect4.modules import ResidualTower
 from games.general.base_model import ModelContainer
 from games.general.hardcoded_players import OneStepLookahead
+from games.general.modules import ResidualTower
 
 try:
     save_dir = "saves__c4mtcs_par"

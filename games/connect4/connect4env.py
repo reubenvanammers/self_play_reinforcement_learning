@@ -94,3 +94,6 @@ class Connect4Env(BaseEnv):
 
     def get_state(self):
         return self.board, self.heights
+
+    def variant_string(self):
+        return "connect4"

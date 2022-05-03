@@ -5,6 +5,7 @@ import traceback
 from concurrent import futures
 
 from games.algos.base_worker import BaseWorker
+from games.general.base_model import ModelContainer
 
 try:
     from games.algos.evaluation_worker import PerfectEvaluator
@@ -20,14 +21,14 @@ class SelfPlayWorker(BaseWorker):
         memory_queue,
         result_queue,
         env_gen,
-        policy_container,
+        policy_container: ModelContainer,
         start_time,
         network=None,
         evaluation_network=None,
         save_dir="save_dir",
         resume=False,
         self_play=True,
-        evaluation_policy_container=None,
+        evaluation_policy_container: ModelContainer = None,
         epoch_value=None,
         threading=0,
     ):
@@ -40,15 +41,13 @@ class SelfPlayWorker(BaseWorker):
         self.policy_container = policy_container
         self.evaluation_policy_container = evaluation_policy_container
 
-        self.policy = None
-        self.opposing_policy_train = None
+        # self.opposing_policy_train = None
         self.opposing_policy = None
         self.opposing_policy_evaluate = None
 
         self.task_queue = task_queue
         self.memory_queue = memory_queue
         self.result_queue = result_queue
-        self.save_dir = save_dir
         self.start_time = start_time
         self.self_play = self_play
 
@@ -60,7 +59,7 @@ class SelfPlayWorker(BaseWorker):
 
         self.threading = threading
 
-        super().__init__()
+        super().__init__(save_dir=save_dir, start_time=start_time)
 
     def set_up_policies(self, evaluate=False):
         try:

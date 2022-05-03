@@ -2,7 +2,7 @@ import random
 from copy import copy
 
 from games.general.base_env import BaseEnv
-from games.general.base_model import BaseModel, BasePlayer
+from games.general.base_model import BasePlayer
 
 
 class OneStepLookahead(BasePlayer):
@@ -29,36 +29,9 @@ class OneStepLookahead(BasePlayer):
         a = random.choice(possible_moves)
         return a
 
-    def load_state_dict(self, *args, **kwargs):
-        pass
-
-    def update(self, *args, **kwargs):
-        pass
-
-    # determines when a neural net has enough data to train
-    @property
-    def ready(self):
-        pass
-
-    def state_dict(self):
-        pass
-
-    def update_target_net(self):
-        pass
-
-    def train(self, train_state=False):
-        pass
-
-    def evaluate(self, evaluate_state=False):
-        pass
-
     def reset(self, player=None):
         self.player = player
         self.env.reset()
-
-    @property
-    def optim(self):
-        return None
 
     def play_action(self, action, player):
         self.env.step(action, player)
@@ -72,40 +45,12 @@ class Random(BasePlayer):
 
     def __call__(self, s):
         state, _ = copy(self.env.get_state())
-        test_env = self.env_gen()
         possible_moves = [i for i, move in enumerate(self.env.valid_moves()) if move]
         a = random.choice(possible_moves)
         return a
 
-    def load_state_dict(self, *args, **kwargs):
-        pass
-
-    def update(self, *args, **kwargs):
-        pass
-
-    # determines when a neural net has enough data to train
-    @property
-    def ready(self):
-        pass
-
-    def state_dict(self):
-        pass
-
-    def update_target_net(self):
-        pass
-
-    def train(self, train_state=False):
-        pass
-
-    def evaluate(self, evaluate_state=False):
-        pass
-
     def reset(self, player=None):
         self.env.reset()
-
-    @property
-    def optim(self):
-        return None
 
     def play_action(self, action, player):
         self.env.step(action, player)

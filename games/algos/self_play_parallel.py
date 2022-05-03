@@ -8,12 +8,14 @@ from os.path import join
 import multiprocessing_logging
 import numpy as np
 import torch
-from torch import multiprocessing
+from torch import multiprocessing, nn
 from torch.utils.tensorboard import SummaryWriter
 
 from games.algos.inference_proxy import InferenceProxy, InferenceWorker
 from games.algos.selfplayworker import SelfPlayWorker
 from games.algos.updateworker import UpdateWorker
+from games.general.base_env import BaseEnv
+from games.general.base_model import ModelContainer
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -34,10 +36,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class SelfPlayScheduler:
     def __init__(
         self,
-        policy_container,
-        env_gen,
-        evaluation_policy_container=None,
-        network=None,
+        policy_container: ModelContainer,
+        env_gen: BaseEnv,
+        evaluation_policy_container: ModelContainer = None,
+        network: nn.Module = None,
         swap_sides=True,
         save_dir="saves",
         epoch_length=500,
@@ -46,7 +48,7 @@ class SelfPlayScheduler:
         lr=0.001,
         stagger=False,
         evaluation_games=100,
-        evaluation_network=None,
+        evaluation_network: nn.Module = None,
         stagger_mem_step=5000,
         deduplicate=False,
         update_delay=0.01,
@@ -81,6 +83,15 @@ class SelfPlayScheduler:
             os.mkdir(os.path.join(save_dir, self.start_time))
             logging.basicConfig(filename=join(save_dir, self.start_time, "log"), level=logging.INFO)
         multiprocessing_logging.install_mp_handler()
+
+    # def _get_network(self, container) -> nn.Module:
+    #     if container.policy_kwargs.get("evaluator"):
+    #         network = container.policy_kwargs["evaluator"]
+    #         network.load_state_dict(container.policy_kwargs["starting_state_dict"])
+    #         del container.policy_kwargs["evaluator"]
+    #     else:
+    #         network = None
+    #     return network
 
     def setup_player_workers(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
         epoch_value = multiprocessing.Value("i", 0)
@@ -155,7 +166,7 @@ class SelfPlayScheduler:
             ]
         return player_workers, inference_worker, epoch_value
 
-    def _get_network(self, network, container):
+    def _get_network(self, network, container) -> nn.Module:
         if network:  # TODO cleanup
             used_network = network
         elif container.policy_kwargs.get("network"):

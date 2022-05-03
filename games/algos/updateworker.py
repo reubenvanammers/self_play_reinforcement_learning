@@ -39,8 +39,6 @@ class UpdateWorker(BaseWorker):
         self.policy_container = policy_container
         self.update_flag = update_flag
         self.update_worker_queue = update_worker_queue
-        self.save_dir = save_dir
-        self.start_time = start_time
         self.memory_size = 0
         self.resume_memory = resume_memory
         self.resume_model = resume_model
@@ -56,7 +54,7 @@ class UpdateWorker(BaseWorker):
 
         self.update_delay = update_delay
 
-        super().__init__()
+        super().__init__(save_dir=save_dir, start_time=start_time)
 
     def run(self):
         logging.info("running update worker")

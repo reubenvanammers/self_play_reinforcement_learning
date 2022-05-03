@@ -1,3 +1,5 @@
+import torch
+
 from rl_utils.memory import Memory
 
 
@@ -58,13 +60,21 @@ class BaseModel:
         pass
 
 
+class Policy(BaseModel, BasePlayer):
+    pass
+
+
 class ModelContainer:
     def __init__(self, policy_gen, policy_args=[], policy_kwargs={}):
         self.policy_gen = policy_gen
         self.policy_args = policy_args
         self.policy_kwargs = policy_kwargs
 
-    def setup(self, **kwargs):
+    def setup(self, **kwargs) -> Policy:
         if "evaluator" in self.policy_kwargs:
             self.policy_kwargs["network"] = self.policy_kwargs.pop("evaluator")
         return self.policy_gen(*self.policy_args, **self.policy_kwargs, **kwargs)
+
+    def load_state_dict(self, save_file):
+        checkpoint = torch.load(save_file)
+        self.policy_kwargs["network"].load_state_dict(checkpoint["model"])

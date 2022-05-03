@@ -1,8 +1,14 @@
+import copy
+
+
 class GameOver(Exception):
     pass
 
 
 class BaseEnv:
+    def __call__(self):
+        return copy.deepcopy(self)
+
     def step(self, action, player=1):
         raise NotImplementedError
 
@@ -25,4 +31,7 @@ class BaseEnv:
         raise NotImplementedError
 
     def get_state(self):
+        raise NotImplementedError
+
+    def variant_string(self):
         raise NotImplementedError
