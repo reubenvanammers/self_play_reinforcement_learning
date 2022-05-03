@@ -159,9 +159,7 @@ class MCTreeSearch(BaseModel):
         self.update_nn = update_nn
         self.starting_state_dict = starting_state_dict
 
-        self.memory_queue = memory_queue
         self.temp_memory = []
-        self.memory = Memory(memory_size)
         self.min_memory = min_memory
         self.temperature_cutoff = temperature_cutoff
         self.actions = self.env.action_space.n
@@ -175,8 +173,9 @@ class MCTreeSearch(BaseModel):
         self.q_average = q_average
 
         if self.starting_state_dict:
-            # print("laoding [sic] state dict in mcts")
             self.load_state_dict(self.starting_state_dict)
+
+        super().__init__(memory_size, memory_queue)
 
     def reset(self, player=1):
         base_state = self.env.reset()

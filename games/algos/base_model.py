@@ -1,6 +1,14 @@
+from rl_utils.memory import Memory
+
+
 class BaseModel:
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, memory_queue, memory_size, *args, **kwargs):
+        self.memory = self.create_memory(memory_size)
+        self.create_memory(memory_size)
+        self.memory_queue = memory_queue
+
+    def create_memory(self, memory_size):
+        return Memory(memory_size)
 
     def __call__(self, s):
         raise NotImplementedError
@@ -14,14 +22,14 @@ class BaseModel:
         if self.ready:
             self.update_from_memory()
 
+    def update_from_memory(self):
+        raise NotImplementedError
+
     @property
     def ready(self):
         raise NotImplementedError
 
     def state_dict(self):
-        raise NotImplementedError
-
-    def update_target_net(self):
         raise NotImplementedError
 
     def train(self, train_state):
@@ -50,9 +58,6 @@ class BaseModel:
 
     def deduplicate(self):
         pass
-
-    def play_action(self, a):
-        raise NotImplementedError
 
 
 class ModelContainer:

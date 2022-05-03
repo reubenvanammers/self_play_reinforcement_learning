@@ -104,7 +104,7 @@ class View:
 
         if player == 1:
             a = self.player1(s)
-            print(f"{Fore.YELLOW}Player 1{Style.RESET_ALL} chose move {a}")
+            print(f"{Fore.GREEN}Player 1{Style.RESET_ALL} chose move {a}")
             s_next, r, done, info = self.play_move(a, player=1)
             return s_next, a, r, done, info
         else:

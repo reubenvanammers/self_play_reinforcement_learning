@@ -19,6 +19,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class EpsilonGreedy(BaseModel):
+    #TODO Fix this
+    MEM_TYPE = 'sumtree'
+
     def __init__(
         self,
         evaluator,
@@ -42,10 +45,15 @@ class EpsilonGreedy(BaseModel):
         self.policy_net = copy.deepcopy(evaluator)
         self.target_net = copy.deepcopy(evaluator)
 
-        if mem_type == "sumtree":
+        super().__init__(memory_size, memory_queue)
+
+    def create_memory(self, memory_size):
+        if self.MEM_TYPE == "sumtree":
             self.memory = WeightedMemory(memory_size)
         else:
             self.memory = Memory(memory_size)
+
+
 
     def __call__(self, s):
         return self._epsilon_greedy(s)
@@ -81,18 +89,11 @@ class EpsilonGreedy(BaseModel):
 
     def push_to_queue(self, s, a, r, done, next_s):
         s = torch.tensor(s, device=device)
-        # s = self.policy_net.preprocess(s)
         a = torch.tensor(a, device=device)
         r = torch.tensor(r, device=device)
         done = torch.tensor(done, device=device)
         next_s = torch.tensor(next_s, device=device)
-        # next_s = self.policy_net.preprocess(next_s)
         self.memory_queue.put(Transition(s, a, r, done, next_s))
-
-    def pull_from_queue(self):
-        while not self.memory_queue.empty():
-            experience = self.memory_queue.get()
-            self.memory.add(experience)
 
     def update_from_memory(self):
         if isinstance(self.memory, WeightedMemory):
@@ -116,9 +117,7 @@ class EpsilonGreedy(BaseModel):
 
         q_next_actual = (~done_batch) * q_next  # Removes elements thx`at are done
         q_target = r_batch + self.gamma * q_next_actual
-        ###TEST if clamping works or is even good practise
         q_target = q_target.clamp(-1, 1)
-        ###/TEST
 
         if isinstance(self.memory, WeightedMemory):
             absolute_loss = torch.abs(q - q_target).detach().cpu().numpy()

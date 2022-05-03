@@ -61,7 +61,7 @@ class Connect4Env:
         colorama.init()
         l = []
         board = board or self.board
-        map = {0: " ", 1: f"{Fore.YELLOW}X{Style.RESET_ALL}", -1: f"{Fore.RED}O{Style.RESET_ALL}"}
+        map = {0: " ", 1: f"{Fore.GREEN}X{Style.RESET_ALL}", -1: f"{Fore.RED}O{Style.RESET_ALL}"}
         for row_number in range(self.height):
             boundary = f"{Fore.BLUE}|{Style.RESET_ALL}"
             l.append(boundary + boundary.join([map[piece] for piece in board[:, row_number]]) + boundary)
