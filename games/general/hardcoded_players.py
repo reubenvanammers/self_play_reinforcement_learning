@@ -6,8 +6,8 @@ from games.general.base_model import BasePlayer
 
 
 class OneStepLookahead(BasePlayer):
-    def __init__(self, env_gen, player=-1, **kwargs):
-        self.env: BaseEnv = env_gen()
+    def __init__(self, env_gen: BaseEnv, player=-1, **kwargs):
+        self.env = env_gen()
         self.env_gen = env_gen
         self.player = player
 
@@ -38,7 +38,7 @@ class OneStepLookahead(BasePlayer):
 
 
 class Random(BasePlayer):
-    def __init__(self, env_gen, player=-1, **kwargs):
+    def __init__(self, env_gen: BaseEnv, player=-1, **kwargs):
         self.env = env_gen()
         self.env_gen = env_gen
         self.player = player

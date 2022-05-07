@@ -6,8 +6,16 @@ from torch import multiprocessing
 from games.algos.base_worker import recent_save_file
 from games.algos.elo import Elo, ModelDatabase
 from games.algos.self_play_parallel import SelfPlayScheduler
+from games.connect4 import connect4config
+from games.connect4.connect4env import Connect4Env
 from games.general.base_env import BaseEnv
 from games.general.base_model import ModelContainer
+from games.general.hardcoded_players import OneStepLookahead, Random
+from games.tictactoe import tictactoeconfig
+from games.tictactoe.tictactoe_env import TicTacToeEnv
+
+game_dict = {"connect4": Connect4Env, "tictactoe": TicTacToeEnv}
+config_dict = {"connect4": connect4config, "tictactoe": tictactoeconfig}
 
 
 def main():
@@ -40,12 +48,27 @@ def main():
         else:
             elo.compare_models(*players)
     elif args.command == "train":
-        train(args.game, args.config, args.opponent, elo, args.name)
+        board_args = args.board_size or []
+        env = game_dict[args.game](*board_args)
+        policy = _get_model(args.config, md, env, args.game)
+        opposing_policy = _get_model(args.opponent, md, env, args.game)
+        train(args.game, policy, opposing_policy, elo, args.name)
+
+
+def _get_model(model_name: str, model_database: ModelDatabase, env: BaseEnv, game: str) -> ModelContainer:
+    base_model_dict = {"random": Random, "lookahead": OneStepLookahead}
+    if model_name in model_database.model_shelf:
+        return model_database.get_model(model_name)
+    elif model_name in base_model_dict:
+        return base_model_dict[model_name](env)
+    elif config_dict[game].getattr(model_name):
+        return config_dict[game].getattr(model_name)
+    raise ModuleNotFoundError
 
 
 def train(game: BaseEnv, policy_container: ModelContainer, opponent: ModelContainer, elo: Elo, name):
+    save_dir = f"saves__{game.variant_string()}-{name}"
     try:
-        save_dir = f"saves__{game.variant_string()}-{name}"
         os.mkdir(save_dir)
     except Exception:
         pass
@@ -66,7 +89,7 @@ def train(game: BaseEnv, policy_container: ModelContainer, opponent: ModelContai
         update_delay=0.01,
     )
     self_play.train_model(20, resume_memory=True, resume_model=True)
-    save_file = recent_save_file(save_dir, SelfPlayScheduler.start_time, False, "model")
+    save_file = recent_save_file(save_dir, self_play.start_time, False, "model")
     policy_container.load_state_dict(save_file)
     elo.model_database.add_model(name, policy_container)
 

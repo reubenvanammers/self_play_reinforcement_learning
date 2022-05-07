@@ -27,7 +27,7 @@ class SelfPlayWorker(BaseWorker):
         evaluation_network=None,
         save_dir="save_dir",
         resume=False,
-        self_play=True,
+        # self_play=True,
         evaluation_policy_container: ModelContainer = None,
         epoch_value=None,
         threading=0,
@@ -49,7 +49,7 @@ class SelfPlayWorker(BaseWorker):
         self.memory_queue = memory_queue
         self.result_queue = result_queue
         self.start_time = start_time
-        self.self_play = self_play
+        # self.self_play = self_play
 
         self.current_model_file = None
         self.resume = resume
@@ -133,7 +133,7 @@ class SelfPlayWorker(BaseWorker):
                     else:
                         done, future_set = futures.wait(future_set, return_when=futures.FIRST_COMPLETED)
 
-            except Exception as e:
+            except Exception:
                 logging.exception(traceback.format_exc())
                 self.task_queue.task_done()
 
