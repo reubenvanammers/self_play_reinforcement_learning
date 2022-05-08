@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from torch import multiprocessing, nn
 from torch.utils.tensorboard import SummaryWriter
-
+from logging.handlers import TimedRotatingFileHandler
 from games.algos.inference_proxy import InferenceProxy, InferenceWorker
 from games.algos.selfplayworker import SelfPlayWorker
 from games.algos.updateworker import UpdateWorker
@@ -21,15 +21,22 @@ for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 from rl_utils.queues import QueueContainer
 
-logging.basicConfig(
-    filename="log.log",
-    level=logging.INFO,
-    format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
-    datefmt="%H:%M:%S",
-)
-logging.info("initializing logging")
+logger = logging.getLogger()
 
-multiprocessing_logging.install_mp_handler()
+logname = "rl.log"
+handler = TimedRotatingFileHandler(logname, when="midnight", interval=1)
+handler.suffix = "%Y%m%d"
+handler.setLevel(logging.INFO)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter("[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+logger.info("initializing logging")
+
+multiprocessing_logging.install_mp_handler(logger)
+logging.info("initializing logging multiprocessing")
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 

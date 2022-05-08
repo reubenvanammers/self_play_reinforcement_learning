@@ -72,7 +72,7 @@ def run_training():
         deduplicate=False,
         update_delay=0.01,
     )
-    self_play.train_model(500, resume_memory=True, resume_model=True)
+    self_play.train_model(500, resume_memory=False, resume_model=False)
     print("Training Done")
 
 

@@ -10,7 +10,7 @@ import torch
 from anytree import NodeMixin
 
 from games.algos.inference_proxy import InferenceProxy
-from games.general.base_model import BaseModel, BasePlayer, Policy
+from games.general.base_model import TrainableModel, BasePlayer, Policy
 from rl_utils.flat import MSELossFlat
 
 Move = namedtuple(
@@ -174,7 +174,7 @@ class MCTreeSearch(Policy):
         if self.starting_state_dict:
             self.load_state_dict(self.starting_state_dict)
 
-        super().__init__(memory_size, memory_queue)
+        super().__init__(memory_size=memory_size, memory_queue=memory_queue)
 
     def reset(self, player=1):
         base_state = self.env.reset()

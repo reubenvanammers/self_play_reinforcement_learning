@@ -7,7 +7,7 @@ import torch
 from torch.functional import F
 
 import games.general.modules
-from games.general.base_model import BaseModel, BasePlayer, Policy
+from games.general.base_model import TrainableModel, BasePlayer, Policy
 from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.memory import Memory
 from rl_utils.sum_tree import WeightedMemory
@@ -44,7 +44,7 @@ class EpsilonGreedy(Policy):
         self.policy_net = copy.deepcopy(evaluator)
         self.target_net = copy.deepcopy(evaluator)
 
-        super().__init__(memory_size, memory_queue)
+        super().__init__(memory_size=memory_size, memory_queue=memory_queue)
 
     def create_memory(self, memory_size):
         if self.MEM_TYPE == "sumtree":

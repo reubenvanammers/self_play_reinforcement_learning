@@ -1,3 +1,5 @@
+from multiprocessing import Queue
+
 import torch
 
 from rl_utils.memory import Memory
@@ -13,9 +15,16 @@ class BasePlayer:
     def play_action(self, action, player):
         raise NotImplementedError
 
+    # TODO - Maybe refactor?
+    def train(self, train_state):
+        pass
 
-class BaseModel:
-    def __init__(self, memory_queue, memory_size, *args, **kwargs):
+    def evaluate(self, evaluate_state=False):
+        pass
+
+# Must have a network to be updated
+class TrainableModel:
+    def __init__(self, memory_queue: Queue, memory_size: int, *args, **kwargs):
         self.memory = self.create_memory(memory_size)
         self.create_memory(memory_size)
         self.memory_queue = memory_queue
@@ -60,7 +69,7 @@ class BaseModel:
         pass
 
 
-class Policy(BaseModel, BasePlayer):
+class Policy(TrainableModel, BasePlayer):
     pass
 
 
@@ -70,7 +79,7 @@ class ModelContainer:
         self.policy_args = policy_args
         self.policy_kwargs = policy_kwargs
 
-    def setup(self, **kwargs) -> Policy:
+    def setup(self, **kwargs) -> BasePlayer:
         if "evaluator" in self.policy_kwargs:
             self.policy_kwargs["network"] = self.policy_kwargs.pop("evaluator")
         return self.policy_gen(*self.policy_args, **self.policy_kwargs, **kwargs)

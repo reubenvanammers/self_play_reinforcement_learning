@@ -74,13 +74,11 @@ class InferenceWorker(BaseWorker):
         self.counter_time = datetime.datetime.now()
         self.epoch_value = epoch_value
         self.current_model_file = None
-        self.save_dir = save_dir
         self.resume = resume
-        self.start_time = start_time
 
         self.epoch_count = 0
 
-        super().__init__()
+        super().__init__(save_dir=save_dir, start_time=start_time)
 
     def _expand_queues(self, queues):
         if not queues[0].threaded:

@@ -9,7 +9,10 @@ from games.general.base_env import BaseEnv, GameOver
 
 
 class Connect4Env(BaseEnv):
-    def __init__(self, width=7, height=6, state=None):
+    DEFAULT_WIDTH = 7
+    DEFAULT_HEIGHT= 6
+
+    def __init__(self, width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT, state=None):
         self.height = height
         self.width = width
         self.episode_over = False  # TODO maybe put this in set state?x
@@ -96,4 +99,7 @@ class Connect4Env(BaseEnv):
         return self.board, self.heights
 
     def variant_string(self):
-        return "connect4"
+        if self.width == self.DEFAULT_WIDTH and self.height == self.DEFAULT_HEIGHT:
+            return "connect4"
+        else:
+            return f"connect4_{self.width}_{self.height}"

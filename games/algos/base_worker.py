@@ -12,6 +12,7 @@ class BaseWorker(multiprocessing.Process):
     def __init__(self, start_time, save_dir):
         self.start_time = start_time
         self.save_dir = save_dir
+        super().__init__()
 
     def load_model(self, prev_run=False, model_file=None):
         logging.info("loading model")
