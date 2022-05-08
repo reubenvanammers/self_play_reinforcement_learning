@@ -4,6 +4,7 @@ from torch.functional import F
 from torch.nn import functional
 
 from games.connect4.modules import device
+from games.general.base_env import BaseEnv, TwoDEnv
 from rl_utils.weights import init_weights
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -71,17 +72,16 @@ class ResidualTower(nn.Module):
 
         self.apply(init_weights)
 
+    @staticmethod
+    def from_env(env: TwoDEnv, num_blocks=15):
+        return ResidualTower(env.width, env.height, env.num_actions(), num_blocks)
+
     def _make_layer(self, block, planes, blocks, stride=1):
         layers = []
         layers.append(block(self.inplanes, planes, stride))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(
-                block(
-                    self.inplanes,
-                    planes,
-                )
-            )
+            layers.append(block(self.inplanes, planes,))
 
         return nn.Sequential(*layers)
 

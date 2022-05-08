@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import traceback
+from logging.handlers import TimedRotatingFileHandler
 from os.path import join
 
 import multiprocessing_logging
@@ -10,7 +11,7 @@ import numpy as np
 import torch
 from torch import multiprocessing, nn
 from torch.utils.tensorboard import SummaryWriter
-from logging.handlers import TimedRotatingFileHandler
+
 from games.algos.inference_proxy import InferenceProxy, InferenceWorker
 from games.algos.selfplayworker import SelfPlayWorker
 from games.algos.updateworker import UpdateWorker
@@ -44,7 +45,7 @@ class SelfPlayScheduler:
     def __init__(
         self,
         policy_container: ModelContainer,
-        env_gen: BaseEnv,
+        env: BaseEnv,
         evaluation_policy_container: ModelContainer = None,
         network: nn.Module = None,
         swap_sides=True,
@@ -62,7 +63,7 @@ class SelfPlayScheduler:
     ):
         self.policy_container = policy_container
         self.evaluation_policy_container = evaluation_policy_container
-        self.env_gen = env_gen
+        self.env_gen = env
         self.swap_sides = swap_sides
         self.save_dir = save_dir
         self.epoch_length = epoch_length
@@ -73,7 +74,7 @@ class SelfPlayScheduler:
         self.deduplicate = deduplicate
         self.update_delay = update_delay
 
-        self.network = network
+        self.network = self._get_network(network, policy_container)  # Maybe cleanup?
         self.evaluation_games = evaluation_games
 
         self.start_time = datetime.datetime.now().isoformat()
@@ -90,15 +91,6 @@ class SelfPlayScheduler:
             os.mkdir(os.path.join(save_dir, self.start_time))
             logging.basicConfig(filename=join(save_dir, self.start_time, "log"), level=logging.INFO)
         multiprocessing_logging.install_mp_handler()
-
-    # def _get_network(self, container) -> nn.Module:
-    #     if container.policy_kwargs.get("evaluator"):
-    #         network = container.policy_kwargs["evaluator"]
-    #         network.load_state_dict(container.policy_kwargs["starting_state_dict"])
-    #         del container.policy_kwargs["evaluator"]
-    #     else:
-    #         network = None
-    #     return network
 
     def setup_player_workers(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
         epoch_value = multiprocessing.Value("i", 0)
@@ -192,7 +184,7 @@ class SelfPlayScheduler:
 
         update_flag = multiprocessing.Event()
         update_flag.clear()
-        network = self.network
+        network = self._get_network(self.network, self.policy_container)
         optim = torch.optim.SGD(network.parameters(), weight_decay=0.0001, momentum=0.9, lr=self.lr)
 
         update_worker = UpdateWorker(
@@ -291,6 +283,7 @@ class SelfPlayScheduler:
         except Exception as e:
             logging.exception(traceback.format_exc())
             logging.exception("error in main loop" + str(e))
+            raise e
 
     def run_evaluation_games(self):
         # Requires external validator

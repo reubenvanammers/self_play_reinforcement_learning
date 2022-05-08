@@ -11,6 +11,7 @@ from games.connect4.connect4env import Connect4Env
 from games.general.base_env import BaseEnv
 from games.general.base_model import ModelContainer
 from games.general.hardcoded_players import OneStepLookahead, Random
+from games.general.modules import ResidualTower
 from games.tictactoe import tictactoeconfig
 from games.tictactoe.tictactoe_env import TicTacToeEnv
 
@@ -23,7 +24,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", help="command")
     parser.add_argument("--p", nargs="*", help="players")
-    parser.add_argument("--b", nargs=2, help="board size", dest="board_size")
+    parser.add_argument("--b", nargs="*", help="board size", dest="board_size")
     parser.add_argument(
         "--g", dest="game", help="game - connect4 or tictactoe", default="connect4", choices=["connect4", "tictactoe"]
     )
@@ -32,7 +33,11 @@ def main():
     parser.add_argument("--w", dest="win_config")
     parser.add_argument("--n", dest="name")
     args = parser.parse_args()
-    md = ModelDatabase(args.game)
+    board_args = args.board_size or []
+    board_args = [int(x) for x in board_args]
+    env: BaseEnv = game_dict[args.game](*board_args)
+
+    md = ModelDatabase(env.variant_string())
     elo = Elo(md)
 
     if args.command == "observe":
@@ -48,11 +53,9 @@ def main():
         else:
             elo.compare_models(*players)
     elif args.command == "train":
-        board_args = args.board_size or []
-        env = game_dict[args.game](*board_args)
         policy = _get_model(args.config, md, env, args.game)
         opposing_policy = _get_model(args.opponent, md, env, args.game)
-        train(args.game, policy, opposing_policy, elo, args.name)
+        train(env, policy, opposing_policy, elo, args.name)
 
 
 def _get_model(model_name: str, model_database: ModelDatabase, env: BaseEnv, game: str) -> ModelContainer:
@@ -60,9 +63,14 @@ def _get_model(model_name: str, model_database: ModelDatabase, env: BaseEnv, gam
     if model_name in model_database.model_shelf:
         return model_database.get_model(model_name)
     elif model_name in base_model_dict:
-        return base_model_dict[model_name](env)
-    elif config_dict[game].getattr(model_name):
-        return config_dict[game].getattr(model_name)
+        return ModelContainer(base_model_dict[model_name], policy_kwargs=dict(env=env))
+    elif getattr(config_dict[game], model_name):
+        model: ModelContainer = getattr(config_dict[game], model_name)
+        model.set_env(env)
+        network = ResidualTower.from_env(env)
+        network.share_memory()
+        model.set_network(network)
+        return model
     raise ModuleNotFoundError
 
 
@@ -74,21 +82,20 @@ def train(game: BaseEnv, policy_container: ModelContainer, opponent: ModelContai
         pass
 
     self_play = SelfPlayScheduler(
-        env_gen=game,
+        env=game,
         policy_container=policy_container,
         evaluation_policy_container=opponent,
         initial_games=40,
         epoch_length=1500,
         evaluation_games=150,
         save_dir=save_dir,
-        self_play=True,
         stagger=True,
         stagger_mem_step=15000,
         lr=0.005,
         deduplicate=False,
         update_delay=0.01,
     )
-    self_play.train_model(20, resume_memory=True, resume_model=True)
+    self_play.train_model(20, resume_memory=False, resume_model=False)
     save_file = recent_save_file(save_dir, self_play.start_time, False, "model")
     policy_container.load_state_dict(save_file)
     elo.model_database.add_model(name, policy_container)

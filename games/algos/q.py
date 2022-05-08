@@ -7,7 +7,7 @@ import torch
 from torch.functional import F
 
 import games.general.modules
-from games.general.base_model import TrainableModel, BasePlayer, Policy
+from games.general.base_model import BasePlayer, Policy, TrainableModel
 from rl_utils.losses import weighted_smooth_l1_loss
 from rl_utils.memory import Memory
 from rl_utils.sum_tree import WeightedMemory
@@ -194,12 +194,7 @@ class Q:
         self.policy_net.apply(init_weights)
         self.target_net.apply(init_weights)
 
-        self.optim = torch.optim.SGD(
-            self.policy_net.parameters(),
-            weight_decay=weight_decay,
-            momentum=momentum,
-            lr=lr,
-        )
+        self.optim = torch.optim.SGD(self.policy_net.parameters(), weight_decay=weight_decay, momentum=momentum, lr=lr,)
 
         if mem_type == "sumtree":
             self.memory = WeightedMemory(buffer_size)

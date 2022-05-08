@@ -3,17 +3,15 @@ from functools import reduce
 import numpy as np
 from gym import spaces
 
-from games.general.base_env import BaseEnv, GameOver
+from games.general.base_env import BaseEnv, GameOver, TwoDEnv
 
 
-class TicTacToeEnv(BaseEnv):
+class TicTacToeEnv(TwoDEnv):
     def __init__(self, width=3, height=3, win_amount=3):
-        self.height = height
-        self.width = width
+        super().__init__(width, height, spaces.Discrete(width * height))
         self.win_amount = win_amount
         self.episode_over = False
         self.board = np.zeros([width, height], dtype=np.int64)
-        self.action_space = spaces.Discrete(width * height)  # Linear action space even though board is 3*3
 
     def max_moves(self):
         return self.height * self.width

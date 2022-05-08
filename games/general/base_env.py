@@ -9,6 +9,9 @@ class BaseEnv:
     def __call__(self):
         return copy.deepcopy(self)
 
+    def num_actions(self):
+        return self.action_space.n
+
     def step(self, action, player=1):
         raise NotImplementedError
 
@@ -35,3 +38,10 @@ class BaseEnv:
 
     def variant_string(self):
         raise NotImplementedError
+
+
+class TwoDEnv(BaseEnv):
+    def __init__(self, width, height, action_space):
+        self.width = width
+        self.height = height
+        self.action_space = action_space

@@ -1,7 +1,9 @@
 from multiprocessing import Queue
 
 import torch
+from torch import nn
 
+from games.general.base_env import BaseEnv
 from rl_utils.memory import Memory
 
 
@@ -21,6 +23,7 @@ class BasePlayer:
 
     def evaluate(self, evaluate_state=False):
         pass
+
 
 # Must have a network to be updated
 class TrainableModel:
@@ -87,3 +90,11 @@ class ModelContainer:
     def load_state_dict(self, save_file):
         checkpoint = torch.load(save_file)
         self.policy_kwargs["network"].load_state_dict(checkpoint["model"])
+
+    def set_env(self, env: BaseEnv):
+        self.policy_kwargs["env"] = env
+        return self
+
+    def set_network(self, network: nn.Module):
+        self.policy_kwargs["network"] = network
+        return self

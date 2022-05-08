@@ -5,19 +5,16 @@ import numpy as np
 from colorama import Fore, Style
 from gym import spaces
 
-from games.general.base_env import BaseEnv, GameOver
+from games.general.base_env import BaseEnv, GameOver, TwoDEnv
 
 
-class Connect4Env(BaseEnv):
+class Connect4Env(TwoDEnv):
     DEFAULT_WIDTH = 7
-    DEFAULT_HEIGHT= 6
+    DEFAULT_HEIGHT = 6
 
     def __init__(self, width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT, state=None):
-        self.height = height
-        self.width = width
+        super().__init__(width, height, spaces.Discrete(width))
         self.episode_over = False  # TODO maybe put this in set state?x
-
-        self.action_space = spaces.Discrete(width)
 
         if state:
             self.set_state(state)
@@ -28,6 +25,7 @@ class Connect4Env(BaseEnv):
     def max_moves(self):
         return self.height * self.width
 
+    # Action is a integer between 0 and the width
     def step(self, action, player=1):
         if self.episode_over:
             raise GameOver
@@ -48,8 +46,6 @@ class Connect4Env(BaseEnv):
 
     def valid_moves(self):
         return self.heights < self.height
-
-    # Action is a integer between 0 and the width
 
     def reset(self):
         self.episode_over = False

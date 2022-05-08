@@ -75,7 +75,7 @@ class Elo:
         scheduler = self_play_parallel.SelfPlayScheduler(
             policy_container=self.model_database.model_shelf[model_1],
             evaluation_policy_container=self.model_database.model_shelf[model_2],
-            env_gen=self.model_database.env,
+            env=self.model_database.env,
             epoch_length=num_games,
             initial_games=0,
             self_play=False,

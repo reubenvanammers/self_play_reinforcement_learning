@@ -74,13 +74,7 @@ if __name__ == "__main__":
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(
-        iterations=400,
-        min_memory=25000,
-        memory_size=100000,
-        env_gen=Connect4Env,
-        batch_size=64,
-    )
+    policy_kwargs = dict(iterations=400, min_memory=25000, memory_size=100000, env_gen=Connect4Env, batch_size=64,)
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     eval = PerfectEvaluator(policy_container.setup(network=network))

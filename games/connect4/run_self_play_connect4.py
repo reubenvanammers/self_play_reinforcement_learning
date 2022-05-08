@@ -26,13 +26,7 @@ def run_training():
 
     policy_gen = MCTreeSearch
     policy_args = []
-    policy_kwargs = dict(
-        iterations=800,
-        min_memory=25000,
-        memory_size=300000,
-        env_gen=Connect4Env,
-        batch_size=128,
-    )
+    policy_kwargs = dict(iterations=800, min_memory=25000, memory_size=300000, env_gen=Connect4Env, batch_size=128,)
     policy_container = ModelContainer(policy_gen=policy_gen, policy_kwargs=policy_kwargs)
 
     model_db = ModelDatabase()
@@ -56,7 +50,7 @@ def run_training():
         evaluation_network = None
 
     self_play = SelfPlayScheduler(
-        env_gen=Connect4Env,
+        env=Connect4Env,
         network=network,
         policy_container=policy_container,
         evaluation_policy_container=evaluation_policy_container,

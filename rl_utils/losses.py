@@ -7,7 +7,7 @@ import torch.nn._reduction as _Reduction
 def _weighted_smooth_l1_loss(input, target, weights):
     # type: (Tensor, Tensor) -> Tensor
     t = torch.abs(input - target)
-    return weights * torch.where(t < 1, 0.5 * t**2, t - 0.5)
+    return weights * torch.where(t < 1, 0.5 * t ** 2, t - 0.5)
 
 
 def weighted_smooth_l1_loss(input, target, weights, size_average=None, reduce=None, reduction="mean"):
