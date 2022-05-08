@@ -51,7 +51,7 @@ class SelfPlayScheduler:
         save_dir="saves",
         epoch_length=500,
         initial_games=64,
-        self_play=False,
+        # self_play=False,
         lr=0.001,
         stagger=False,
         evaluation_games=100,
@@ -66,7 +66,7 @@ class SelfPlayScheduler:
         self.swap_sides = swap_sides
         self.save_dir = save_dir
         self.epoch_length = epoch_length
-        self.self_play = self_play
+        # self.self_play = self_play
         self.lr = lr
         self.stagger = stagger
         self.stagger_mem_step = stagger_mem_step
@@ -131,7 +131,7 @@ class SelfPlayScheduler:
                     policy_container=self.policy_container,
                     evaluation_policy_container=self.evaluation_policy_container,
                     save_dir=self.save_dir,
-                    self_play=self.self_play,
+                    # self_play=self.self_play,
                     threading=threads_per_worker,
                 )
                 for i in range(num_play_workers)
@@ -166,7 +166,7 @@ class SelfPlayScheduler:
                     evaluation_policy_container=self.evaluation_policy_container,
                     save_dir=self.save_dir,
                     resume=resume_model,
-                    self_play=self.self_play,
+                    # self_play=self.self_play,
                     epoch_value=epoch_value,
                 )
                 for _ in range(num_play_workers)
@@ -336,17 +336,17 @@ class SelfPlayScheduler:
         if epoch >= 0:
             total_rewards, _ = self.parse_results(reward_list)
 
-        if self.self_play:
-            reward_list = []
-            logging.info("running evaluation games")
-            print("Running evaluation games")
-            self.run_evaluation_games()
-            while not self.result_queue.empty():
-                reward_list.append(self.result_queue.get())
-            print("Evaluation games are: \n")
-            logging.info("Evaluation games are ")
+        # if self.self_play:
+        reward_list = []
+        logging.info("running evaluation games")
+        print("Running evaluation games")
+        self.run_evaluation_games()
+        while not self.result_queue.empty():
+            reward_list.append(self.result_queue.get())
+        print("Evaluation games are: \n")
+        logging.info("Evaluation games are ")
 
-            total_rewards, _ = self.parse_results(reward_list)
+        total_rewards, _ = self.parse_results(reward_list)
 
         # self.scheduler.step(total_rewards)
         print(f"epoch is {epoch}")
@@ -355,7 +355,7 @@ class SelfPlayScheduler:
         return total_rewards
 
     def compare_models(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
-        player_workers, inference_worker = self.setup_player_workers(
+        player_workers, inference_worker, _ = self.setup_player_workers(
             resume_model=resume_model,
             inference_proxy=inference_proxy,
             threads_per_worker=threads_per_worker,
