@@ -1,6 +1,7 @@
 import concurrent.futures
 import copy
 import logging
+import threading
 import time
 import traceback
 from collections import namedtuple
@@ -39,11 +40,11 @@ class MCNode(NodeMixin):
         self.cpuct = cpuct  # exploration factor
 
         # Flag for threading
-        self.in_use = False
         self.virtual_loss = 0
 
         self.active_root = False
         self.v = v
+        self.lock= threading.Lock()
 
     def add_noise(self):  # Adds noise to childrens p value
         dirichlet_distribution = np.random.dirichlet([self.alpha] * len(self.children))
@@ -84,7 +85,8 @@ class MCNode(NodeMixin):
 
     @property
     def valid(self):
-        return self._valid and not self.in_use
+        return self._valid and not self.lock.locked()
+
 
     def remove_virtual_loss(self):
         self.virtual_loss -= 1
@@ -107,6 +109,9 @@ class MCNode(NodeMixin):
 
     def _post_detach_children(self, children):
         pass
+
+    def __str__(self):
+        return '/n'.join([f"state={self.state}", f"n={self.n}"])
 
 
 class MCTreeSearch(Policy):
@@ -274,6 +279,7 @@ class MCTreeSearch(Policy):
         except ValueError:
             logging.info(f"action exception, actions {self.actions} p = {play_probs}")
             logging.info(traceback.format_exc())
+            logging.info(str(self.root_node))
             ns = [child.n for child in self.root_node.children]
             action = ns.index(max(ns))
 
@@ -346,11 +352,11 @@ class MCTreeSearch(Policy):
             action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
             child_node = node.children[action]
             if child_node.is_leaf:
-                child_node.in_use = True
+                child_node.lock.acquire()
                 node, v = self._expand_node(node, action, node.player)
                 node.backup(v)
                 node.v = v
-                node.in_use = False
+                child_node.lock.release()
                 [n.remove_virtual_loss() for n in node_list]
                 break
             else:
