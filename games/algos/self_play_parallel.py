@@ -12,7 +12,8 @@ import torch
 from torch import multiprocessing, nn
 from torch.utils.tensorboard import SummaryWriter
 
-from games.algos.inference_proxy import InferenceProxy, InferenceWorker
+from games.algos.inference_proxy import InferenceProxy
+from games.algos.inference_worker import InferenceWorker
 from games.algos.selfplayworker import SelfPlayWorker
 from games.algos.updateworker import UpdateWorker
 from games.general.base_env import BaseEnv
@@ -27,8 +28,6 @@ logger = logging.getLogger()
 logname = "rl.log"
 handler = TimedRotatingFileHandler(logname, when="midnight", interval=1)
 handler.suffix = "%Y%m%d"
-handler.setLevel(logging.INFO)
-logger.setLevel(logging.INFO)
 formatter = logging.Formatter("[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)

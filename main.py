@@ -67,7 +67,7 @@ def _get_model(model_name: str, model_database: ModelDatabase, env: BaseEnv, gam
     elif getattr(config_dict[game], model_name):
         model: ModelContainer = getattr(config_dict[game], model_name)
         model.set_env(env)
-        network = ResidualTower.from_env(env)
+        network = ResidualTower.from_env(env, filter_factor=32, num_blocks=15)
         network.share_memory()
         model.set_network(network)
         return model
@@ -85,12 +85,11 @@ def train(game: BaseEnv, policy_container: ModelContainer, opponent: ModelContai
         env=game,
         policy_container=policy_container,
         evaluation_policy_container=opponent,
-        initial_games=40,
-        epoch_length=1500,
-        evaluation_games=150,
+        initial_games=20,
+        epoch_length=750,
+        evaluation_games=75,
         save_dir=save_dir,
         stagger=True,
-        stagger_mem_step=15000,
         lr=0.005,
         deduplicate=False,
         update_delay=0.01,

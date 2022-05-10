@@ -271,9 +271,11 @@ class MCTreeSearch(Policy):
 
         try:
             action = np.random.choice(self.actions, p=play_probs)
-        except Exception:
-            logging.info(f"action exception, actions{self.actions} p = {play_probs}")
+        except ValueError:
+            logging.info(f"action exception, actions {self.actions} p = {play_probs}")
             logging.info(traceback.format_exc())
+            ns = [child.n for child in self.root_node.children]
+            action = ns.index(max(ns))
 
         self.moves_played += 1
 
