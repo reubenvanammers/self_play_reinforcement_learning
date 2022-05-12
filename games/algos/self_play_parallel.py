@@ -5,7 +5,6 @@ import time
 import traceback
 from logging.handlers import TimedRotatingFileHandler
 from os.path import join
-
 import multiprocessing_logging
 import numpy as np
 import torch
@@ -30,8 +29,9 @@ handler = TimedRotatingFileHandler(logname, when="midnight", interval=1)
 handler.suffix = "%Y%m%d"
 formatter = logging.Formatter("[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
+handler.setLevel(logging.INFO)
+logger.setLevel(logging.INFO)
 logger.addHandler(handler)
-
 logger.info("initializing logging")
 
 multiprocessing_logging.install_mp_handler(logger)
@@ -94,12 +94,11 @@ class SelfPlayScheduler:
     def setup_player_workers(self, num_workers=None, inference_proxy=True, threads_per_worker=8, resume_model=False):
         epoch_value = multiprocessing.Value("i", 0)
         num_workers = num_workers or multiprocessing.cpu_count()
-
         if inference_proxy:
             num_play_workers = num_workers - 2
             assert num_play_workers >= 1
             # Use four worker threads per MCTS game
-            queues = [QueueContainer(threading=threads_per_worker * 4) for _ in range(num_play_workers)]
+            queues = [QueueContainer(threading=threads_per_worker * self.policy_container.policy_kwargs.get("thread_count", 4) ) for _ in range(num_play_workers)]
             network_inference_proxy = [InferenceProxy(queue.policy_queues) for queue in queues]
 
             evaluation_network = self._get_network(self.evaluation_network, self.evaluation_policy_container)
@@ -124,6 +123,7 @@ class SelfPlayScheduler:
                     save_dir=self.save_dir,
                     # self_play=self.self_play,
                     threading=threads_per_worker,
+                    worker_number=i
                 )
                 for i in range(num_play_workers)
             ]

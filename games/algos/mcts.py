@@ -352,7 +352,8 @@ class MCTreeSearch(Policy):
             action = np.argmax(select_probs + 0.000001 * np.random.rand(self.actions))
             child_node = node.children[action]
             if child_node.is_leaf:
-                child_node.lock.acquire()
+                # TODO analyze this a bit more
+                child_node.lock.acquire(timeout=5)
                 node, v = self._expand_node(node, action, node.player)
                 node.backup(v)
                 node.v = v

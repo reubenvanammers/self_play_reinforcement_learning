@@ -5,7 +5,8 @@ import traceback
 from concurrent import futures
 
 from games.algos.base_worker import BaseWorker
-from games.general.base_model import ModelContainer
+from games.general.base_env import BaseEnv
+from games.general.base_model import ModelContainer, BasePlayer, Policy
 
 try:
     from games.algos.evaluation_worker import PerfectEvaluator
@@ -31,6 +32,7 @@ class SelfPlayWorker(BaseWorker):
         evaluation_policy_container: ModelContainer = None,
         epoch_value=None,
         threading=0,
+        worker_number=None,
     ):
         logging.info("initializing self play worker worker")
         self.env_gen = env_gen
@@ -58,6 +60,7 @@ class SelfPlayWorker(BaseWorker):
         self.epoch_count = 0
 
         self.threading = threading
+        self.worker_number=worker_number
 
         super().__init__(save_dir=save_dir, start_time=start_time)
 
@@ -83,8 +86,7 @@ class SelfPlayWorker(BaseWorker):
                 # Both environments are more willing to explore
                 policy.evaluate(False)
                 opposing_policy.evaluate(False)
-            logging.debug("Created SelfPlayWorker")
-
+            logging.debug(f"Created SelfPlayWorker at worker {self.worker_number}")
             return SelfPlayer(policy, opposing_policy, self.env_gen(), self.result_queue)
         except Exception as e:
             logging.exception("setting up policies failed" + str(e))
@@ -118,16 +120,18 @@ class SelfPlayWorker(BaseWorker):
                 self_player = self.set_up_policies(evaluate=evaluate)
 
                 episode_args = task["play"]
-                if not self.threading:
+                if (not self.threading) or self.threading == 1:
                     self_player.play_episode(**episode_args)
                     self.task_queue.task_done()
-                    logging.info("task done")
+                    logging.debug(f"task done by worker {self.worker_number}")
                 else:
                     # small delay to allow threads to be more equal across core
                     time.sleep(0.1)
                     future = executor.submit(self_player.play_episode, **episode_args)
                     future.add_done_callback(self._task_finished)
                     future_set.add(future)
+                    logging.debug(f"adding task to worker {self.worker_number}")
+                    logging.debug(f" future set len {len(future_set)}  thread {self.threading} {self.worker_number}")
                     if len(future_set) < self.threading:
                         continue
                     else:
@@ -154,11 +158,11 @@ class SelfPlayWorker(BaseWorker):
     def _task_finished(self, future):
         if future.done():
             self.task_queue.task_done()
-            logging.debug("task done")
+            logging.debug(f"task done by worker {self.worker_number}")
 
 
 class SelfPlayer:
-    def __init__(self, policy, opposing_policy, env, result_queue, update_opponent=True):
+    def __init__(self, policy : Policy, opposing_policy: BasePlayer, env : BaseEnv, result_queue, update_opponent=True):
         self.policy = policy
         self.opposing_policy = opposing_policy
         self.env = env
@@ -167,14 +171,13 @@ class SelfPlayer:
 
     def play_episode(self, swap_sides=False, update=False):
         try:
-
             s = self.env.reset()
             self.policy.reset(player=(-1 if swap_sides else 1))
             self.opposing_policy.reset(player=(1 if swap_sides else -1))  # opposite from opposing policy perspective
             state_list = []
             if swap_sides:
                 s, _, _, _, _ = self.get_and_play_moves(s, player=-1)
-            for i in range(100):  # Should be less than this
+            for i in range(self.env.max_moves()):
                 s, done, r = self.play_round(s, update=update)
                 state_list.append(copy.deepcopy(s))
                 if done:

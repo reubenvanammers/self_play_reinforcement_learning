@@ -28,7 +28,7 @@ class BidirectionalQueue:
             self.request_queue.put(obj)
             return self.answer_queue.get(block=True)
         except AssertionError:
-            print("asdf")
+            logging.error(" Request queue is not empty")
 
 
 class ThreadedBidirectionalQueue:
