@@ -44,7 +44,7 @@ class MCNode(NodeMixin):
 
         self.active_root = False
         self.v = v
-        self.lock= threading.Lock()
+        self.lock = threading.Lock()
 
     def add_noise(self):  # Adds noise to childrens p value
         dirichlet_distribution = np.random.dirichlet([self.alpha] * len(self.children))
@@ -87,7 +87,6 @@ class MCNode(NodeMixin):
     def valid(self):
         return self._valid and not self.lock.locked()
 
-
     def remove_virtual_loss(self):
         self.virtual_loss -= 1
         assert self.virtual_loss >= 0
@@ -111,7 +110,7 @@ class MCNode(NodeMixin):
         pass
 
     def __str__(self):
-        return '/n'.join([f"state={self.state}", f"n={self.n}"])
+        return "/n".join([f"state={self.state}", f"n={self.n}"])
 
 
 class MCTreeSearch(Policy):

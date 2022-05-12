@@ -94,7 +94,7 @@ def train(game: BaseEnv, policy_container: ModelContainer, opponent: ModelContai
         deduplicate=False,
         update_delay=0.01,
     )
-    self_play.train_model(20, resume_memory=False, resume_model=False)
+    self_play.train_model(20, resume_memory=True, resume_model=True, threads_per_worker=1)
     save_file = recent_save_file(save_dir, self_play.start_time, False, "model")
     policy_container.load_state_dict(save_file)
     elo.model_database.add_model(name, policy_container)

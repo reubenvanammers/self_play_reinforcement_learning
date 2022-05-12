@@ -41,7 +41,7 @@ class BasicBlock(nn.Module):
 
 
 class ResidualTower(nn.Module):
-    def __init__(self, width=7, height=6, action_size=7, num_blocks=15, default_kernel_size=3, filter_factor = 32):
+    def __init__(self, width=7, height=6, action_size=7, num_blocks=15, default_kernel_size=3, filter_factor=32):
         super(ResidualTower, self).__init__()
         self.inplanes = filter_factor * 4
         self.width = width
@@ -50,7 +50,7 @@ class ResidualTower(nn.Module):
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=default_kernel_size, stride=1, padding=1, bias=True)
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
-        self.residual_blocks = self._make_layer(BasicBlock, filter_factor*4, num_blocks)
+        self.residual_blocks = self._make_layer(BasicBlock, filter_factor * 4, num_blocks)
 
         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(width))), 1, 1, 0)
         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(conv2d_size_out(height))), 1, 1, 0)
@@ -67,8 +67,8 @@ class ResidualTower(nn.Module):
         self.conv_value = nn.Conv2d(self.inplanes, filter_factor, kernel_size=1, stride=1)
         self.value_bn = nn.BatchNorm2d(filter_factor)
         self.value_dropout = nn.Dropout(p=0.5)
-        self.fc_value = nn.Linear(linear_input_size * filter_factor, filter_factor*8)
-        self.linear_output = nn.Linear(filter_factor*8, 1)
+        self.fc_value = nn.Linear(linear_input_size * filter_factor, filter_factor * 8)
+        self.linear_output = nn.Linear(filter_factor * 8, 1)
 
         self.apply(init_weights)
 

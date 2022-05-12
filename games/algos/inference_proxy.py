@@ -34,5 +34,3 @@ class InferenceProxy:
     # train is always false for evaluator proxy
     def load_state_dict(self, *args, **kwargs):
         return self
-
-

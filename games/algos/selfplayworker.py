@@ -6,7 +6,7 @@ from concurrent import futures
 
 from games.algos.base_worker import BaseWorker
 from games.general.base_env import BaseEnv
-from games.general.base_model import ModelContainer, BasePlayer, Policy
+from games.general.base_model import BasePlayer, ModelContainer, Policy
 
 try:
     from games.algos.evaluation_worker import PerfectEvaluator
@@ -60,7 +60,7 @@ class SelfPlayWorker(BaseWorker):
         self.epoch_count = 0
 
         self.threading = threading
-        self.worker_number=worker_number
+        self.worker_number = worker_number
 
         super().__init__(save_dir=save_dir, start_time=start_time)
 
@@ -162,7 +162,7 @@ class SelfPlayWorker(BaseWorker):
 
 
 class SelfPlayer:
-    def __init__(self, policy : Policy, opposing_policy: BasePlayer, env : BaseEnv, result_queue, update_opponent=True):
+    def __init__(self, policy: Policy, opposing_policy: BasePlayer, env: BaseEnv, result_queue, update_opponent=True):
         self.policy = policy
         self.opposing_policy = opposing_policy
         self.env = env

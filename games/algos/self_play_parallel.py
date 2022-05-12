@@ -5,6 +5,7 @@ import time
 import traceback
 from logging.handlers import TimedRotatingFileHandler
 from os.path import join
+
 import multiprocessing_logging
 import numpy as np
 import torch
@@ -98,7 +99,12 @@ class SelfPlayScheduler:
             num_play_workers = num_workers - 2
             assert num_play_workers >= 1
             # Use four worker threads per MCTS game
-            queues = [QueueContainer(threading=threads_per_worker * self.policy_container.policy_kwargs.get("thread_count", 4) ) for _ in range(num_play_workers)]
+            queues = [
+                QueueContainer(
+                    threading=threads_per_worker * self.policy_container.policy_kwargs.get("thread_count", 4)
+                )
+                for _ in range(num_play_workers)
+            ]
             network_inference_proxy = [InferenceProxy(queue.policy_queues) for queue in queues]
 
             evaluation_network = self._get_network(self.evaluation_network, self.evaluation_policy_container)
@@ -123,7 +129,7 @@ class SelfPlayScheduler:
                     save_dir=self.save_dir,
                     # self_play=self.self_play,
                     threading=threads_per_worker,
-                    worker_number=i
+                    worker_number=i,
                 )
                 for i in range(num_play_workers)
             ]
