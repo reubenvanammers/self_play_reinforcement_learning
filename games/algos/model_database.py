@@ -74,7 +74,7 @@ class ModelDatabase:
         model.train(False)
         model.evaluate(True)
 
-        manual = ManualPlay(self.GAME_DICT[self.game](), model)
+        manual = ManualPlay(model.env(), model)
         manual.play()
 
     def observe(self, model_name, opponent_model_name):

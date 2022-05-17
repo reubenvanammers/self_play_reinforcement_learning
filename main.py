@@ -22,7 +22,7 @@ config_dict = {"connect4": connect4config, "tictactoe": tictactoeconfig}
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", help="command")
+    parser.add_argument("command", help="command", choices=["observe", "calculate_elo", "compare_models", "manual", "train"])
     parser.add_argument("--p", nargs="*", help="players")
     parser.add_argument("--b", nargs="*", help="board size", dest="board_size")
     parser.add_argument(
@@ -52,6 +52,8 @@ def main():
             elo.compare_all()
         else:
             elo.compare_models(*players)
+    elif args.command == "manual":
+        md.manual_play(args.opponent)
     elif args.command == "train":
         policy = _get_model(args.config, md, env, args.game)
         opposing_policy = _get_model(args.opponent, md, env, args.game)

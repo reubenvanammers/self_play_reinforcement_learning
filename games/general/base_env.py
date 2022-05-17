@@ -39,6 +39,9 @@ class BaseEnv:
     def variant_string(self):
         raise NotImplementedError
 
+    def get_manual_move(self):
+        return int(input("Choose your move (X)"))
+
 
 class TwoDEnv(BaseEnv):
     def __init__(self, width, height, action_space):

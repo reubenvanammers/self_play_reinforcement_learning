@@ -7,7 +7,11 @@ from games.general.base_env import BaseEnv, GameOver, TwoDEnv
 
 
 class TicTacToeEnv(TwoDEnv):
-    def __init__(self, width=3, height=3, win_amount=3):
+    DEFAULT_WIDTH = 3
+    DEFAULT_HEIGHT = 3
+    DEFAULT_WIN_AMOUNT = 3
+
+    def __init__(self, width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT, win_amount=DEFAULT_WIN_AMOUNT):
         super().__init__(width, height, spaces.Discrete(width * height))
         self.win_amount = win_amount
         self.episode_over = False
@@ -50,8 +54,9 @@ class TicTacToeEnv(TwoDEnv):
         board = board or self.board
         map = {0: " ", 1: "X", -1: "O"}
         for row_number in range(self.height):
-            l.append("|".join([map[piece] for piece in board[:, row_number]]))
+            l.append(f"{row_number}" + "|".join([map[piece] for piece in board[:, row_number]]))
         l.reverse()
+        l.append(" " + " ".join((str(i) for i in range(self.width))))
         print("\n".join(l))
 
     def get_reward(self, action, player=1):
@@ -79,5 +84,15 @@ class TicTacToeEnv(TwoDEnv):
     def get_state(self):
         return self.board, None
 
+    def get_manual_move(self):
+        x = int(input("Choose your column"))
+        y = int(input("Choose your row"))
+
+        return x* self.height + y
+
+
     def variant_string(self):
-        return "tictactoe"
+        if self.width == self.DEFAULT_WIDTH and self.height == self.DEFAULT_HEIGHT and self.win_amount == self.DEFAULT_WIN_AMOUNT:
+            return "tictactoe"
+        else:
+            return f"tictactoe_{self.width}_{self.height}_{self.win_amount}"

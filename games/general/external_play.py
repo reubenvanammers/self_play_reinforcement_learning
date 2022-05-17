@@ -54,7 +54,10 @@ class ManualPlay(AbstractExternalPlay):
     def get_and_play_moves(self, s, player=1):
         self.env.render()
         if player == 1:
-            a = int(input("Choose your move (X)"))
+            try:
+                a = self.env.get_manual_move()
+            except:
+                a = int(input("Choose your move (X)"))
             s_next, r, done, info = self.play_move(a, player=1)
             return s_next, a, r, done, info
         else:

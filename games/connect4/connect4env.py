@@ -66,7 +66,7 @@ class Connect4Env(TwoDEnv):
             boundary = f"{Fore.BLUE}|{Style.RESET_ALL}"
             l.append(boundary + boundary.join([map[piece] for piece in board[:, row_number]]) + boundary)
         l.reverse()
-        l.append(" " + " ".join((str(i) for i in range(7))))
+        l.append(" " + " ".join((str(i) for i in range(self.width))))
         print("\n".join(l))
 
     def get_reward(self, action, player=1):
