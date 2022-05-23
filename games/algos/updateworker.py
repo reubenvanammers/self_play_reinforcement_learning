@@ -73,8 +73,11 @@ class UpdateWorker(BaseWorker):
             self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(  # Might need to rework scheduler?
                 self.policy.optim, "max", patience=15, factor=0.5, verbose=True, min_lr=0.00001, cooldown=5
             )
-
-            while True:
+        except Exception as e:
+            logging.exception(traceback.format_exc())
+            logging.exception("error in update worker" + str(e))
+        while True:
+            try:
                 if not self.update_worker_queue.empty():
                     task = self.update_worker_queue.get()
                     if task.get("saved_name"):
@@ -97,9 +100,9 @@ class UpdateWorker(BaseWorker):
                     self.update()
                 else:
                     self.pull()
-        except Exception as e:
-            logging.exception(traceback.format_exc())
-            logging.exception("error in update worker" + str(e))
+            except Exception as e:
+                logging.exception(traceback.format_exc())
+                logging.exception("error in update worker" + str(e))
 
     def stagger_memory(self):
         max_size = min(self.policy.memory.max_size + self.mem_step, self.max_mem)

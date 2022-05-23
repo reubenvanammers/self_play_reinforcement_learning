@@ -88,11 +88,14 @@ class TicTacToeEnv(TwoDEnv):
         x = int(input("Choose your column"))
         y = int(input("Choose your row"))
 
-        return x* self.height + y
-
+        return x * self.height + y
 
     def variant_string(self):
-        if self.width == self.DEFAULT_WIDTH and self.height == self.DEFAULT_HEIGHT and self.win_amount == self.DEFAULT_WIN_AMOUNT:
+        if (
+            self.width == self.DEFAULT_WIDTH
+            and self.height == self.DEFAULT_HEIGHT
+            and self.win_amount == self.DEFAULT_WIN_AMOUNT
+        ):
             return "tictactoe"
         else:
             return f"tictactoe_{self.width}_{self.height}_{self.win_amount}"

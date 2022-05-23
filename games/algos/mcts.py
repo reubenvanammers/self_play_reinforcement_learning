@@ -224,6 +224,7 @@ class MCTreeSearch(Policy):
         # Push memory of the game to the memory queue with the actual result of the game
         if done:
             for experience in self.temp_memory:
+                # TODO do some assertion on memory quality
                 experience = experience._replace(actual_val=torch.tensor(r).float())
                 self.memory_queue.put(experience)
             self.temp_memory = []
@@ -275,6 +276,15 @@ class MCTreeSearch(Policy):
 
         try:
             action = np.random.choice(self.actions, p=play_probs)
+            # dont put this in if something went wrong?
+            self.temp_memory.append(
+                Move(
+                    torch.tensor(self.root_node.state),
+                    None,
+                    torch.tensor(play_probs).float(),
+                    torch.tensor(self.root_node.q),
+                )
+            )
         except ValueError:
             logging.info(f"action exception, actions {self.actions} p = {play_probs}")
             logging.info(traceback.format_exc())
@@ -284,14 +294,6 @@ class MCTreeSearch(Policy):
 
         self.moves_played += 1
 
-        self.temp_memory.append(
-            Move(
-                torch.tensor(self.root_node.state),
-                None,
-                torch.tensor(play_probs).float(),
-                torch.tensor(self.root_node.q),
-            )
-        )
         return action
 
     def _expand_node(self, parent_node, action, player=1):

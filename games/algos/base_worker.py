@@ -50,7 +50,8 @@ def recent_save_file(save_dir, start_time, prev_run=False, starting_str="model")
         ]
     else:
         folders = [join(save_dir, f) for f in listdir(os.path.join(save_dir)) if not isfile(join(save_dir, f))]
-    recent_folder = max(folders)
+    non_empty_folders = [f for f in folders if os.listdir(f)]
+    recent_folder = max(non_empty_folders)
 
     saves = [
         join(recent_folder, f)

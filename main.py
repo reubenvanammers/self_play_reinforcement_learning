@@ -22,7 +22,9 @@ config_dict = {"connect4": connect4config, "tictactoe": tictactoeconfig}
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", help="command", choices=["observe", "calculate_elo", "compare_models", "manual", "train"])
+    parser.add_argument(
+        "command", help="command", choices=["observe", "calculate_elo", "compare_models", "manual", "train"]
+    )
     parser.add_argument("--p", nargs="*", help="players")
     parser.add_argument("--b", nargs="*", help="board size", dest="board_size")
     parser.add_argument(
@@ -98,6 +100,7 @@ def train(game: BaseEnv, policy_container: ModelContainer, opponent: ModelContai
     )
     self_play.train_model(20, resume_memory=True, resume_model=True, threads_per_worker=1)
     save_file = recent_save_file(save_dir, self_play.start_time, False, "model")
+    policy_container.set_network(self_play.network)
     policy_container.load_state_dict(save_file)
     elo.model_database.add_model(name, policy_container)
 

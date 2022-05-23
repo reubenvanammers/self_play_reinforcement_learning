@@ -30,8 +30,8 @@ handler = TimedRotatingFileHandler(logname, when="midnight", interval=1)
 handler.suffix = "%Y%m%d"
 formatter = logging.Formatter("[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
-handler.setLevel(logging.INFO)
-logger.setLevel(logging.INFO)
+handler.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 logger.info("initializing logging")
 
