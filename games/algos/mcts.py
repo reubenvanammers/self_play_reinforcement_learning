@@ -22,7 +22,7 @@ class MCNode(NodeMixin):
     # Represents an action of a Monte Carlo Search Tree
 
     def __init__(
-        self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True,
+        self, state=None, n=0, w=0, p=0, x=0.25, parent=None, cpuct=4, player=1, v=None, valid=True, alpha=1,
     ):
         self.state = state
         self.n = n
@@ -33,7 +33,7 @@ class MCNode(NodeMixin):
         self.noise_active = False
         self.p_noise = 0
 
-        self.alpha = 1  # Dirichlet parameter
+        self.alpha = alpha  # Dirichlet parameter
         self.parent = parent
         self.player = -1 * self.parent.player if self.parent else player
         self._valid = valid  # Whether an action is valid - don't play moves that you cannot
@@ -103,7 +103,7 @@ class MCNode(NodeMixin):
     def create_children(self, action_probs, validities):
         children_list = []
         for i, action_prob in enumerate(action_probs):
-            children_list.append(MCNode(p=action_prob, parent=self, valid=validities[i]))
+            children_list.append(MCNode(p=action_prob, parent=self, valid=validities[i], alpha=self.alpha))
             self.children = children_list
 
     def _post_detach_children(self, children):
@@ -132,12 +132,14 @@ class MCTreeSearch(Policy):
         thread_count=4,
         strong_play=False,  # Whether or not  to prefer short games to long ones
         q_average=True,
+        alpha=1,
     ):
         self.iterations = iterations
         self.network = network.to(device)
         self.env_gen = env
         self.optim = optim
         self.env = env()
+        self.alpha = alpha
         self.root_node = None
         self.reset()
         self.update_nn = update_nn
@@ -164,7 +166,7 @@ class MCTreeSearch(Policy):
     def reset(self, player=1):
         base_state = self.env.reset()
         probs, v = self.network(base_state)
-        self._set_root(MCNode(state=base_state, v=v, player=player))
+        self._set_root(MCNode(state=base_state, v=v, player=player, alpha=self.alpha))
         self.root_node.create_children(probs, self.env.valid_moves())
         self.moves_played = 0
         self.temp_memory = []

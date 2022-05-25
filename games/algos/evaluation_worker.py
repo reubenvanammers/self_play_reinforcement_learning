@@ -23,7 +23,7 @@ class PerfectEvaluator:
         self.evaluator = evaluator
 
     # TODO add test for evaluator without MCTS as well
-    # TODO add to tensorboard?
+    # TODO add to tensorboard?a
     def test(self, num_pos=100, base_network=False, weak=False):
         games = random.sample(self.pos_list, num_pos)
         if base_network:
@@ -80,7 +80,5 @@ if __name__ == "__main__":
     eval = PerfectEvaluator(policy_container.setup(network=network))
     eval.test(base_network=True)
     eval.test()
-    # eval.evaluator.env.step(1)
-    # eval.evaluator.env.step(2,-1)
 
     print("asdf")
